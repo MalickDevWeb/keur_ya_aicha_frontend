@@ -41,17 +41,17 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
   const active = focused || hasValue;
 
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 28 }}>
       {/* Label */}
       <label
         style={{
           display: "block",
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 600,
           letterSpacing: "1.4px",
           textTransform: "uppercase",
           color: active ? "#4a7cff" : "#7a8fa8",
-          marginBottom: 8,
+          marginBottom: 10,
           transition: "color .25s",
         }}
       >
@@ -62,10 +62,10 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
       <div
         style={{
           position: "relative",
-          borderRadius: 14,
-          border: `1.5px solid ${error ? "#ef4444" : focused ? "#4a7cff" : hasValue ? "#cbd5e1" : "#e2e8f0"}`,
+          borderRadius: 16,
+          border: `2px solid ${error ? "#ef4444" : focused ? "#4a7cff" : hasValue ? "#cbd5e1" : "#e2e8f0"}`,
           background: focused ? "#fff" : "#f8fafc",
-          boxShadow: focused ? "0 0 0 3.5px rgba(74,124,255,.13)" : "none",
+          boxShadow: focused ? "0 0 0 4px rgba(74,124,255,.13)" : "none",
           transition: "border-color .25s, box-shadow .25s, background .25s",
         }}
       >
@@ -73,7 +73,7 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
         <span
           style={{
             position: "absolute",
-            left: 16,
+            left: 18,
             top: "50%",
             transform: "translateY(-50%)",
             color: focused ? "#4a7cff" : "#94a3b8",
@@ -95,14 +95,14 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
           onFocus={() => setFocused(true)}
           style={{
             width: "100%",
-            padding: "14px 44px 14px 48px",
+            padding: "16px 48px 16px 52px",
             border: "none",
             background: "transparent",
             fontFamily: "'DM Sans', sans-serif",
-            fontSize: 14,
+            fontSize: 16,
             color: "#0f2854",
             outline: "none",
-            borderRadius: 14,
+            borderRadius: 16,
           }}
         />
 
@@ -202,6 +202,28 @@ export default function LoginPage() {
         rel="stylesheet"
       />
 
+      {/* Hidden SVG clipPath for wavy border */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <clipPath id="wave-clip" clipPathUnits="objectBoundingBox">
+            <path
+              d="
+                M 0 0
+                L 1 0
+                C 1 0.08, 0.84 0.14, 1 0.2
+                C 1.16 0.26, 0.84 0.32, 1 0.38
+                C 1.16 0.44, 0.84 0.5, 1 0.56
+                C 1.16 0.62, 0.84 0.68, 1 0.74
+                C 1.16 0.8, 0.84 0.86, 1 0.92
+                C 1.16 0.96, 1 1, 1 1
+                L 0 1
+                Z
+              "
+            />
+          </clipPath>
+        </defs>
+      </svg>
+
       <div
         style={{
           minHeight: "100vh",
@@ -221,7 +243,7 @@ export default function LoginPage() {
             alignItems: "center",
             padding: "60px 48px",
             overflow: "hidden",
-            clipPath: "polygon(100 100, 100% 0, 100% 75%, 0 85%, 0 100%)",
+            clipPath: "url(#wave-clip)",
           }}
         >
           {/* Exceptional diagonal separator */}
@@ -313,30 +335,70 @@ export default function LoginPage() {
 
             {/* Video */}
             <div style={{ position: "relative", maxWidth: 520, margin: "0 auto" }}>
+              {/* TV Screen Frame */}
               <div
                 style={{
-                  borderRadius: 18,
+                  borderRadius: 20,
                   overflow: "hidden",
-                  border: "1.5px solid rgba(255,255,255,.1)",
-                  boxShadow: "0 12px 50px rgba(0,0,0,.35)",
+                  background: "#0a0a0a",
+                  padding: 8,
+                  boxShadow: "0 15px 45px rgba(0,0,0,.45), 0 4px 15px rgba(0,0,0,.2)",
                 }}
               >
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  loop
-                  playsInline
-                  style={{ width: "100%", display: "block", borderRadius: 20 }}
+                <div
+                  style={{
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    background: "#000",
+                    position: "relative",
+                  }}
                 >
-                  <source src="/VIDEO.mp4" type="video/mp4" />
-                </video>
+                  {/* Screen Glare Effect */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: "50%",
+                      background: "linear-gradient(180deg, rgba(255,255,255,.03) 0%, transparent 100%)",
+                      pointerEvents: "none",
+                      zIndex: 1,
+                    }}
+                  />
+                  {/* Samsung Logo */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 12,
+                      right: 16,
+                      fontFamily: "Arial, sans-serif",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "rgba(255,255,255,.35)",
+                      letterSpacing: 1,
+                      zIndex: 2,
+                    }}
+                  >
+                    SAMSUNG
+                  </div>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    loop
+                    playsInline
+                    style={{ width: "100%", display: "block", borderRadius: 10 }}
+                  >
+                    <source src="/VIDEO.mp4" type="video/mp4" />
+                  </video>
+                </div>
               </div>
 
               {/* Mute toggle */}
               <button
                 onClick={toggleMute}
                 style={{
-                  position: "absolute", bottom: 14, right: 14,
+                  position: "absolute", bottom: 14, left: 14,
                   width: 42, height: 42, borderRadius: "50%",
                   background: "rgba(0,0,0,.55)",
                   border: "1px solid rgba(255,255,255,.15)",
@@ -384,27 +446,27 @@ export default function LoginPage() {
             {/* Logo centered at top */}
             <div
               style={{
-                width: 100, height: 100, borderRadius: 100,
+                width: 140, height: 140, borderRadius: 100,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 24px",
+                margin: "0 auto 32px",
               }}
             >
-              <img src="/logo.png" alt="KYA" style={{ width: 70, height: 70, objectFit: "contain" }} />
+              <img src="/logo.png" alt="KYA" style={{ width: 100, height: 100, objectFit: "contain" }} />
             </div>
 
             <div style={{ textAlign: "center" }}>
               <h2
                 style={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: 32,
+                  fontSize: 36,
                   color: NAVY,
                   fontWeight: 700,
-                  marginBottom: 4,
+                  marginBottom: 8,
                 }}
               >
                 Bienvenue
               </h2>
-              <p style={{ color: "#7a8fa8", fontSize: 15, fontWeight: 300, marginBottom: 42 }}>
+              <p style={{ color: "#7a8fa8", fontSize: 17, fontWeight: 300, marginBottom: 48 }}>
                 Entrez vos identifiants pour accéder
               </p>
             </div>
@@ -481,12 +543,12 @@ export default function LoginPage() {
                 disabled={loading}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  width: "100%", padding: "18px 0",
-                  border: "none", borderRadius: 14,
+                  width: "100%", padding: "22px 0",
+                  border: "none", borderRadius: 16,
                   background: `linear-gradient(135deg, ${NAVY}, ${NAVY_MID})`,
                   color: "#fff",
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 15,
+                  fontSize: 17,
                   fontWeight: 600,
                   letterSpacing: "1.3px",
                   textTransform: "uppercase",
@@ -506,7 +568,7 @@ export default function LoginPage() {
                   (e.currentTarget as any).style.boxShadow = "0 4px 22px rgba(15,40,84,.3)";
                 }}
               >
-                {loading ? "Connexion…" : <>Se connecter <ArrowRight size={18} /></>}
+                {loading ? "Connexion…" : <>Se connecter <ArrowRight size={20} /></>}
               </button>
             </form>
 
