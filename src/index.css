@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design System - Application Gestion Locative
+   Palette: #0F2854, #1C4D8D, #4988C4, #BDE8F5
+   All colors in HSL format
+*/
+
+@layer base {
+  :root {
+    --background: 200 50% 98%;
+    --foreground: 217 69% 19%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 217 69% 19%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 69% 19%;
+
+    /* Primary: #0F2854 */
+    --primary: 217 69% 19%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: #1C4D8D */
+    --secondary: 215 67% 33%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted */
+    --muted: 200 50% 96%;
+    --muted-foreground: 217 30% 45%;
+
+    /* Accent: #4988C4 */
+    --accent: 210 52% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Highlight: #BDE8F5 */
+    --highlight: 195 75% 85%;
+    --highlight-foreground: 217 69% 19%;
+
+    /* Status colors */
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 69% 19%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar: #0F2854 */
+    --sidebar-background: 217 69% 19%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 195 75% 85%;
+    --sidebar-primary-foreground: 217 69% 19%;
+    --sidebar-accent: 215 67% 33%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 217 50% 30%;
+    --sidebar-ring: 195 75% 85%;
+
+    /* Chart colors */
+    --chart-1: 217 69% 19%;
+    --chart-2: 215 67% 33%;
+    --chart-3: 210 52% 53%;
+    --chart-4: 195 75% 85%;
+    --chart-5: 145 63% 42%;
+  }
+
+  .dark {
+    --background: 217 69% 10%;
+    --foreground: 200 50% 98%;
+
+    --card: 217 60% 14%;
+    --card-foreground: 200 50% 98%;
+
+    --popover: 217 60% 14%;
+    --popover-foreground: 200 50% 98%;
+
+    --primary: 195 75% 85%;
+    --primary-foreground: 217 69% 19%;
+
+    --secondary: 215 67% 33%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 217 50% 20%;
+    --muted-foreground: 200 30% 70%;
+
+    --accent: 210 52% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --highlight: 195 60% 30%;
+    --highlight-foreground: 195 75% 85%;
+
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 50% 25%;
+    --input: 217 50% 25%;
+    --ring: 195 75% 85%;
+
+    --sidebar-background: 217 69% 12%;
+    --sidebar-foreground: 200 50% 98%;
+    --sidebar-primary: 195 75% 85%;
+    --sidebar-primary-foreground: 217 69% 19%;
+    --sidebar-accent: 215 67% 33%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 217 50% 20%;
+    --sidebar-ring: 195 75% 85%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
