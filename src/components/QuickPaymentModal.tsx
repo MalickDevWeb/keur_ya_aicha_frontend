@@ -15,11 +15,12 @@ import { formatCurrency } from '@/lib/types';
 interface QuickPaymentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPayTotal: () => void;
-  onPayPartial: (amount: number) => void;
+  onPayTotal: () => void | Promise<void>;
+  onPayPartial: (amount: number) => void | Promise<void>;
   clientName: string;
   propertyName: string;
   amountDue: number;
+  isLoading?: boolean;
 }
 
 export function QuickPaymentModal({
@@ -30,23 +31,22 @@ export function QuickPaymentModal({
   clientName,
   propertyName,
   amountDue,
+  isLoading = false,
 }: QuickPaymentModalProps) {
   const [showPartialInput, setShowPartialInput] = useState(false);
   const [partialAmount, setPartialAmount] = useState(amountDue.toString());
 
-  const handlePayPartial = () => {
+  const handlePayPartial = async () => {
     const amount = parseFloat(partialAmount);
     if (isNaN(amount) || amount <= 0 || amount > amountDue) {
       alert('Montant invalide');
       return;
     }
-    onPayPartial(amount);
-    onOpenChange(false);
+    await onPayPartial(amount);
   };
 
-  const handlePayTotal = () => {
-    onPayTotal();
-    onOpenChange(false);
+  const handlePayTotal = async () => {
+    await onPayTotal();
   };
 
   return (
@@ -82,15 +82,17 @@ export function QuickPaymentModal({
           <div className="space-y-3 pt-2">
             <Button
               onClick={handlePayTotal}
+              disabled={isLoading}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
               size="lg"
             >
-              Payer le total
+              {isLoading ? 'Enregistrement...' : 'Payer le total'}
             </Button>
 
             {!showPartialInput ? (
               <Button
                 onClick={() => setShowPartialInput(true)}
+                disabled={isLoading}
                 variant="outline"
                 className="w-full"
                 size="lg"
@@ -110,6 +112,7 @@ export function QuickPaymentModal({
                     max={amountDue}
                     value={partialAmount}
                     onChange={(e) => setPartialAmount(e.target.value)}
+                    disabled={isLoading}
                     placeholder={formatCurrency(amountDue)}
                     className="text-lg font-semibold"
                   />
@@ -120,14 +123,16 @@ export function QuickPaymentModal({
 
                 <Button
                   onClick={handlePayPartial}
+                  disabled={isLoading}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   size="lg"
                 >
-                  Confirmer
+                  {isLoading ? 'Enregistrement...' : 'Confirmer'}
                 </Button>
 
                 <Button
                   onClick={() => setShowPartialInput(false)}
+                  disabled={isLoading}
                   variant="ghost"
                   className="w-full"
                 >

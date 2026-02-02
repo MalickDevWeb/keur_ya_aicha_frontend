@@ -29,10 +29,11 @@ interface OverdueClient {
 
 export default function Dashboard() {
   const { t } = useI18n();
-  const { stats, clients } = useData();
+  const { stats, clients, addMonthlyPayment } = useData();
   const navigate = useNavigate();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get priority clients (unpaid and late)
   const priorityClients = useMemo(() => {
@@ -90,19 +91,49 @@ export default function Dashboard() {
     setPaymentModalOpen(true);
   };
 
-  const handlePayTotal = () => {
-    if (selectedPayment) {
-      console.log('Paying total:', selectedPayment.maxAmount, selectedPayment);
-      // TODO: Update payment status to paid
+  const handlePayTotal = async () => {
+    if (!selectedPayment) return;
+
+    try {
+      setIsLoading(true);
+      const { payment, item } = selectedPayment;
+
+      // Enregistrer le paiement complet
+      await addMonthlyPayment(
+        payment.rentalId,
+        payment.id,
+        selectedPayment.maxAmount
+      );
+
       setPaymentModalOpen(false);
+      setSelectedPayment(null);
+    } catch (error) {
+      console.error('Erreur lors du paiement:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handlePayPartial = (amount: number) => {
-    if (selectedPayment) {
-      console.log('Paying partial:', amount, selectedPayment);
-      // TODO: Update payment with partial amount
+  const handlePayPartial = async (amount: number) => {
+    if (!selectedPayment) return;
+
+    try {
+      setIsLoading(true);
+      const { payment, item } = selectedPayment;
+
+      // Enregistrer le paiement partiel
+      await addMonthlyPayment(
+        payment.rentalId,
+        payment.id,
+        amount
+      );
+
       setPaymentModalOpen(false);
+      setSelectedPayment(null);
+    } catch (error) {
+      console.error('Erreur lors du paiement:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -292,6 +323,7 @@ export default function Dashboard() {
           clientName={`${selectedPayment.item.client.firstName} ${selectedPayment.item.client.lastName}`}
           propertyName={selectedPayment.item.rental.propertyName}
           amountDue={selectedPayment.maxAmount}
+          isLoading={isLoading}
         />
       )}
     </div>
