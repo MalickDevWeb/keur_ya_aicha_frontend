@@ -75,8 +75,8 @@ export default function AddClient() {
   const paidDeposit = form.watch('paidDeposit');
   const remainingDeposit = Math.max(0, totalDeposit - paidDeposit);
 
-  const onSubmit = (data: FormData) => {
-    const newClient = addClient({
+  const onSubmit = async (data: FormData) => {
+    const newClient = await addClient({
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,
@@ -99,7 +99,6 @@ export default function AddClient() {
         },
       },
     });
-
     setCreatedClient({ id: newClient.id, name: `${data.firstName} ${data.lastName}` });
 
     toast({

@@ -2,7 +2,7 @@ import { ClientDTO } from '@/dto/ClientDTO'
 import { DocumentDTO } from '@/dto/DocumentDTO'
 import { MonthlyPaymentDTO } from '@/dto/PaymentDTO'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 export async function fetchClients(): Promise<ClientDTO[]> {
   const res = await fetch(`${API_BASE}/clients`)

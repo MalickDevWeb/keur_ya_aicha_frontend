@@ -1,0 +1,122 @@
+{
+	"clients": [
+		{
+			"id": "client-1",
+			"firstName": "Amadou",
+			"lastName": "Diallo",
+			"phone": "+221 77 123 45 67",
+			"cni": "1234567890123",
+			"status": "active",
+			"createdAt": "2025-06-01T08:00:00.000Z",
+			"rentals": [
+				{
+					"id": "client-1-rental-0",
+					"clientId": "client-1",
+					"propertyType": "apartment",
+					"propertyName": "Appartement A1",
+					"monthlyRent": 150000,
+					"startDate": "2025-06-01T00:00:00.000Z",
+					"deposit": {
+						"total": 300000,
+						"paid": 300000,
+						"payments": [
+							{
+								"id": "dep-1",
+								"amount": 300000,
+								"date": "2025-06-01T00:00:00.000Z",
+								"receiptNumber": "DEP-202506-ABC123"
+							}
+						]
+					},
+					"payments": [
+						{
+							"id": "pay-1",
+							"rentalId": "client-1-rental-0",
+							"periodStart": "2025-06-01T00:00:00.000Z",
+							"periodEnd": "2025-06-30T23:59:59.000Z",
+							"dueDate": "2025-07-05T00:00:00.000Z",
+							"amount": 150000,
+							"paidAmount": 150000,
+							"status": "paid",
+							"payments": [
+								{
+									"id": "rec-1",
+									"amount": 150000,
+									"date": "2025-06-05T10:00:00.000Z",
+									"receiptNumber": "REC-202506-XYZ001"
+								}
+							]
+						},
+						{
+							"id": "pay-2",
+							"rentalId": "client-1-rental-0",
+							"periodStart": "2025-07-01T00:00:00.000Z",
+							"periodEnd": "2025-07-31T23:59:59.000Z",
+							"dueDate": "2025-08-05T00:00:00.000Z",
+							"amount": 150000,
+							"paidAmount": 0,
+							"status": "unpaid",
+							"payments": []
+						}
+					],
+					"documents": []
+				}
+			]
+		},
+		{
+			"id": "client-2",
+			"firstName": "Fatou",
+			"lastName": "Sow",
+			"phone": "+221 78 234 56 78",
+			"cni": "2345678901234",
+			"status": "active",
+			"createdAt": "2025-08-01T08:00:00.000Z",
+			"rentals": [
+				{
+					"id": "client-2-rental-0",
+					"clientId": "client-2",
+					"propertyType": "villa",
+					"propertyName": "Villa Palmier",
+					"monthlyRent": 300000,
+					"startDate": "2025-08-01T00:00:00.000Z",
+					"deposit": {
+						"total": 600000,
+						"paid": 300000,
+						"payments": [
+							{
+								"id": "dep-2",
+								"amount": 300000,
+								"date": "2025-08-01T00:00:00.000Z",
+								"receiptNumber": "DEP-202508-DEF456"
+							}
+						]
+					},
+					"payments": [
+						{
+							"id": "pay-3",
+							"rentalId": "client-2-rental-0",
+							"periodStart": "2025-08-01T00:00:00.000Z",
+							"periodEnd": "2025-08-31T23:59:59.000Z",
+							"dueDate": "2025-09-05T00:00:00.000Z",
+							"amount": 300000,
+							"paidAmount": 300000,
+							"status": "paid",
+							"payments": [
+								{
+									"id": "rec-2",
+									"amount": 300000,
+									"date": "2025-08-10T11:30:00.000Z",
+									"receiptNumber": "REC-202508-XYZ002"
+								}
+							]
+						}
+					],
+					"documents": []
+				}
+			]
+		}
+	],
+	"documents": [],
+	"payments": [],
+	"deposits": []
+}

@@ -1,33 +1,73 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Client, Rental, MonthlyPayment, DashboardStats, PaymentRecord, DepositPayment, PaymentStatus, Document } from '@/lib/types';
 
-import { mockClients, calculateDashboardStats, generateId } from '@/lib/mockData';
+import { calculateDashboardStats, generateId } from '@/lib/mockData';
 import { fetchClients, createClient as apiCreateClient, updateClient as apiUpdateClient, postPaymentRecord, postDepositPayment, postDocument as apiPostDocument, deleteDocument as apiDeleteDocument } from '@/services/api';
 import { ClientDTO } from '@/dto/ClientDTO';
 import { addMonths, addDays } from 'date-fns';
+
+// Helper: serialize Client / Rental objects to DTO shape (convert Date -> ISO strings)
+function serializeClientForApi(input: Partial<Client>): Partial<ClientDTO> {
+  const out: any = { ...input };
+  if (input.createdAt instanceof Date) out.createdAt = input.createdAt.toISOString();
+
+  if (Array.isArray(input.rentals)) {
+    out.rentals = input.rentals.map(r => {
+      const rental: any = { ...r };
+      if (r.startDate instanceof Date) rental.startDate = r.startDate.toISOString();
+
+      if (r.deposit) {
+        rental.deposit = {
+          total: r.deposit.total,
+          paid: r.deposit.paid,
+          payments: (r.deposit.payments || []).map(p => ({
+            ...p,
+            date: (p.date instanceof Date) ? p.date.toISOString() : p.date,
+          })),
+        };
+      }
+
+      if (Array.isArray(r.payments)) {
+        rental.payments = r.payments.map(p => ({
+          ...p,
+          periodStart: (p.periodStart instanceof Date) ? p.periodStart.toISOString() : (p as any).periodStart,
+          periodEnd: (p.periodEnd instanceof Date) ? p.periodEnd.toISOString() : (p as any).periodEnd,
+          dueDate: (p.dueDate instanceof Date) ? p.dueDate.toISOString() : (p as any).dueDate,
+          payments: (p.payments || []).map(rec => ({
+            ...rec,
+            date: (rec.date instanceof Date) ? rec.date.toISOString() : rec.date,
+          })),
+        }));
+      }
+
+      if (Array.isArray(r.documents)) {
+        rental.documents = r.documents.map(d => ({
+          ...d,
+          uploadedAt: (d.uploadedAt instanceof Date) ? d.uploadedAt.toISOString() : (d as any).uploadedAt,
+        }));
+      }
+
+      return rental;
+    });
+  }
+
+  return out;
+}
 
 interface DataContextType {
   clients: Client[];
   stats: DashboardStats;
 
-  // Client operations
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'rentals'> & { rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'> }) => Promise<Client>;
-  updateClient: (id: string, data: Partial<Client>) => void;
-  archiveClient: (id: string) => void;
-  blacklistClient: (id: string) => void;
+  updateClient: (id: string, data: Partial<Client>) => Promise<void>;
+  archiveClient: (id: string) => Promise<void>;
+  blacklistClient: (id: string) => Promise<void>;
   getClient: (id: string) => Client | undefined;
-
-  // Rental operations
-  addRental: (clientId: string, rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>) => void;
-
-  // Payment operations
-  addMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => void;
-  addDepositPayment: (rentalId: string, amount: number) => void;
-  // Document operations
-  addDocument: (clientId: string, rentalId: string, doc: { name: string; type: 'contract' | 'receipt' | 'other'; signed?: boolean; file?: File | null }) => void;
-  deleteDocument: (clientId: string, rentalId: string, docId: string) => void;
-
-  // Refresh stats
+  addRental: (clientId: string, rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>) => Promise<void>;
+  addMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => Promise<void>;
+  addDepositPayment: (rentalId: string, amount: number) => Promise<void>;
+  addDocument: (clientId: string, rentalId: string, doc: { name: string; type: 'contract' | 'receipt' | 'other'; signed?: boolean; file?: File | null }) => Promise<void>;
+  deleteDocument: (clientId: string, rentalId: string, docId: string) => Promise<void>;
   refreshStats: () => void;
 }
 
@@ -38,11 +78,8 @@ interface DataProviderProps {
 }
 
 export function DataProvider({ children }: DataProviderProps) {
-  const [clients, setClients] = useState<Client[]>(mockClients);
-  const [stats, setStats] = useState<DashboardStats>(() => calculateDashboardStats(mockClients));
-
-  // If Vite env VITE_USE_API=true, fetch clients from API on mount
-  const useApi = (import.meta as any).env?.VITE_USE_API === 'true';
+  const [clients, setClients] = useState<Client[]>([]);
+  const [stats, setStats] = useState<DashboardStats>(() => calculateDashboardStats([]));
 
   const reloadClients = useCallback(async () => {
     try {
@@ -56,14 +93,13 @@ export function DataProvider({ children }: DataProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (!useApi) return;
     let mounted = true;
     (async () => {
       if (!mounted) return;
       await reloadClients();
     })();
     return () => { mounted = false; };
-  }, [reloadClients, useApi]);
+  }, [reloadClients]);
 
   function transformClientDTO(dto: ClientDTO): Client {
     return {
@@ -99,15 +135,11 @@ export function DataProvider({ children }: DataProviderProps) {
     setStats(calculateDashboardStats(clients));
   }, [clients]);
 
-  const addClient = useCallback((
-    clientData: Omit<Client, 'id' | 'createdAt' | 'rentals'> & {
-      rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>
-    }
-  ): Client => {
+  const addClient = useCallback(async (
+    clientData: Omit<Client, 'id' | 'createdAt' | 'rentals'> & { rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'> }
+  ): Promise<Client> => {
     const clientId = generateId();
     const rentalId = generateId();
-
-    // Generate initial monthly payments
     const startDate = clientData.rental.startDate;
     const monthlyRent = clientData.rental.monthlyRent;
 
@@ -128,7 +160,7 @@ export function DataProvider({ children }: DataProviderProps) {
       clientId,
       propertyType: clientData.rental.propertyType,
       propertyName: clientData.rental.propertyName,
-      monthlyRent: clientData.rental.monthlyRent,
+      monthlyRent: monthlyRent,
       startDate: clientData.rental.startDate,
       deposit: clientData.rental.deposit,
       payments: [initialPayment],
@@ -146,108 +178,43 @@ export function DataProvider({ children }: DataProviderProps) {
       rentals: [rental],
     };
 
-    if (useApi) {
-      (async () => {
-        try {
-          await apiCreateClient({
-            id: newClient.id,
-            firstName: newClient.firstName,
-            lastName: newClient.lastName,
-            phone: newClient.phone,
-            cni: newClient.cni,
-            status: newClient.status,
-            createdAt: newClient.createdAt.toISOString(),
-            rentals: newClient.rentals.map(r => ({
-              id: r.id,
-              clientId: r.clientId,
-              propertyType: r.propertyType,
-              propertyName: r.propertyName,
-              monthlyRent: r.monthlyRent,
-              startDate: r.startDate.toISOString(),
-              deposit: {
-                total: r.deposit.total,
-                paid: r.deposit.paid,
-                payments: (r.deposit.payments || []).map(p => ({
-                  ...p,
-                  date: (p.date instanceof Date) ? p.date.toISOString() : p.date,
-                })),
-              },
-              payments: (r.payments || []).map(p => ({
-                ...p,
-                periodStart: (p.periodStart instanceof Date) ? p.periodStart.toISOString() : (p as any).periodStart,
-                periodEnd: (p.periodEnd instanceof Date) ? p.periodEnd.toISOString() : (p as any).periodEnd,
-                dueDate: (p.dueDate instanceof Date) ? p.dueDate.toISOString() : (p as any).dueDate,
-                payments: (p.payments || []).map(rec => ({
-                  ...rec,
-                  date: (rec.date instanceof Date) ? rec.date.toISOString() : rec.date,
-                })),
-              })),
-              documents: (r.documents || []).map(d => ({
-                ...d,
-                uploadedAt: (d.uploadedAt instanceof Date) ? d.uploadedAt.toISOString() : (d as any).uploadedAt,
-              })),
-            })),
-          });
-          await reloadClients();
-        } catch (e) {
-          console.error('Failed to create client via API', e);
-        }
-      })();
-      return newClient;
+    try {
+      const payload = serializeClientForApi({ ...newClient, createdAt: newClient.createdAt });
+      await apiCreateClient(payload as any);
+      await reloadClients();
+    } catch (e) {
+      console.error('Failed to create client via API', e);
+      throw e;
     }
-
-    setClients(prev => {
-      const updated = [...prev, newClient];
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
 
     return newClient;
-  }, []);
+  }, [reloadClients]);
 
-  const updateClient = useCallback((id: string, data: Partial<Client>) => {
-    if (useApi) {
-      (async () => {
-        try {
-          await apiUpdateClient(id, {
-            ...data,
-            createdAt: (data.createdAt as any)?.toISOString?.() || undefined,
-          } as any);
-          await reloadClients();
-        } catch (e) {
-          console.error('Failed to update client via API', e);
-        }
-      })();
-      return;
+  const updateClient = useCallback(async (id: string, data: Partial<Client>): Promise<void> => {
+    try {
+      const payload = serializeClientForApi(data);
+      await apiUpdateClient(id, payload as any);
+      await reloadClients();
+    } catch (e) {
+      console.error('Failed to update client via API', e);
+      throw e;
     }
+  }, [reloadClients]);
 
-    setClients(prev => {
-      const updated = prev.map(client =>
-        client.id === id ? { ...client, ...data } : client
-      );
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
-  }, []);
-
-  const archiveClient = useCallback((id: string) => {
-    updateClient(id, { status: 'archived' });
+  const archiveClient = useCallback(async (id: string): Promise<void> => {
+    await updateClient(id, { status: 'archived' });
   }, [updateClient]);
 
-  const blacklistClient = useCallback((id: string) => {
-    updateClient(id, { status: 'blacklisted' });
+  const blacklistClient = useCallback(async (id: string): Promise<void> => {
+    await updateClient(id, { status: 'blacklisted' });
   }, [updateClient]);
 
   const getClient = useCallback((id: string): Client | undefined => {
     return clients.find(c => c.id === id);
   }, [clients]);
 
-  const addRental = useCallback((
-    clientId: string,
-    rentalData: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>
-  ) => {
+  const addRental = useCallback(async (clientId: string, rentalData: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>): Promise<void> => {
     const rentalId = generateId();
-
     const initialPayment: MonthlyPayment = {
       id: generateId(),
       rentalId,
@@ -268,212 +235,65 @@ export function DataProvider({ children }: DataProviderProps) {
       documents: [],
     };
 
-    setClients(prev => {
-      const updated = prev.map(client =>
-        client.id === clientId
-          ? { ...client, rentals: [...client.rentals, rental] }
-          : client
-      );
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
-  }, []);
-
-  const addMonthlyPayment = useCallback((rentalId: string, paymentId: string, amount: number) => {
-    if (useApi) {
-      (async () => {
-        try {
-          await postPaymentRecord(rentalId, paymentId, amount);
-          await reloadClients();
-        } catch (e) {
-          console.error('Failed to post payment record via API', e);
-        }
-      })();
-      return;
+    try {
+      const existing = clients.find(c => c.id === clientId);
+      const newRentals = existing ? [...existing.rentals, rental] : [rental];
+      await updateClient(clientId, { rentals: newRentals });
+    } catch (e) {
+      console.error('Failed to add rental via API', e);
+      throw e;
     }
+  }, [clients, updateClient]);
 
-    setClients(prev => {
-      const updated: Client[] = prev.map(client => ({
-        ...client,
-        rentals: client.rentals.map(rental => {
-          if (rental.id !== rentalId) return rental;
-
-          return {
-            ...rental,
-            payments: rental.payments.map(payment => {
-              if (payment.id !== paymentId) return payment;
-
-              const newPaidAmount = Math.min(payment.paidAmount + amount, payment.amount);
-              const newStatus: PaymentStatus = newPaidAmount >= payment.amount ? 'paid' : 'partial';
-              const paymentRecord: PaymentRecord = {
-                id: generateId(),
-                amount,
-                date: new Date(),
-                receiptNumber: `REC-${new Date().toISOString().slice(0, 7).replace('-', '')}-${generateId().slice(0, 6).toUpperCase()}`,
-              };
-
-              return {
-                ...payment,
-                paidAmount: newPaidAmount,
-                status: newStatus,
-                payments: [...payment.payments, paymentRecord],
-              };
-            }),
-          };
-        }),
-      }));
-
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
-  }, []);
-
-  const addDepositPayment = useCallback((rentalId: string, amount: number) => {
-    if (useApi) {
-      (async () => {
-        try {
-          await postDepositPayment(rentalId, amount);
-          await reloadClients();
-        } catch (e) {
-          console.error('Failed to post deposit via API', e);
-        }
-      })();
-      return;
+  const addMonthlyPayment = useCallback(async (rentalId: string, paymentId: string, amount: number): Promise<void> => {
+    try {
+      await postPaymentRecord(rentalId, paymentId, amount);
+      await reloadClients();
+    } catch (e) {
+      console.error('Failed to post payment record via API', e);
+      throw e;
     }
+  }, [reloadClients]);
 
-    setClients(prev => {
-      const updated = prev.map(client => ({
-        ...client,
-        rentals: client.rentals.map(rental => {
-          if (rental.id !== rentalId) return rental;
-
-          const newPaid = Math.min(rental.deposit.paid + amount, rental.deposit.total);
-          const depositPayment: DepositPayment = {
-            id: generateId(),
-            amount,
-            date: new Date(),
-            receiptNumber: `DEP-${new Date().toISOString().slice(0, 7).replace('-', '')}-${generateId().slice(0, 6).toUpperCase()}`,
-          };
-
-          return {
-            ...rental,
-            deposit: {
-              ...rental.deposit,
-              paid: newPaid,
-              payments: [...rental.deposit.payments, depositPayment],
-            },
-          };
-        }),
-      }));
-
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
-  }, []);
-
-  const addDocument = useCallback((clientId: string, rentalId: string, doc: { name: string; type: 'contract' | 'receipt' | 'other'; signed?: boolean; file?: File | null }) => {
-    if (useApi) {
-      (async () => {
-        try {
-          // For simplicity, post document metadata. file handling can be added later.
-          const payload: any = {
-            name: doc.name,
-            type: doc.type,
-            url: doc.file ? '' : (doc as any).url || '',
-            signed: !!doc.signed,
-          };
-          await apiPostDocument(payload);
-          await reloadClients();
-        } catch (e) {
-          console.error('Failed to post document via API', e);
-        }
-      })();
-      return;
+  const addDepositPayment = useCallback(async (rentalId: string, amount: number): Promise<void> => {
+    try {
+      await postDepositPayment(rentalId, amount);
+      await reloadClients();
+    } catch (e) {
+      console.error('Failed to post deposit via API', e);
+      throw e;
     }
+  }, [reloadClients]);
 
-    setClients(prev => {
-      const updated = prev.map(client => {
-        if (client.id !== clientId) return client;
-
-        return {
-          ...client,
-          rentals: client.rentals.map(rental => {
-            if (rental.id !== rentalId) return rental;
-
-            const id = generateId();
-            const url = doc.file ? URL.createObjectURL(doc.file) : (doc as any).url || '';
-            const newDoc: Document = {
-              id,
-              name: doc.name,
-              type: doc.type,
-              url,
-              uploadedAt: new Date(),
-              signed: !!doc.signed,
-            };
-
-            return {
-              ...rental,
-              documents: [...(rental.documents || []), newDoc],
-            };
-          }),
-        };
-      });
-
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
-  }, []);
-
-  const deleteDocument = useCallback((clientId: string, rentalId: string, docId: string) => {
-    if (useApi) {
-      (async () => {
-        try {
-          await apiDeleteDocument(docId);
-          await reloadClients();
-        } catch (e) {
-          console.error('Failed to delete document via API', e);
-        }
-      })();
-      return;
+  const addDocument = useCallback(async (clientId: string, rentalId: string, doc: { name: string; type: 'contract' | 'receipt' | 'other'; signed?: boolean; file?: File | null }): Promise<void> => {
+    try {
+      const payload: any = {
+        name: doc.name,
+        type: doc.type,
+        url: doc.file ? '' : (doc as any).url || '',
+        signed: !!doc.signed,
+        uploadedAt: new Date().toISOString(),
+      };
+      await apiPostDocument(payload);
+      await reloadClients();
+    } catch (e) {
+      console.error('Failed to post document via API', e);
+      throw e;
     }
+  }, [reloadClients]);
 
-    setClients(prev => {
-      const updated = prev.map(client => {
-        if (client.id !== clientId) return client;
-        return {
-          ...client,
-          rentals: client.rentals.map(rental => {
-            if (rental.id !== rentalId) return rental;
-            return {
-              ...rental,
-              documents: (rental.documents || []).filter(d => d.id !== docId),
-            };
-          }),
-        };
-      });
-      setStats(calculateDashboardStats(updated));
-      return updated;
-    });
-  }, []);
+  const deleteDocument = useCallback(async (clientId: string, rentalId: string, docId: string): Promise<void> => {
+    try {
+      await apiDeleteDocument(docId);
+      await reloadClients();
+    } catch (e) {
+      console.error('Failed to delete document via API', e);
+      throw e;
+    }
+  }, [reloadClients]);
 
   return (
-    <DataContext.Provider
-      value={{
-        clients,
-        stats,
-        addClient,
-        updateClient,
-        archiveClient,
-        blacklistClient,
-        getClient,
-        addRental,
-        addMonthlyPayment,
-        addDepositPayment,
-        addDocument,
-        deleteDocument,
-        refreshStats,
-      }}
-    >
+    <DataContext.Provider value={{ clients, stats, addClient, updateClient, archiveClient, blacklistClient, getClient, addRental, addMonthlyPayment, addDepositPayment, addDocument, deleteDocument, refreshStats }}>
       {children}
     </DataContext.Provider>
   );

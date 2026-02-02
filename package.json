@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"ELECTRON_DEV=true electron .\" \"vite\"",
+    "dev": "concurrently \"json-server --watch db/db.json --port 4000 --routes json-server.routes.json\" \"ELECTRON_DEV=true electron .\" \"vite\"",
     "dev:web": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start:api": "node backend/server.js"
+    "start:api": "node backend/server.js",
+    "json:server": "json-server --watch db/db.json --port 4000"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -48,8 +49,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "express": "^4.18.2",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
     "jspdf": "^4.0.0",
@@ -67,9 +70,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
     "wouter": "^3.9.0",
-    "zod": "^3.25.76",
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
@@ -89,6 +90,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
+    "json-server": "^1.0.0-beta.3",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
