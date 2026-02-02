@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, X } from 'lucide-react';
 import {
   Dialog,
@@ -36,6 +36,11 @@ export function QuickPaymentModal({
   const [showPartialInput, setShowPartialInput] = useState(false);
   const [partialAmount, setPartialAmount] = useState(amountDue.toString());
 
+  // Keep partial amount in sync when amountDue changes
+  useEffect(() => {
+    setPartialAmount(amountDue.toString());
+  }, [amountDue]);
+
   const handlePayPartial = async () => {
     const amount = parseFloat(partialAmount);
     if (isNaN(amount) || amount <= 0 || amount > amountDue) {
@@ -51,15 +56,17 @@ export function QuickPaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            Enregistrer un paiement
-          </DialogTitle>
-          <DialogDescription>
-            Enregistrez rapidement le paiement du client
-          </DialogDescription>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <h3 className="text-lg font-semibold">{clientName}</h3>
+            </div>
+            <DialogDescription className="mt-1 text-sm text-muted-foreground">
+              {propertyName} — Enregistrer un paiement
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

@@ -81,9 +81,17 @@ export default function AddRental() {
   });
 
   const handleSubmit = async (data: RentalFormData) => {
+    console.log('🔵 [AddRental] handleSubmit clicked with data:', {
+      propertyName: data.propertyName,
+      propertyType: data.propertyType,
+      monthlyRent: data.monthlyRent,
+      depositTotal: data.depositTotal,
+      startDate: data.startDate,
+    });
     setIsLoading(true);
     try {
       if (!selectedClientId) {
+        console.warn('⚠️ [AddRental] No client selected!');
         alert('Veuillez sélectionner un client');
         return;
       }
@@ -100,10 +108,17 @@ export default function AddRental() {
         },
       };
 
-      addRental(selectedClientId, rentalData);
+      console.log('🟢 [AddRental] Adding rental for client:', {
+        clientId: selectedClientId,
+        rentalData,
+      });
+      await addRental(selectedClientId, rentalData);
+      console.log('✅ [AddRental] Rental added successfully');
 
       // Navigate back to client
       navigate(`/clients/${selectedClientId}`);
+    } catch (error) {
+      console.error('❌ [AddRental] Error adding rental:', error);
     } finally {
       setIsLoading(false);
     }

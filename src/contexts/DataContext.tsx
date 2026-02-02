@@ -1,13 +1,22 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Client, Rental, MonthlyPayment, DashboardStats, PaymentRecord, DepositPayment, PaymentStatus, Document } from '@/lib/types';
 
-import { fetchClients, createClient as apiCreateClient, updateClient as apiUpdateClient, postPaymentRecord, postDepositPayment, postDocument as apiPostDocument, deleteDocument as apiDeleteDocument } from '@/services/api';
+import { fetchClients, createClient as apiCreateClient, updateClient as apiUpdateClient, postPaymentRecord, postDepositPayment, postDocument as apiPostDocument, deleteDocument as apiDeleteDocument, uploadToCloudinary } from '@/services/api';
 import { ClientDTO } from '@/dto/ClientDTO';
 import { addMonths, addDays } from 'date-fns';
 
 // Helper to generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
+// Read a File as a data URL (base64) for storing in json-server
+const readFileAsDataURL = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+};
 // Calculate dashboard stats from clients
 function calculateDashboardStats(clients: Client[]): DashboardStats {
   let totalRentals = 0;
@@ -119,17 +128,21 @@ export function DataProvider({ children }: DataProviderProps) {
   const [stats, setStats] = useState<DashboardStats>(() => calculateDashboardStats([]));
 
   const reloadClients = useCallback(async () => {
+    console.log('🔄 [DataContext] reloadClients called');
     try {
       const dtos: ClientDTO[] = await fetchClients();
+      console.log(`🔄 [DataContext] Loaded ${dtos.length} clients from API`);
       const parsed = dtos.map(d => transformClientDTO(d));
       setClients(parsed);
       setStats(calculateDashboardStats(parsed));
+      console.log('✅ [DataContext] State updated with fetched clients');
     } catch (e) {
-      console.error('Failed to load clients from API', e);
+      console.error('❌ [DataContext] Failed to load clients from API', e);
     }
   }, []);
 
   useEffect(() => {
+    console.log('🟦 [DataContext] Mounting DataProvider, initial load...');
     let mounted = true;
     (async () => {
       if (!mounted) return;
@@ -175,6 +188,8 @@ export function DataProvider({ children }: DataProviderProps) {
   const addClient = useCallback(async (
     clientData: Omit<Client, 'id' | 'createdAt' | 'rentals'> & { rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'> }
   ): Promise<Client> => {
+    console.log('🟦 [DataContext] addClient called:', clientData);
+
     const clientId = generateId();
     const rentalId = generateId();
     const startDate = clientData.rental.startDate;
@@ -216,11 +231,15 @@ export function DataProvider({ children }: DataProviderProps) {
     };
 
     try {
+      console.log('🟦 [DataContext] Creating client with payload:', newClient);
       const payload = serializeClientForApi({ ...newClient, createdAt: newClient.createdAt });
+      console.log('🟦 [DataContext] Serialized payload:', payload);
       await apiCreateClient(payload as any);
+      console.log('✅ [DataContext] Client created via API');
       await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded');
     } catch (e) {
-      console.error('Failed to create client via API', e);
+      console.error('❌ [DataContext] Failed to create client via API', e);
       throw e;
     }
 
@@ -228,12 +247,16 @@ export function DataProvider({ children }: DataProviderProps) {
   }, [reloadClients]);
 
   const updateClient = useCallback(async (id: string, data: Partial<Client>): Promise<void> => {
+    console.log('🟦 [DataContext] updateClient called:', { id, data });
     try {
       const payload = serializeClientForApi(data);
+      console.log('🟦 [DataContext] Updating client:', { id, payload });
       await apiUpdateClient(id, payload as any);
+      console.log('✅ [DataContext] Client updated via API');
       await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded after update');
     } catch (e) {
-      console.error('Failed to update client via API', e);
+      console.error('❌ [DataContext] Failed to update client via API', e);
       throw e;
     }
   }, [reloadClients]);
@@ -251,6 +274,7 @@ export function DataProvider({ children }: DataProviderProps) {
   }, [clients]);
 
   const addRental = useCallback(async (clientId: string, rentalData: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>): Promise<void> => {
+    console.log('🟦 [DataContext] addRental called:', { clientId, rentalData });
     const rentalId = generateId();
     const initialPayment: MonthlyPayment = {
       id: generateId(),
@@ -273,58 +297,99 @@ export function DataProvider({ children }: DataProviderProps) {
     };
 
     try {
+      console.log('🟩 [DataContext] Creating rental:', { rentalId, clientId, propertyName: rentalData.propertyName });
       const existing = clients.find(c => c.id === clientId);
       const newRentals = existing ? [...existing.rentals, rental] : [rental];
       await updateClient(clientId, { rentals: newRentals });
+      console.log('✅ [DataContext] Rental added successfully');
     } catch (e) {
-      console.error('Failed to add rental via API', e);
+      console.error('❌ [DataContext] Failed to add rental via API', e);
       throw e;
     }
   }, [clients, updateClient]);
 
   const addMonthlyPayment = useCallback(async (rentalId: string, paymentId: string, amount: number): Promise<void> => {
+    console.log('🟩 [DataContext] addMonthlyPayment called:', { rentalId, paymentId, amount });
     try {
+      console.log('🟩 [DataContext] Posting payment record to API...');
       await postPaymentRecord(rentalId, paymentId, amount);
+      console.log('✅ [DataContext] Payment recorded via API');
+      console.log('🟩 [DataContext] Reloading clients...');
       await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded after payment');
     } catch (e) {
-      console.error('Failed to post payment record via API', e);
+      console.error('❌ [DataContext] Failed to post payment record via API', e);
       throw e;
     }
   }, [reloadClients]);
 
   const addDepositPayment = useCallback(async (rentalId: string, amount: number): Promise<void> => {
+    console.log('🟦 [DataContext] addDepositPayment called:', { rentalId, amount });
     try {
+      console.log('🟩 [DataContext] Posting deposit payment to API...');
       await postDepositPayment(rentalId, amount);
+      console.log('✅ [DataContext] Deposit payment recorded via API');
       await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded after deposit');
     } catch (e) {
-      console.error('Failed to post deposit via API', e);
+      console.error('❌ [DataContext] Failed to post deposit via API', e);
       throw e;
     }
   }, [reloadClients]);
 
   const addDocument = useCallback(async (clientId: string, rentalId: string, doc: { name: string; type: 'contract' | 'receipt' | 'other'; signed?: boolean; file?: File | null }): Promise<void> => {
+    console.log('🟦 [DataContext] addDocument called:', { clientId, rentalId, docName: doc.name, docType: doc.type });
     try {
-      const payload: any = {
+      // Upload file to Cloudinary if provided
+      let fileUrl = '';
+      if (doc.file) {
+        console.log('🟩 [DataContext] Uploading file to Cloudinary...');
+        fileUrl = await uploadToCloudinary(doc.file);
+        console.log('✅ [DataContext] File uploaded to Cloudinary:', fileUrl);
+      }
+
+      const newDoc = {
+        id: generateId(),
         name: doc.name,
         type: doc.type,
-        url: doc.file ? '' : (doc as any).url || '',
+        url: fileUrl,
         signed: !!doc.signed,
         uploadedAt: new Date().toISOString(),
-      };
-      await apiPostDocument(payload);
+      } as any;
+
+      // Attach document to the specified client's rental and persist full client
+      const client = clients.find(c => c.id === clientId);
+      if (!client) throw new Error('Client not found')
+
+      const updatedRentals = client.rentals.map(r => {
+        if (r.id !== rentalId) return r;
+        return {
+          ...r,
+          documents: [...(r.documents || []), newDoc],
+        };
+      });
+
+      console.log('🟩 [DataContext] Persisting document into client object...');
+      await updateClient(clientId, { rentals: updatedRentals });
+      console.log('✅ [DataContext] Document saved on client rental');
       await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded after document upload');
     } catch (e) {
-      console.error('Failed to post document via API', e);
+      console.error('❌ [DataContext] Failed to add document', e);
       throw e;
     }
-  }, [reloadClients]);
+  }, [clients, reloadClients, updateClient]);
 
   const deleteDocument = useCallback(async (clientId: string, rentalId: string, docId: string): Promise<void> => {
+    console.log('🟦 [DataContext] deleteDocument called:', { clientId, rentalId, docId });
     try {
+      console.log('🟩 [DataContext] Deleting document from API...');
       await apiDeleteDocument(docId);
+      console.log('✅ [DataContext] Document deleted via API');
       await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded after document deletion');
     } catch (e) {
-      console.error('Failed to delete document via API', e);
+      console.error('❌ [DataContext] Failed to delete document via API', e);
       throw e;
     }
   }, [reloadClients]);

@@ -80,23 +80,47 @@ export default function Dashboard() {
   }, [clients]);
 
   const handlePayment = (item: OverdueClient) => {
+    console.log('🔵 [Dashboard] handlePayment clicked:', {
+      clientId: item.client.id,
+      clientName: `${item.client.firstName} ${item.client.lastName}`,
+      rentalId: item.rental.id,
+      propertyName: item.rental.propertyName,
+      paymentStatus: item.paymentStatus,
+      amountDue: item.amountDue,
+    });
+
     const payment = item.rental.payments.find(p =>
       calculatePaymentStatus(p) === item.paymentStatus
     );
+
+    console.log('🔵 [Dashboard] Found payment object:', payment);
+
     setSelectedPayment({
       item,
       payment,
       maxAmount: item.amountDue,
     });
     setPaymentModalOpen(true);
+    console.log('🔵 [Dashboard] Payment modal opened');
   };
 
   const handlePayTotal = async () => {
-    if (!selectedPayment) return;
+    console.log('🟢 [Dashboard] handlePayTotal clicked');
+    if (!selectedPayment) {
+      console.warn('⚠️ [Dashboard] No payment selected!');
+      return;
+    }
 
     try {
       setIsLoading(true);
       const { payment, item } = selectedPayment;
+
+      console.log('🟢 [Dashboard] Paying total:', {
+        rentalId: payment.rentalId,
+        paymentId: payment.id,
+        amount: selectedPayment.maxAmount,
+        payment: payment,
+      });
 
       // Enregistrer le paiement complet
       await addMonthlyPayment(
@@ -105,21 +129,32 @@ export default function Dashboard() {
         selectedPayment.maxAmount
       );
 
+      console.log('✅ [Dashboard] Payment recorded successfully');
       setPaymentModalOpen(false);
       setSelectedPayment(null);
     } catch (error) {
-      console.error('Erreur lors du paiement:', error);
+      console.error('❌ [Dashboard] Erreur lors du paiement:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePayPartial = async (amount: number) => {
-    if (!selectedPayment) return;
+    console.log('🔵 [Dashboard] handlePayPartial clicked with amount:', amount);
+    if (!selectedPayment) {
+      console.warn('⚠️ [Dashboard] No payment selected!');
+      return;
+    }
 
     try {
       setIsLoading(true);
       const { payment, item } = selectedPayment;
+
+      console.log('🔵 [Dashboard] Paying partial:', {
+        rentalId: payment.rentalId,
+        paymentId: payment.id,
+        amount: amount,
+      });
 
       // Enregistrer le paiement partiel
       await addMonthlyPayment(
@@ -128,10 +163,11 @@ export default function Dashboard() {
         amount
       );
 
+      console.log('✅ [Dashboard] Partial payment recorded successfully');
       setPaymentModalOpen(false);
       setSelectedPayment(null);
     } catch (error) {
-      console.error('Erreur lors du paiement:', error);
+      console.error('❌ [Dashboard] Erreur lors du paiement partiel:', error);
     } finally {
       setIsLoading(false);
     }

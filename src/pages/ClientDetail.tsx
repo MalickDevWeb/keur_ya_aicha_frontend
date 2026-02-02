@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Archive, Ban, Plus, Home, CreditCard, FileText, Wallet } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Edit, Archive, Ban, Plus, Home, CreditCard, FileText, Wallet, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,11 +16,13 @@ import { Badge } from '@/components/ui/badge';
 import { BadgeStatut } from '@/components/BadgeStatut';
 import { useI18n } from '@/lib/i18n';
 import { useData } from '@/contexts/DataContext';
-import { 
-  formatCurrency, 
-  calculatePaymentStatus, 
+import { QuickPaymentModal } from '@/components/QuickPaymentModal';
+import { useToast } from '@/hooks/use-toast';
+import {
+  formatCurrency,
+  calculatePaymentStatus,
   calculateDepositStatus,
-  calculateClientPaymentStatus 
+  calculateClientPaymentStatus
 } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -28,7 +31,13 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t, language } = useI18n();
-  const { getClient, archiveClient, blacklistClient } = useData();
+  const { getClient, archiveClient, blacklistClient, addMonthlyPayment, addDepositPayment } = useData();
+  const { toast } = useToast();
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const client = getClient(id || '');
 
@@ -47,12 +56,22 @@ export default function ClientDetail() {
   const dateLocale = language === 'fr' ? fr : undefined;
 
   const handleArchive = () => {
+    console.log('📦 [ClientDetail] Archiving client:', {
+      clientId: client.id,
+      clientName: `${client.firstName} ${client.lastName}`,
+    });
     archiveClient(client.id);
+    console.log('✅ [ClientDetail] Client archived, navigating to clients list');
     navigate('/clients');
   };
 
   const handleBlacklist = () => {
+    console.log('🚫 [ClientDetail] Blacklisting client:', {
+      clientId: client.id,
+      clientName: `${client.firstName} ${client.lastName}`,
+    });
     blacklistClient(client.id);
+    console.log('✅ [ClientDetail] Client blacklisted, navigating to clients list');
     navigate('/clients');
   };
 
@@ -217,7 +236,6 @@ export default function ClientDetail() {
                         <TableHead>{t('detail.dueDate')}</TableHead>
                         <TableHead>{t('detail.amount')}</TableHead>
                         <TableHead>{t('detail.paidAmount')}</TableHead>
-                        <TableHead>{t('clients.status')}</TableHead>
                         <TableHead>{t('clients.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -225,7 +243,7 @@ export default function ClientDetail() {
                       {rental.payments.map((payment) => {
                         const status = calculatePaymentStatus(payment);
                         return (
-                          <TableRow key={payment.id}>
+                          <TableRow key={payment.id} className={status === 'paid' ? 'bg-success/10' : 'hover:bg-muted/50'}>
                             <TableCell>
                               {format(payment.periodStart, 'd MMM', { locale: dateLocale })} →{' '}
                               {format(payment.periodEnd, 'd MMM yyyy', { locale: dateLocale })}
@@ -240,13 +258,25 @@ export default function ClientDetail() {
                               </span>
                             </TableCell>
                             <TableCell>
-                              <BadgeStatut status={status} size="sm" />
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="sm">
-                                <Plus className="w-4 h-4 mr-1" />
-                                {t('detail.addPayment')}
-                              </Button>
+                              {status !== 'paid' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    console.log('💰 [ClientDetail] handlePayment clicked');
+                                    setSelectedPayment({
+                                      payment,
+                                      rental,
+                                      maxAmount: payment.amount - payment.paidAmount,
+                                    });
+                                    setPaymentModalOpen(true);
+                                  }}
+                                  className="text-primary hover:text-primary"
+                                >
+                                  <DollarSign className="w-4 h-4 mr-1" />
+                                  Payer
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         );
@@ -264,7 +294,7 @@ export default function ClientDetail() {
           {client.rentals.map((rental) => {
             const depositStatus = calculateDepositStatus(rental.deposit);
             const remaining = rental.deposit.total - rental.deposit.paid;
-            
+
             return (
               <Card key={rental.id} className="mb-4">
                 <CardHeader>
@@ -289,17 +319,26 @@ export default function ClientDetail() {
                         {formatCurrency(remaining)} FCFA
                       </p>
                     </div>
-                    <div className="p-4 bg-muted rounded-lg flex flex-col justify-center items-center">
-                      <BadgeStatut status={depositStatus} size="lg" />
+                    <div className="p-4 flex flex-col justify-center items-center">
+                      {remaining > 0 ? (
+                        <Button
+                          className="bg-secondary hover:bg-secondary/90 w-full"
+                          size="sm"
+                          onClick={() => {
+                            console.log('💰 [ClientDetail] Deposit payment clicked');
+                            setSelectedDeposit({
+                              rental,
+                              maxAmount: remaining,
+                            });
+                            setDepositModalOpen(true);
+                          }}
+                        >
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          Payer
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
-
-                  {remaining > 0 && (
-                    <Button className="bg-secondary hover:bg-secondary/90">
-                      <Plus className="w-4 h-4 mr-2" />
-                      {t('detail.addPayment')}
-                    </Button>
-                  )}
                 </CardContent>
               </Card>
             );
@@ -324,6 +363,135 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+        <QuickPaymentModal
+          open={paymentModalOpen}
+          onOpenChange={setPaymentModalOpen}
+          clientName={client.firstName + ' ' + client.lastName}
+          propertyName={selectedPayment ? selectedPayment.rental.propertyName : ''}
+          amountDue={selectedPayment ? selectedPayment.maxAmount : 0}
+          onPayTotal={async () => {
+            if (!selectedPayment) return;
+            try {
+              setIsLoading(true);
+              console.log('💵 [ClientDetail] Paying total:', {
+                rentalId: selectedPayment.rental.id,
+                paymentId: selectedPayment.payment.id,
+                amount: selectedPayment.maxAmount,
+              });
+              await addMonthlyPayment(selectedPayment.rental.id, selectedPayment.payment.id, selectedPayment.maxAmount);
+              console.log('✅ [ClientDetail] Payment recorded successfully');
+              toast({
+                title: t('common.success'),
+                description: `Paiement de ${formatCurrency(selectedPayment.maxAmount)} FCFA enregistré`,
+              });
+              setPaymentModalOpen(false);
+              setSelectedPayment(null);
+            } catch (error) {
+              console.error('❌ [ClientDetail] Error during payment:', error);
+              toast({
+                title: 'Erreur',
+                description: 'Erreur lors de l\'enregistrement du paiement',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          onPayPartial={async (amount: number) => {
+            if (!selectedPayment) return;
+            try {
+              setIsLoading(true);
+              console.log('💵 [ClientDetail] Paying partial:', {
+                rentalId: selectedPayment.rental.id,
+                paymentId: selectedPayment.payment.id,
+                amount,
+              });
+              await addMonthlyPayment(selectedPayment.rental.id, selectedPayment.payment.id, amount);
+              console.log('✅ [ClientDetail] Partial payment recorded successfully');
+              toast({
+                title: t('common.success'),
+                description: `Paiement de ${formatCurrency(amount)} FCFA enregistré`,
+              });
+              setPaymentModalOpen(false);
+              setSelectedPayment(null);
+            } catch (error) {
+              console.error('❌ [ClientDetail] Error during partial payment:', error);
+              toast({
+                title: 'Erreur',
+                description: 'Erreur lors de l\'enregistrement du paiement',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          isLoading={isLoading}
+        />
+
+        {/* Deposit Payment Modal */}
+        <QuickPaymentModal
+          open={depositModalOpen}
+          onOpenChange={setDepositModalOpen}
+          clientName={client.firstName + ' ' + client.lastName}
+          propertyName={selectedDeposit ? selectedDeposit.rental.propertyName : ''}
+          amountDue={selectedDeposit ? selectedDeposit.maxAmount : 0}
+          onPayTotal={async () => {
+            if (!selectedDeposit) return;
+            try {
+              setIsLoading(true);
+              console.log('💵 [ClientDetail] Deposit: Paying total:', {
+                rentalId: selectedDeposit.rental.id,
+                amount: selectedDeposit.maxAmount,
+              });
+              await addDepositPayment(selectedDeposit.rental.id, selectedDeposit.maxAmount);
+              console.log('✅ [ClientDetail] Deposit payment recorded successfully');
+              toast({
+                title: t('common.success'),
+                description: `Paiement de caution de ${formatCurrency(selectedDeposit.maxAmount)} FCFA enregistré`,
+              });
+              setDepositModalOpen(false);
+              setSelectedDeposit(null);
+            } catch (error) {
+              console.error('❌ [ClientDetail] Error during deposit payment:', error);
+              toast({
+                title: 'Erreur',
+                description: 'Erreur lors de l\'enregistrement du paiement de caution',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          onPayPartial={async (amount: number) => {
+            if (!selectedDeposit) return;
+            try {
+              setIsLoading(true);
+              console.log('💵 [ClientDetail] Deposit: Paying partial:', {
+                rentalId: selectedDeposit.rental.id,
+                amount,
+              });
+              await addDepositPayment(selectedDeposit.rental.id, amount);
+              console.log('✅ [ClientDetail] Deposit partial payment recorded successfully');
+              toast({
+                title: t('common.success'),
+                description: `Paiement de caution de ${formatCurrency(amount)} FCFA enregistré`,
+              });
+              setDepositModalOpen(false);
+              setSelectedDeposit(null);
+            } catch (error) {
+              console.error('❌ [ClientDetail] Error during deposit partial payment:', error);
+              toast({
+                title: 'Erreur',
+                description: 'Erreur lors de l\'enregistrement du paiement de caution',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          isLoading={isLoading}
+        />
     </div>
   );
 }

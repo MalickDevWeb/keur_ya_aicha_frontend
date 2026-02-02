@@ -12,8 +12,11 @@ find_free_port() {
 # Trouver port libre pour json-server (commence par 4000)
 JSON_PORT=$(find_free_port 4000)
 echo "🚀 Démarrage json-server sur le port $JSON_PORT..."
-npm run json:server > /tmp/json-server.log 2>&1 &
+json-server --watch db/db.json --port $JSON_PORT > /tmp/json-server.log 2>&1 &
 JSON_PID=$!
+
+# Exporter le port pour l'application
+export VITE_API_URL="http://localhost:$JSON_PORT"
 
 # Attendre que json-server démarre
 sleep 2

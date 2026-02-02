@@ -1,13 +1,6 @@
 {
   "clients": [
     {
-      "id": "client-1",
-      "firstName": "Amadou",
-      "lastName": "Diallo",
-      "phone": "+221 77 123 45 67",
-      "cni": "1234567890123",
-      "status": "active",
-      "createdAt": "2025-06-01T08:00:00.000Z",
       "rentals": [
         {
           "id": "client-1-rental-0",
@@ -54,14 +47,63 @@
               "periodEnd": "2025-07-31T23:59:59.000Z",
               "dueDate": "2025-08-05T00:00:00.000Z",
               "amount": 150000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
+              "paidAmount": 150000,
+              "status": "paid",
+              "payments": [
+                {
+                  "id": "f4y0itwo",
+                  "amount": 150000,
+                  "date": "2026-02-02T14:25:48.879Z",
+                  "receiptNumber": "REC-1770042348879"
+                }
+              ]
+            }
+          ],
+          "documents": []
+        },
+        {
+          "id": "5xvt4d80dg9",
+          "clientId": "client-1",
+          "propertyType": "room",
+          "propertyName": "Appartement A1",
+          "monthlyRent": 11000,
+          "startDate": "2026-02-02T00:00:00.000Z",
+          "deposit": {
+            "total": 100000,
+            "paid": 100000,
+            "payments": [
+              {
+                "id": "a6osw6gw",
+                "amount": 100000,
+                "date": "2026-02-02T15:00:31.207Z",
+                "receiptNumber": "DEP-1770044431207"
+              }
+            ]
+          },
+          "payments": [
+            {
+              "id": "kjgibnx77v",
+              "rentalId": "5xvt4d80dg9",
+              "periodStart": "2026-02-02T00:00:00.000Z",
+              "periodEnd": "2026-03-01T00:00:00.000Z",
+              "dueDate": "2026-03-06T00:00:00.000Z",
+              "amount": 11000,
+              "paidAmount": 11000,
+              "status": "paid",
+              "payments": [
+                {
+                  "id": "itveor5m",
+                  "amount": 11000,
+                  "date": "2026-02-02T14:28:45.889Z",
+                  "receiptNumber": "REC-1770042525889"
+                }
+              ]
             }
           ],
           "documents": []
         }
-      ]
+      ],
+      "id": "client-1"
     },
     {
       "id": "client-2",
@@ -159,6 +201,88 @@
       "rentalId": "rental-1",
       "paymentId": "monthly-1",
       "amount": 150000
+    },
+    {
+      "id": "6bdb",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "2938",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "47fc",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "6416",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 15000
+    },
+    {
+      "id": "5658",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "8957",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "2ac9",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "92a8",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "66a9",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "5979",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "cd4c",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000
+    },
+    {
+      "id": "efe8",
+      "rentalId": "client-1-rental-0",
+      "paymentId": "pay-2",
+      "amount": 150000,
+      "receiptId": "f4y0itwo",
+      "date": "2026-02-02T14:25:48.879Z"
+    },
+    {
+      "id": "7df8",
+      "rentalId": "5xvt4d80dg9",
+      "paymentId": "kjgibnx77v",
+      "amount": 11000,
+      "receiptId": "itveor5m",
+      "date": "2026-02-02T14:28:45.889Z"
     }
   ],
   "deposits": [
@@ -176,6 +300,13 @@
       "id": "deposit-test-123",
       "rentalId": "rental-1",
       "amount": 300000
+    },
+    {
+      "id": "702d",
+      "rentalId": "5xvt4d80dg9",
+      "amount": 100000,
+      "receiptId": "a6osw6gw",
+      "date": "2026-02-02T15:00:31.207Z"
     }
   ]
 }

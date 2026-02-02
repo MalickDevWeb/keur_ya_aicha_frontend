@@ -69,15 +69,23 @@ export default function AddPayment() {
   });
 
   const handleSubmit = async (data: PaymentFormData) => {
+    console.log('🔵 [AddPayment] handleSubmit clicked with data:', {
+      rentalId: data.rentalId,
+      amount: data.amount,
+      date: data.date,
+      receiptNumber: data.receiptNumber,
+    });
     setIsLoading(true);
     try {
       // TODO: Implement payment addition
-      console.log('Add payment:', data);
+      console.log('🟢 [AddPayment] Adding payment:', data);
 
       // For now, just navigate back
       setTimeout(() => {
+        console.log('✅ [AddPayment] Navigating to rental details');
         navigate(`/rentals/${data.rentalId}`);
       }, 1000);
+
     } finally {
       setIsLoading(false);
     }

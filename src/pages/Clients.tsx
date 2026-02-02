@@ -181,7 +181,13 @@ export default function Clients() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/clients/${client.id}`)}
+                              onClick={() => {
+                                console.log('👁️ [Clients] View client details:', {
+                                  clientId: client.id,
+                                  clientName: `${client.firstName} ${client.lastName}`,
+                                });
+                                navigate(`/clients/${client.id}`);
+                              }}
                               title={t('clients.details')}
                             >
                               <Eye className="w-4 h-4" />
@@ -189,7 +195,13 @@ export default function Clients() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/clients/${client.id}/edit`)}
+                              onClick={() => {
+                                console.log('✏️ [Clients] Edit client:', {
+                                  clientId: client.id,
+                                  clientName: `${client.firstName} ${client.lastName}`,
+                                });
+                                navigate(`/clients/${client.id}/edit`);
+                              }}
                               title={t('clients.edit')}
                             >
                               <Edit className="w-4 h-4" />
@@ -197,7 +209,13 @@ export default function Clients() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/clients/${client.id}/add-rental`)}
+                              onClick={() => {
+                                console.log('🏠 [Clients] Add rental for client:', {
+                                  clientId: client.id,
+                                  clientName: `${client.firstName} ${client.lastName}`,
+                                });
+                                navigate(`/clients/${client.id}/add-rental`);
+                              }}
                               title={t('clients.addRental')}
                             >
                               <Plus className="w-4 h-4" />

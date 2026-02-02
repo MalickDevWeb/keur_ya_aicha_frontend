@@ -76,35 +76,54 @@ export default function AddClient() {
   const remainingDeposit = Math.max(0, totalDeposit - paidDeposit);
 
   const onSubmit = async (data: FormData) => {
-    const newClient = await addClient({
+    console.log('🔵 [AddClient] onSubmit clicked with form data:', {
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,
-      cni: data.cni,
-      status: 'active',
-      rental: {
-        propertyType: data.propertyType as PropertyType,
-        propertyName: data.propertyName,
-        startDate: new Date(data.startDate),
-        monthlyRent: data.monthlyRent,
-        deposit: {
-          total: data.totalDeposit,
-          paid: data.paidDeposit,
-          payments: data.paidDeposit > 0 ? [{
-            id: crypto.randomUUID(),
-            amount: data.paidDeposit,
-            date: new Date(),
-            receiptNumber: `DEP-${Date.now().toString(36).toUpperCase()}`,
-          }] : [],
+      propertyName: data.propertyName,
+      monthlyRent: data.monthlyRent,
+      totalDeposit: data.totalDeposit,
+      paidDeposit: data.paidDeposit,
+    });
+    try {
+      const newClient = await addClient({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        cni: data.cni,
+        status: 'active',
+        rental: {
+          propertyType: data.propertyType as PropertyType,
+          propertyName: data.propertyName,
+          startDate: new Date(data.startDate),
+          monthlyRent: data.monthlyRent,
+          deposit: {
+            total: data.totalDeposit,
+            paid: data.paidDeposit,
+            payments: data.paidDeposit > 0 ? [{
+              id: crypto.randomUUID(),
+              amount: data.paidDeposit,
+              date: new Date(),
+              receiptNumber: `DEP-${Date.now().toString(36).toUpperCase()}`,
+            }] : [],
+          },
         },
-      },
-    });
-    setCreatedClient({ id: newClient.id, name: `${data.firstName} ${data.lastName}` });
+      });
+      console.log('✅ [AddClient] Client created successfully:', newClient);
+      setCreatedClient({ id: newClient.id, name: `${data.firstName} ${data.lastName}` });
 
-    toast({
-      title: t('common.success'),
-      description: `Client ${data.firstName} ${data.lastName} créé avec succès`,
-    });
+      toast({
+        title: t('common.success'),
+        description: `Client ${data.firstName} ${data.lastName} créé avec succès`,
+      });
+    } catch (error) {
+      console.error('❌ [AddClient] Error creating client:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Erreur lors de la création du client',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handlePrintContract = async () => {
