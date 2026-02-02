@@ -50,6 +50,14 @@ export function BadgeStatut({ status, size = 'md', className }: BadgeStatutProps
 
   const config = statusConfig[status];
 
+  if (!config) {
+    return (
+      <span className={cn('inline-flex items-center font-medium rounded-full', sizeClasses[size], className)}>
+        {status}
+      </span>
+    );
+  }
+
   return (
     <span
       className={cn(

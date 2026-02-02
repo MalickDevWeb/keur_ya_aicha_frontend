@@ -12,6 +12,14 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import AddClient from "./pages/AddClient";
 import ClientDetail from "./pages/ClientDetail";
+import Rentals from "./pages/Rentals";
+import AddRental from "./pages/AddRental";
+import EditRental from "./pages/EditRental";
+import RentalDetail from "./pages/RentalDetail";
+import Payments from "./pages/Payments";
+import AddPayment from "./pages/AddPayment";
+import Deposits from "./pages/Deposits";
+import Archive from "./pages/Archive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,16 +32,38 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+
+                  {/* Clients Routes */}
                   <Route path="/clients" element={<Clients />} />
                   <Route path="/clients/add" element={<AddClient />} />
                   <Route path="/clients/:id" element={<ClientDetail />} />
+                  <Route path="/clients/:id/edit" element={<AddClient />} />
+                  <Route path="/clients/:id/add-rental" element={<AddRental />} />
+
+                  {/* Rentals Routes */}
+                  <Route path="/rentals" element={<Rentals />} />
+                  <Route path="/rentals/add/:clientId" element={<AddRental />} />
+                  <Route path="/rentals/:id" element={<RentalDetail />} />
+                  <Route path="/rentals/:id/edit" element={<EditRental />} />
+
+                  {/* Payments Routes - Note: IDs can contain dashes like client-6-rental-1 */}
+                  <Route path="/payments" element={<Payments />} />
+                  <Route path="/payments/add" element={<AddPayment />} />
+                  <Route path="/payments/add/:clientId" element={<AddPayment />} />
+                  <Route path="/payments/add/:clientId/:rentalId" element={<AddPayment />} />
+                  <Route path="/payments/:rentalId" element={<RentalDetail />} />
+                  <Route path="/payments/deposit" element={<Deposits />} />
+                  <Route path="/payments/deposit/:rentalId" element={<Deposits />} />
+
+                  {/* Settings & Archive */}
                   <Route path="/settings" element={<Dashboard />} />
+                  <Route path="/archive" element={<Archive />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

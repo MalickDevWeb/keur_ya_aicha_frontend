@@ -2,8 +2,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User, Lock, Volume2, VolumeX, Eye, EyeOff, ArrowRight } from "lucide-react";
-import { Redirect } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── 1. Validation schema ────────────────────────────────────────────
 const loginSchema = z.object({
@@ -12,16 +13,7 @@ const loginSchema = z.object({
 });
 type LoginData = z.infer<typeof loginSchema>;
 
-// ─── 2. Fake auth (swap with real API) ───────────────────────────────
-const fakeLogin = async (username: string, password: string) => {
-  if (username === "admin" && password === "password123") {
-    localStorage.setItem("user", JSON.stringify({ username }));
-    return { username };
-  }
-  throw new Error("Identifiants invalides");
-};
-
-// ─── 3. Tiny reusable input ───────────────────────────────────────────
+// ─── InputField Component ──────────────────────────────────────────────
 interface FieldProps {
   label: string;
   name: "nomUtilisateur" | "motDePasse";
@@ -29,15 +21,14 @@ interface FieldProps {
   placeholder: string;
   type?: string;
   error?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  register: any;
+  watch: string;
   rightIcon?: React.ReactNode;
 }
 
-function InputField({ label, icon, placeholder, type = "text", error, value, onChange, onBlur, rightIcon }: FieldProps) {
+function InputField({ label, name, icon, placeholder, type = "text", error, register: reg, watch: watchValue, rightIcon }: FieldProps) {
   const [focused, setFocused] = useState(false);
-  const hasValue = value.length > 0;
+  const hasValue = watchValue && watchValue.length > 0;
   const active = focused || hasValue;
 
   return (
@@ -64,9 +55,9 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
           position: "relative",
           borderRadius: 16,
           border: `2px solid ${error ? "#ef4444" : focused ? "#4a7cff" : hasValue ? "#cbd5e1" : "#e2e8f0"}`,
-          background: focused ? "#fff" : "#f8fafc",
+          background: "#fff",
           boxShadow: focused ? "0 0 0 4px rgba(74,124,255,.13)" : "none",
-          transition: "border-color .25s, box-shadow .25s, background .25s",
+          transition: "border-color .25s, box-shadow .25s",
         }}
       >
         {/* Left icon */}
@@ -76,7 +67,7 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
             left: 18,
             top: "50%",
             transform: "translateY(-50%)",
-            color: focused ? "#4a7cff" : "#94a3b8",
+            color: focused ? "#4a7cff" : "#64748b",
             display: "flex",
             alignItems: "center",
             transition: "color .25s",
@@ -87,12 +78,16 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
         </span>
 
         <input
+          id={name}
           type={type}
           placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
+          value={watchValue || ""}
+          {...reg}
           onFocus={() => setFocused(true)}
+          onBlur={(e) => {
+            setFocused(false);
+            reg.onBlur(e);
+          }}
           style={{
             width: "100%",
             padding: "16px 48px 16px 52px",
@@ -100,7 +95,8 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
             background: "transparent",
             fontFamily: "'DM Sans', sans-serif",
             fontSize: 16,
-            color: "#0f2854",
+            fontWeight: 500,
+            color: "#000000",
             outline: "none",
             borderRadius: 16,
           }}
@@ -124,10 +120,10 @@ function InputField({ label, icon, placeholder, type = "text", error, value, onC
   );
 }
 
-// ─── 4. Main Page ─────────────────────────────────────────────────────
+// ─── 2. Main Page ─────────────────────────────────────────────────────
 export default function LoginPage() {
-  const savedUser = localStorage.getItem("user");
-  const user = savedUser ? JSON.parse(savedUser) : null;
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
 
   const [isMuted, setIsMuted] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -178,16 +174,23 @@ export default function LoginPage() {
     setLoading(true);
     setLoginError("");
     try {
-      await fakeLogin(data.nomUtilisateur, data.motDePasse);
-      window.location.reload();
+      const success = await login(data.nomUtilisateur, data.motDePasse);
+      if (success) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        setLoginError("Identifiants invalides");
+      }
     } catch (e: any) {
-      setLoginError(e.message);
+      setLoginError(e.message || "Erreur lors de la connexion");
     } finally {
       setLoading(false);
     }
   };
 
-  if (user) return <Redirect to="/" />;
+  if (isAuthenticated) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   // ─── styles constants
   const NAVY = "#0F2854";
@@ -479,8 +482,8 @@ export default function LoginPage() {
                 icon={<User size={18} />}
                 placeholder="admin"
                 error={errors.nomUtilisateur?.message}
-                value={watchNomUtilisateur || ""}
-                {...register("nomUtilisateur")}
+                watch={watchNomUtilisateur || ""}
+                register={register("nomUtilisateur")}
                 rightIcon={null}
               />
 
@@ -491,8 +494,8 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 type={showPass ? "text" : "password"}
                 error={errors.motDePasse?.message}
-                value={watchMotDePasse || ""}
-                {...register("motDePasse")}
+                watch={watchMotDePasse || ""}
+                register={register("motDePasse")}
                 rightIcon={
                   <button
                     type="button"
