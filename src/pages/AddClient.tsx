@@ -28,6 +28,7 @@ import { useI18n } from '@/lib/i18n';
 import { useData } from '@/contexts/DataContext';
 import { PropertyType, formatCurrency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } from '@/lib/pdfUtils';
 
 const formSchema = z.object({
   lastName: z.string().min(2, 'Minimum 2 caractères'),
@@ -100,19 +101,51 @@ export default function AddClient() {
     });
 
     setCreatedClient({ id: newClient.id, name: `${data.firstName} ${data.lastName}` });
-    
+
     toast({
       title: t('common.success'),
       description: `Client ${data.firstName} ${data.lastName} créé avec succès`,
     });
   };
 
-  const handlePrintContract = () => {
-    // TODO: Generate and print PDF contract
-    toast({
-      title: 'Impression',
-      description: 'Fonctionnalité d\'impression en cours de développement',
-    });
+  const handlePrintContract = async () => {
+    try {
+      const values = form.getValues();
+      const doc = {
+        clientName: `${values.firstName} ${values.lastName}`,
+        clientPhone: values.phone,
+        property: values.propertyName,
+        propertyType: values.propertyType,
+        startDate: values.startDate,
+        amount: values.monthlyRent,
+        note: `Contrat de location pour ${values.propertyName} - Début: ${new Date(values.startDate).toLocaleDateString('fr-FR')}`,
+        uploadedAt: Date.now(),
+      } as any;
+
+      const blob = await generatePdfForDocument(doc);
+
+      // Try Web Share first (mobile); otherwise download and open in new tab for printing
+      const filename = `contrat_${values.lastName}_${values.firstName}.pdf`;
+      const shared = await shareBlobViaWebShare(blob, filename, 'Contrat de location');
+      if (!shared) {
+        downloadBlob(blob, filename);
+        // Also open in new tab so user can print directly
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      }
+
+      toast({
+        title: 'Impression',
+        description: 'Le contrat a été généré et téléchargé.',
+      });
+    } catch (e: any) {
+      console.error('Print contract failed', e);
+      toast({
+        title: 'Erreur',
+        description: e?.message || 'Impossible de générer le contrat. Installez html2canvas et jspdf si nécessaire.',
+      });
+    }
   };
 
   if (createdClient) {
@@ -294,9 +327,9 @@ export default function AddClient() {
                   <FormItem>
                     <FormLabel>{t('addClient.monthlyRent')} (FCFA)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     </FormControl>
@@ -321,9 +354,9 @@ export default function AddClient() {
                     <FormItem>
                       <FormLabel>{t('addClient.totalDeposit')} (FCFA)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
+                        <Input
+                          type="number"
+                          {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                         />
                       </FormControl>
@@ -338,9 +371,9 @@ export default function AddClient() {
                     <FormItem>
                       <FormLabel>{t('addClient.paidDeposit')} (FCFA)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
+                        <Input
+                          type="number"
+                          {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                         />
                       </FormControl>
@@ -349,9 +382,9 @@ export default function AddClient() {
                   )}
                 />
               </div>
-              
+
               <Separator />
-              
+
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <span className="font-medium">{t('addClient.remainingDeposit')}</span>
                 <span className={`text-lg font-bold ${remainingDeposit > 0 ? 'text-warning' : 'text-success'}`}>

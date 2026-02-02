@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Client, Rental, MonthlyPayment, DashboardStats, PaymentRecord, DepositPayment, PaymentStatus, Document } from '@/lib/types';
 
 import { mockClients, calculateDashboardStats, generateId } from '@/lib/mockData';
@@ -11,7 +11,7 @@ interface DataContextType {
   stats: DashboardStats;
 
   // Client operations
-  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'rentals'> & { rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'> }) => Client;
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'rentals'> & { rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'> }) => Promise<Client>;
   updateClient: (id: string, data: Partial<Client>) => void;
   archiveClient: (id: string) => void;
   blacklistClient: (id: string) => void;
@@ -44,7 +44,7 @@ export function DataProvider({ children }: DataProviderProps) {
   // If Vite env VITE_USE_API=true, fetch clients from API on mount
   const useApi = (import.meta as any).env?.VITE_USE_API === 'true';
 
-  const reloadClients = React.useCallback(async () => {
+  const reloadClients = useCallback(async () => {
     try {
       const dtos: ClientDTO[] = await fetchClients();
       const parsed = dtos.map(d => transformClientDTO(d));
@@ -55,7 +55,7 @@ export function DataProvider({ children }: DataProviderProps) {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!useApi) return;
     let mounted = true;
     (async () => {
@@ -164,9 +164,28 @@ export function DataProvider({ children }: DataProviderProps) {
               propertyName: r.propertyName,
               monthlyRent: r.monthlyRent,
               startDate: r.startDate.toISOString(),
-              deposit: r.deposit,
-              payments: r.payments,
-              documents: r.documents,
+              deposit: {
+                total: r.deposit.total,
+                paid: r.deposit.paid,
+                payments: (r.deposit.payments || []).map(p => ({
+                  ...p,
+                  date: (p.date instanceof Date) ? p.date.toISOString() : p.date,
+                })),
+              },
+              payments: (r.payments || []).map(p => ({
+                ...p,
+                periodStart: (p.periodStart instanceof Date) ? p.periodStart.toISOString() : (p as any).periodStart,
+                periodEnd: (p.periodEnd instanceof Date) ? p.periodEnd.toISOString() : (p as any).periodEnd,
+                dueDate: (p.dueDate instanceof Date) ? p.dueDate.toISOString() : (p as any).dueDate,
+                payments: (p.payments || []).map(rec => ({
+                  ...rec,
+                  date: (rec.date instanceof Date) ? rec.date.toISOString() : rec.date,
+                })),
+              })),
+              documents: (r.documents || []).map(d => ({
+                ...d,
+                uploadedAt: (d.uploadedAt instanceof Date) ? d.uploadedAt.toISOString() : (d as any).uploadedAt,
+              })),
             })),
           });
           await reloadClients();
@@ -311,18 +330,6 @@ export function DataProvider({ children }: DataProviderProps) {
 
   const addDepositPayment = useCallback((rentalId: string, amount: number) => {
     if (useApi) {
-      // adding rental via API requires updating client; we'll send a PUT with new rental appended
-      (async () => {
-        try {
-          const client = clients.find(c => c.id === clientId);
-          if (!client) return;
-          const updatedRentals = [...client.rentals, rental].map(r => ({
-            ...r,
-            startDate: (r.startDate as any)?.toISOString?.() || new Date().toISOString(),
-          }));
-          await apiUpdateClient(clientId, { rentals: updatedRentals as any } as any);
-          await reloadClients();
-        } catch (e) {
       (async () => {
         try {
           await postDepositPayment(rentalId, amount);
@@ -356,11 +363,6 @@ export function DataProvider({ children }: DataProviderProps) {
               payments: [...rental.deposit.payments, depositPayment],
             },
           };
-        }),
-      }));
-
-      setStats(calculateDashboardStats(updated));
-      return updated;
         }),
       }));
 
