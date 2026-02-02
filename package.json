@@ -7,6 +7,7 @@
     "dev": "concurrently \"json-server --watch db/db.json --port 4000 --routes json-server.routes.json\" \"ELECTRON_DEV=true electron .\" \"vite\"",
     "dev:web": "vite",
     "dev:all": "bash start-dev.sh",
+    "seed-db": "node scripts/seed-db.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:electron": "vite build && electron-builder",

@@ -1,11 +1,11 @@
-import { 
-  fetchClients, 
+import {
+  fetchClients,
   fetchClientById,
-  createClient, 
+  createClient,
   updateClient,
   deleteClient,
-  fetchDocuments, 
-  postDocument as postDocumentAPI, 
+  fetchDocuments,
+  postDocument as postDocumentAPI,
   deleteDocument,
   fetchPayments,
   postPaymentRecord,
@@ -14,7 +14,7 @@ import {
   fetchDeposits,
   postDepositPayment,
   updateDeposit,
-  deleteDeposit
+  deleteDeposit,
 } from '@/services/api'
 
 /**
@@ -52,8 +52,8 @@ describe('API CRUD Operations', () => {
     })
 
     test('updateClient - should update client', async () => {
-      const updated = await updateClient('client-1', { 
-        firstName: 'Updated' 
+      const updated = await updateClient('client-1', {
+        firstName: 'Updated',
       })
       expect(updated).toBeDefined()
     })
@@ -90,7 +90,7 @@ describe('API CRUD Operations', () => {
         uploadedAt: new Date().toISOString(),
         signed: false,
       })
-      
+
       // Then delete it
       await deleteDocument(doc.id)
     })
@@ -110,10 +110,10 @@ describe('API CRUD Operations', () => {
     test('updatePayment - should update payment', async () => {
       // First create a payment
       const payment = await postPaymentRecord('rental-test', 'payment-test', 100000)
-      
+
       // Then update it
-      const updated = await updatePayment(payment.id, { 
-        amount: 120000 
+      const updated = await updatePayment(payment.id, {
+        amount: 120000,
       })
       expect(updated).toBeDefined()
     })
@@ -132,8 +132,8 @@ describe('API CRUD Operations', () => {
 
     test('updateDeposit - should update deposit', async () => {
       const deposit = await postDepositPayment('rental-update-test', 250000)
-      const updated = await updateDeposit(deposit.id, { 
-        amount: 350000 
+      const updated = await updateDeposit(deposit.id, {
+        amount: 350000,
       })
       expect(updated).toBeDefined()
     })

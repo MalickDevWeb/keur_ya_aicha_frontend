@@ -1,12 +1,49 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Client, Rental, MonthlyPayment, DashboardStats, PaymentRecord, DepositPayment, PaymentStatus, Document } from '@/lib/types';
 
-import { calculateDashboardStats, generateId } from '@/lib/mockData';
 import { fetchClients, createClient as apiCreateClient, updateClient as apiUpdateClient, postPaymentRecord, postDepositPayment, postDocument as apiPostDocument, deleteDocument as apiDeleteDocument } from '@/services/api';
 import { ClientDTO } from '@/dto/ClientDTO';
 import { addMonths, addDays } from 'date-fns';
 
-// Helper: serialize Client / Rental objects to DTO shape (convert Date -> ISO strings)
+// Helper to generate unique IDs
+const generateId = () => Math.random().toString(36).substring(2, 15);
+
+// Calculate dashboard stats from clients
+function calculateDashboardStats(clients: Client[]): DashboardStats {
+  let totalRentals = 0;
+  let paidRentals = 0;
+  let unpaidRentals = 0;
+  let partialRentals = 0;
+  let monthlyIncome = 0;
+
+  clients.forEach(client => {
+    if (client.status === 'archived' || client.status === 'blacklisted') return;
+    client.rentals.forEach(rental => {
+      totalRentals++;
+      // Count based on current status
+      rental.payments.forEach(p => {
+        if (p.status === 'paid') {
+          paidRentals++;
+          monthlyIncome += p.paidAmount;
+        } else if (p.status === 'partial') {
+          partialRentals++;
+          monthlyIncome += p.paidAmount;
+        } else {
+          unpaidRentals++;
+        }
+      });
+    });
+  });
+
+  return {
+    totalClients: clients.filter(c => c.status === 'active').length,
+    totalRentals,
+    paidRentals,
+    unpaidRentals,
+    partialRentals,
+    monthlyIncome,
+  };
+}
 function serializeClientForApi(input: Partial<Client>): Partial<ClientDTO> {
   const out: any = { ...input };
   if (input.createdAt instanceof Date) out.createdAt = input.createdAt.toISOString();
