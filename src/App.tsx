@@ -19,6 +19,13 @@ import RentalDetail from "./pages/RentalDetail";
 import Payments from "./pages/Payments";
 import AddPayment from "./pages/AddPayment";
 import Deposits from "./pages/Deposits";
+import PaymentHistory from "./pages/PaymentHistory";
+import PaymentReceipts from "./pages/PaymentReceipts";
+import ClientDossier from "./pages/ClientDossier";
+import SignedContracts from "./pages/SignedContracts";
+import Documents from "./pages/Documents";
+import ArchivedClients from "./pages/ArchivedClients";
+import BlacklistedClients from "./pages/BlacklistedClients";
 import Archive from "./pages/Archive";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +55,7 @@ const App = () => (
 
                   {/* Rentals Routes */}
                   <Route path="/rentals" element={<Rentals />} />
+                  <Route path="/rentals/add" element={<AddRental />} />
                   <Route path="/rentals/add/:clientId" element={<AddRental />} />
                   <Route path="/rentals/:id" element={<RentalDetail />} />
                   <Route path="/rentals/:id/edit" element={<EditRental />} />
@@ -60,6 +68,19 @@ const App = () => (
                   <Route path="/payments/:rentalId" element={<RentalDetail />} />
                   <Route path="/payments/deposit" element={<Deposits />} />
                   <Route path="/payments/deposit/:rentalId" element={<Deposits />} />
+                  <Route path="/payments/history" element={<PaymentHistory />} />
+                  <Route path="/payments/receipts" element={<PaymentReceipts />} />
+
+                  {/* Documents & Archive Routes */}
+                  <Route path="/documents/dossiers" element={<ClientDossier />} />
+                  <Route path="/documents/contracts" element={<SignedContracts />} />
+                  <Route path="/documents/archive" element={<Documents />} />
+                  <Route path="/documents/receipts" element={<PaymentReceipts />} />
+                  <Route path="/documents" element={<Documents />} />
+                  <Route path="/blacklist" element={<BlacklistedClients />} />
+                  <Route path="/archive" element={<ArchivedClients />} />
+                  <Route path="/archive/clients" element={<ArchivedClients />} />
+                  <Route path="/archive/blacklist" element={<BlacklistedClients />} />
 
                   {/* Settings & Archive */}
                   <Route path="/settings" element={<Dashboard />} />

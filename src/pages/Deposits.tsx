@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Plus, Filter, X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SendDownloadModal from '@/components/SendDownloadModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -35,6 +36,7 @@ export default function Deposits() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [modalDoc, setModalDoc] = useState<any | null>(null);
 
   // Get all deposits with client info
   const allDeposits = useMemo(() => {
@@ -263,7 +265,18 @@ export default function Deposits() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {}}
+                              onClick={() => {
+                                const client = clients.find(c => c.id === deposit.clientId);
+                                const docForPdf: any = {
+                                  payerName: client ? `${client.firstName} ${client.lastName}` : deposit.clientName,
+                                  payerPhone: client?.phone,
+                                  amount: deposit.paid || 0,
+                                  uploadedAt: new Date(),
+                                  name: `Caution-${deposit.rentalId}`,
+                                  note: `Caution totale: ${deposit.total}`,
+                                };
+                                setModalDoc(docForPdf);
+                              }}
                               title="Télécharger reçus"
                             >
                               <Download className="w-4 h-4" />
@@ -291,6 +304,7 @@ export default function Deposits() {
           )}
         </CardContent>
       </Card>
+      <SendDownloadModal document={modalDoc} onClose={() => setModalDoc(null)} />
     </div>
   );
 }

@@ -367,10 +367,11 @@ export default function RentalDetail() {
                                   size="sm"
                                   onClick={() => handleQuickPayPayment(payment)}
                                   title="Enregistrer un paiement"
-                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                >
-                                  <DollarSign className="w-4 h-4" />
-                                </Button>
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
+                                  >
+                                    <DollarSign className="w-4 h-4" />
+                                    <span className="ml-1">Payer</span>
+                                  </Button>
                               )}
                               <Button
                                 variant="ghost"

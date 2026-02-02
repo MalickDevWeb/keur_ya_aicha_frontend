@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Plus, Filter, X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SendDownloadModal from '@/components/SendDownloadModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -101,6 +102,39 @@ export default function Payments() {
 
     return { daysLate, isInDerogation };
   };
+
+  const handleDownloadReceipt = async (payment: any) => {
+    try {
+      const { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } = await import('@/lib/pdfUtils');
+      // prefer last payment record if exists
+      const record = payment.payments && payment.payments.length > 0 ? payment.payments[payment.payments.length - 1] : null;
+      const client = clients.find(c => c.id === payment.clientId);
+      const docForPdf: any = {
+        payerName: client ? `${client.firstName} ${client.lastName}` : payment.clientName,
+        payerPhone: client?.phone,
+        amount: record ? record.amount : payment.paidAmount || payment.amount,
+        uploadedAt: record ? record.date : new Date(),
+        name: `Reçu-${payment.id}`,
+        note: payment.propertyName || '',
+      };
+      const blob = await generatePdfForDocument(docForPdf);
+      downloadBlob(blob, `${docForPdf.name || 'recu'}.pdf`);
+      const shared = await shareBlobViaWebShare(blob, `${docForPdf.name || 'recu'}.pdf`, `Reçu: ${docForPdf.name}`);
+      if (!shared) {
+        try {
+          const { uploadBlobToFileIo } = await import('@/lib/pdfUtils');
+          const link = await uploadBlobToFileIo(blob, `${docForPdf.name || 'recu'}.pdf`);
+          window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${docForPdf.payerName}: ${link}`)}`, '_blank');
+        } catch (e) {
+          window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${docForPdf.payerName}`)}`, '_blank');
+        }
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Impossible de générer le PDF.');
+    }
+  };
+
+  const [modalDoc, setModalDoc] = useState<any | null>(null);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -282,7 +316,19 @@ export default function Payments() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {}}
+                              onClick={() => {
+                                const record = payment.payments && payment.payments.length > 0 ? payment.payments[payment.payments.length - 1] : null;
+                                const client = clients.find(c => c.id === payment.clientId);
+                                const docForPdf: any = {
+                                  payerName: client ? `${client.firstName} ${client.lastName}` : payment.clientName,
+                                  payerPhone: client?.phone,
+                                  amount: record ? record.amount : payment.paidAmount || payment.amount,
+                                  uploadedAt: record ? record.date : new Date(),
+                                  name: `Reçu-${payment.id}`,
+                                  note: payment.propertyName || '',
+                                };
+                                setModalDoc(docForPdf);
+                              }}
                               title="Télécharger reçu"
                             >
                               <Download className="w-4 h-4" />
@@ -310,6 +356,7 @@ export default function Payments() {
           )}
         </CardContent>
       </Card>
+      <SendDownloadModal document={modalDoc} onClose={() => setModalDoc(null)} />
     </div>
   );
 }

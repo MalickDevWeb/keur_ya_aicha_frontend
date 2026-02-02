@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Download, Printer, X } from 'lucide-react';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -53,36 +54,34 @@ export function ReceiptModal({
   };
 
   const handleDownloadPDF = () => {
-    if (receiptRef.current) {
-      const html = receiptRef.current.innerHTML;
-      // Create blob and download
-      const printWindow = window.open('', '', 'width=800,height=600');
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Reçu ${receiptNumber}</title>
-              <style>
-                body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; }
-                @media print {
-                  body { margin: 0; padding: 0; }
-                }
-              </style>
-            </head>
-            <body>
-              ${html}
-              <script>
-                window.addEventListener('load', () => {
-                  window.print();
-                  setTimeout(() => window.close(), 500);
-                });
-              </script>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
+    // Use pdfUtils to generate a branded PDF and offer download/share
+    (async () => {
+      try {
+        const { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } = await import('@/lib/pdfUtils');
+        const docForPdf: any = {
+          payerName: clientName,
+          payerPhone: '',
+          amount,
+          uploadedAt: date || new Date(),
+          name: `${receiptNumber}`,
+          note: type === 'payment' && periodStart ? `Période: ${format(periodStart, 'dd/MM/yyyy')} - ${format(periodEnd || new Date(), 'dd/MM/yyyy')}` : undefined,
+        };
+        const blob = await generatePdfForDocument(docForPdf);
+        downloadBlob(blob, `${docForPdf.name || 'recu'}.pdf`);
+        const shared = await shareBlobViaWebShare(blob, `${docForPdf.name || 'recu'}.pdf`, `Reçu: ${docForPdf.name}`);
+        if (!shared) {
+          try {
+            const { uploadBlobToFileIo } = await import('@/lib/pdfUtils');
+            const link = await uploadBlobToFileIo(blob, `${docForPdf.name || 'recu'}.pdf`);
+            window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}: ${link}`)}`, '_blank');
+          } catch (e) {
+            window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`, '_blank');
+          }
+        }
+      } catch (e: any) {
+        alert(e?.message || 'Impossible de générer le PDF.');
       }
-    }
+    })();
   };
 
   return (

@@ -24,7 +24,13 @@ import { BadgeStatut } from '@/components/BadgeStatut';
 import { useI18n } from '@/lib/i18n';
 import { useData } from '@/contexts/DataContext';
 import { cn } from '@/lib/utils';
+import { formatCurrency, calculateDepositStatus, Rental } from '@/lib/types';
 import { format } from 'date-fns';
+
+interface RentalWithClient extends Rental {
+  clientName: string;
+  clientId: string;
+}
 
 export default function Rentals() {
   const navigate = useNavigate();
@@ -38,7 +44,7 @@ export default function Rentals() {
 
   // Get all rentals from clients
   const allRentals = useMemo(() => {
-    const rentals: any[] = [];
+    const rentals: RentalWithClient[] = [];
     clients.forEach((client) => {
       client.rentals.forEach((rental) => {
         rentals.push({
@@ -59,14 +65,22 @@ export default function Rentals() {
       const matchesSearch =
         !search ||
         rental.clientName.toLowerCase().includes(searchLower) ||
-        rental.address.toLowerCase().includes(searchLower) ||
-        rental.reference.toLowerCase().includes(searchLower);
+        rental.propertyName.toLowerCase().includes(searchLower) ||
+        rental.propertyType.toLowerCase().includes(searchLower);
 
       // Property type filter
       const matchesType = propertyTypeFilter === 'all' || rental.propertyType === propertyTypeFilter;
 
-      // Status filter
-      const matchesStatus = statusFilter === 'all' || rental.status === statusFilter;
+      // Status filter (based on deposit payment status)
+      const depositStatus = calculateDepositStatus(rental.deposit);
+      let matchesStatus = true;
+      if (statusFilter === 'active') {
+        matchesStatus = depositStatus !== 'paid' || rental.deposit.paid < rental.deposit.total;
+      } else if (statusFilter === 'completed') {
+        matchesStatus = depositStatus === 'paid' && rental.deposit.paid >= rental.deposit.total;
+      } else if (statusFilter === 'archived') {
+        matchesStatus = false; // Archived rentals are not shown
+      }
 
       return matchesSearch && matchesType && matchesStatus;
     });
@@ -79,12 +93,26 @@ export default function Rentals() {
 
   const hasActiveFilters = propertyTypeFilter !== 'all' || statusFilter !== 'all';
 
+  const getPropertyTypeLabel = (type: string) => {
+    switch (type) {
+      case 'apartment': return 'Appartement';
+      case 'studio': return 'Studio';
+      case 'room': return 'Chambre';
+      case 'villa': return 'Villa';
+      case 'house': return 'Maison';
+      case 'shop': return 'Commerce';
+      case 'office': return 'Bureau';
+      case 'other': return 'Autre';
+      default: return type;
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Locations</h1>
         <Button
-          onClick={() => navigate('/rentals/add')}
+          onClick={() => navigate('/clients')}
           className="bg-secondary hover:bg-secondary/90"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -98,7 +126,7 @@ export default function Rentals() {
             <SearchInput
               value={search}
               onChange={setSearch}
-              placeholder="Rechercher par client, adresse..."
+              placeholder="Rechercher par client, bien..."
               className="flex-1"
             />
             <Button
@@ -120,26 +148,29 @@ export default function Rentals() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Type de bien" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les types</SelectItem>
                   <SelectItem value="apartment">Appartement</SelectItem>
+                  <SelectItem value="studio">Studio</SelectItem>
+                  <SelectItem value="room">Chambre</SelectItem>
+                  <SelectItem value="villa">Villa</SelectItem>
                   <SelectItem value="house">Maison</SelectItem>
                   <SelectItem value="shop">Commerce</SelectItem>
                   <SelectItem value="office">Bureau</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="completed">Complété</SelectItem>
-                  <SelectItem value="archived">Archivé</SelectItem>
+                  <SelectItem value="active">Caution non soldée</SelectItem>
+                  <SelectItem value="completed">Caution soldée</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -163,64 +194,68 @@ export default function Rentals() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
-                  <TableHead>Adresse</TableHead>
+                  <TableHead>Bien</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Loyer</TableHead>
                   <TableHead>Début</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>Caution</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRentals.length > 0 ? (
-                  filteredRentals.map((rental) => (
-                    <TableRow
-                      key={rental.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    >
-                      <TableCell className="font-medium">{rental.clientName}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {rental.address}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {rental.propertyType === 'apartment' && 'Appartement'}
-                          {rental.propertyType === 'house' && 'Maison'}
-                          {rental.propertyType === 'shop' && 'Commerce'}
-                          {rental.propertyType === 'office' && 'Bureau'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {rental.monthlyRent?.toLocaleString('fr-SN')} FCFA
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {format(new Date(rental.startDate), 'dd/MM/yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <BadgeStatut status={rental.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/rentals/${rental.id}`)}
-                            title="Voir les détails"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/rentals/${rental.id}/edit`)}
-                            title="Éditer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filteredRentals.map((rental) => {
+                    const depositStatus = calculateDepositStatus(rental.deposit);
+                    return (
+                      <TableRow
+                        key={rental.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <TableCell className="font-medium">{rental.clientName}</TableCell>
+                        <TableCell className="text-sm">
+                          {rental.propertyName}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {getPropertyTypeLabel(rental.propertyType)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(rental.monthlyRent)} FCFA
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {format(new Date(rental.startDate), 'dd/MM/yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <span className={depositStatus === 'paid' ? 'text-green-600' : 'text-orange-600'}>
+                              {formatCurrency(rental.deposit.paid)} / {formatCurrency(rental.deposit.total)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/rentals/${rental.id}`)}
+                              title="Voir les détails"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/rentals/${rental.id}/edit`)}
+                              title="Éditer"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">

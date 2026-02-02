@@ -45,12 +45,28 @@ type RentalFormData = z.infer<typeof rentalSchema>;
 
 export default function AddRental() {
   const navigate = useNavigate();
-  const { clientId } = useParams();
-  const { clients } = useData();
+  const params = useParams();
+  const clientId = (params as any).clientId || (params as any).id;
+  const { clients, addRental } = useData();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(clientId || null);
+  const [clientSearch, setClientSearch] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Find client
   const client = clients.find(c => c.id === clientId);
+
+  // Filter clients by search
+  const filteredClients = clients.filter(c => {
+    const searchLower = clientSearch.toLowerCase();
+    return (
+      c.firstName.toLowerCase().includes(searchLower) ||
+      c.lastName.toLowerCase().includes(searchLower) ||
+      c.phone.includes(searchLower) ||
+      c.id.includes(searchLower)
+    );
+  });
+
+  const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : null;
 
   const form = useForm<RentalFormData>({
     resolver: zodResolver(rentalSchema),
@@ -67,28 +83,31 @@ export default function AddRental() {
   const handleSubmit = async (data: RentalFormData) => {
     setIsLoading(true);
     try {
-      // TODO: Implement rental addition
-      console.log('Add rental:', data);
+      if (!selectedClientId) {
+        alert('Veuillez sélectionner un client');
+        return;
+      }
 
-      // For now, just navigate back
-      setTimeout(() => {
-        navigate(`/clients/${clientId}`);
-      }, 1000);
+      const rentalData: any = {
+        propertyType: data.propertyType,
+        propertyName: data.propertyName,
+        monthlyRent: Number(data.monthlyRent),
+        startDate: new Date(data.startDate),
+        deposit: {
+          total: Number(data.depositTotal),
+          paid: Number(data.depositPaid || 0),
+          payments: [],
+        },
+      };
+
+      addRental(selectedClientId, rentalData);
+
+      // Navigate back to client
+      navigate(`/clients/${selectedClientId}`);
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (!client) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Client non trouvé</p>
-        <Button onClick={() => navigate('/clients')} className="mt-4">
-          Retour aux clients
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -97,18 +116,80 @@ export default function AddRental() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(`/clients/${clientId}`)}
+          onClick={() => navigate('/rentals')}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground">Ajouter une location</h1>
-          <p className="text-muted-foreground">
-            Pour {client.firstName} {client.lastName}
-          </p>
+          {selectedClient && (
+            <p className="text-muted-foreground">Pour {selectedClient.firstName} {selectedClient.lastName}</p>
+          )}
         </div>
       </div>
+
+      {/* Client Selection Card */}
+      {!selectedClientId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Sélectionner un client</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="client-search" className="text-sm font-medium">
+                Chercher un client (nom, prénom, téléphone ou ID)
+              </label>
+              <Input
+                id="client-search"
+                placeholder="Ex: Amadou, Diallo, +221 77, client-1"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+              />
+            </div>
+
+            {filteredClients.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {filteredClients.length} client(s) trouvé(s)
+                </p>
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {filteredClients.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedClientId(c.id);
+                        setClientSearch('');
+                      }}
+                      className="w-full text-left p-3 rounded-lg border border-input hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <p className="font-medium">{c.firstName} {c.lastName}</p>
+                      <p className="text-sm text-muted-foreground">{c.phone}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : clientSearch.length > 0 ? (
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">
+                  Aucun client trouvé avec "{clientSearch}"
+                </p>
+                <Button
+                  onClick={() => navigate('/clients/add')}
+                  className="bg-secondary hover:bg-secondary/90"
+                  size="sm"
+                >
+                  Créer un nouveau client
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center text-sm text-muted-foreground py-4">
+                Tapez pour chercher un client ou cliquez sur la liste ci-dessous
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Form */}
       <div className="grid gap-6 max-w-2xl">
