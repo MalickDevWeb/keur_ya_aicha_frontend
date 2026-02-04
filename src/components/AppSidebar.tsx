@@ -81,24 +81,26 @@ const menuGroups = [
     items: [
       {
         key: 'documents',
-        label: 'Dossiers Clients',
+        label: '📑 Gest Docs',
         icon: FileText,
         submenu: [
-          { key: 'documentsList', label: 'Contrats signés', path: '/documents' },
-          { key: 'documentsArchive', label: 'Documents', path: '/documents/archive' },
-          { key: 'documentsReceipts', label: 'Reçus PDF', path: '/documents/receipts' },
+          { key: 'documentsAll', label: '📋 Tous les documents', path: '/documents' },
+          { key: 'documentsList', label: '📄 Contrats signés', path: '/documents/contracts' },
+          { key: 'documentsReceipts', label: '🧾 Reçus de paiement', path: '/documents/receipts' },
+          { key: 'documentsArchive', label: '📎 Autres documents', path: '/documents/archive' },
         ]
       },
       {
-        key: 'archive',
-        label: 'Archivage & Blacklist',
+        key: 'archiveAdmin',
+        label: '⚙️ Gest Admin',
         icon: Archive,
         submenu: [
-          { key: 'archiveClients', label: 'Clients archivés', path: '/archive' },
-          { key: 'blacklist', label: 'Blacklist', path: '/blacklist' },
+          { key: 'archiveClients', label: '🗂️ Clients archivés', path: '/archive/clients' },
+          { key: 'blacklist', label: '⛔ Blacklist', path: '/archive/blacklist' },
+          { key: 'settings', label: '⚙️ Paramètres', path: '/settings' },
+          { key: 'work', label: '📋 Travaux à faire', path: '/work' },
         ]
       },
-      { key: 'settings', label: 'Paramètres', path: '/settings', icon: Settings },
     ]
   },
 ];
@@ -145,8 +147,8 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        {menuGroups.map((group) => (
-          <SidebarGroup key={group.label}>
+        {menuGroups.map((group, index) => (
+          <SidebarGroup key={group.label} className={group.label === 'Administration' ? 'mt-8' : ''}>
             {!collapsed && <SidebarGroupLabel className="text-xs text-sidebar-foreground/60">{group.label}</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
@@ -156,7 +158,7 @@ export function AppSidebar() {
                   const activeSubmenu = hasSubmenu && item.submenu.some(sub => isActive(sub.path));
 
                   return (
-                    <SidebarMenuItem key={item.key}>
+                    <SidebarMenuItem key={item.key} className={group.label === 'Administration' && item.key === 'archiveAdmin' ? 'mt-4' : ''}>
                       <SidebarMenuButton
                         onClick={() => {
                           if (hasSubmenu) {

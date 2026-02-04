@@ -54,7 +54,7 @@ export function CardStat({
   return (
     <Card
       className={cn(
-        'relative overflow-hidden transition-all duration-300 border-2 hover:shadow-xl hover:scale-105 backdrop-blur-sm',
+        'relative overflow-hidden transition-all duration-300 border hover:shadow-md hover:scale-102 backdrop-blur-sm',
         `bg-gradient-to-br ${config.bg}`,
         config.border,
         onClick && 'cursor-pointer',
@@ -63,18 +63,18 @@ export function CardStat({
       onClick={onClick}
     >
       {/* Decorative gradient background */}
-      <div className="absolute top-0 right-0 w-24 h-24 opacity-10 dark:opacity-20">
+      <div className="absolute top-0 right-0 w-16 h-16 opacity-5 dark:opacity-10">
         <div className={cn('w-full h-full rounded-full bg-gradient-to-br', config.bg)} />
       </div>
 
-      <CardContent className="p-4 sm:p-6 relative z-10">
-        <div className="flex items-start justify-between">
-          <div className="space-y-3 flex-1">
-            <p className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+      <CardContent className="p-3 sm:p-4 relative z-10">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-2 flex-1 min-w-0">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
               {title}
             </p>
-            <div className="space-y-1">
-              <p className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+            <div className="space-y-0.5">
+              <p className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight break-words">
                 {isCurrency ? (
                   <>
                     {formatCurrency(value).slice(0, -4)}{' '}
@@ -93,16 +93,16 @@ export function CardStat({
           </div>
           <div
             className={cn(
-              'flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shadow-md flex-shrink-0 ml-3',
+              'flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex-shrink-0',
               config.icon
             )}
           >
-            <Icon className="w-7 h-7 sm:w-8 sm:h-8" />
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
 
         {/* Bottom accent line */}
-        <div className={cn('h-1 w-12 rounded-full mt-4', config.accent)} />
+        <div className={cn('h-0.5 w-8 rounded-full mt-3', config.accent)} />
       </CardContent>
     </Card>
   );

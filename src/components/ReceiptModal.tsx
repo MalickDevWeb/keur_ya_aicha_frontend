@@ -112,7 +112,7 @@ export function ReceiptModal({
           </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6 border-t">
+        <DialogFooter className="px-6 pb-6 border-t bg-gray-50 flex justify-end gap-2">
           <Button
             type="button"
             variant="outline"
@@ -125,6 +125,7 @@ export function ReceiptModal({
             type="button"
             variant="outline"
             onClick={handlePrint}
+            className="border-blue-300 text-blue-700 hover:bg-blue-50"
           >
             <Printer className="w-4 h-4 mr-2" />
             Imprimer
@@ -132,10 +133,10 @@ export function ReceiptModal({
           <Button
             type="button"
             onClick={handleDownloadPDF}
-            className="bg-secondary hover:bg-secondary/90"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold"
           >
             <Download className="w-4 h-4 mr-2" />
-            PDF
+            Télécharger PDF
           </Button>
         </DialogFooter>
       </DialogContent>

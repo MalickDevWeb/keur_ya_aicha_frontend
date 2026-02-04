@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Plus, Filter, X, Download } from 'lucide-react';
+import { Eye, Edit, Plus, Filter, X, Download, Grid3x3, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SendDownloadModal from '@/components/SendDownloadModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,16 +37,43 @@ export default function Payments() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('monthly');
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
   // Get all monthly payments with client info
   const allPayments = useMemo(() => {
     const payments: any[] = [];
     clients.forEach((client) => {
+      // Valider que le client a un prénom et nom valides
+      if (!client.firstName || !client.lastName) {
+        console.warn('⚠️ Client sans nom valide ignoré:', client.id);
+        return;
+      }
+
       client.rentals.forEach((rental) => {
+        // Valider que la location a un nom
+        if (!rental.propertyName) {
+          console.warn('⚠️ Location sans nom ignorée:', rental.id);
+          return;
+        }
+
         rental.payments.forEach((payment) => {
+          // Valider que le paiement a les données essentielles
+          if (!payment.id || !payment.amount) {
+            console.warn('⚠️ Paiement invalide ignoré:', payment);
+            return;
+          }
+
+          const clientName = `${client.firstName} ${client.lastName}`.trim();
+
+          // Ignorer si le nom du client est vide
+          if (!clientName || clientName === ' ') {
+            console.warn('⚠️ Paiement avec client invalide ignoré');
+            return;
+          }
+
           payments.push({
             ...payment,
-            clientName: `${client.firstName} ${client.lastName}`,
+            clientName: clientName,
             clientId: client.id,
             rentalId: rental.id,
             propertyName: rental.propertyName,
@@ -56,7 +83,11 @@ export default function Payments() {
         });
       });
     });
-    return payments.sort((a, b) => new Date(b.periodStart).getTime() - new Date(a.periodStart).getTime());
+
+    // Trier et s'assurer qu'il n'y a pas de données invalides
+    return payments
+      .filter(p => p.clientName && p.propertyName && p.clientId)
+      .sort((a, b) => new Date(b.periodStart).getTime() - new Date(a.periodStart).getTime());
   }, [clients]);
 
   // Filter payments
@@ -138,180 +169,266 @@ export default function Payments() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Paiements Mensuels</h1>
-        <Button
-          onClick={() => navigate('/payments/add')}
-          className="bg-secondary hover:bg-secondary/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter un paiement
-        </Button>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Locations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">{stats.paid} payées</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Montant Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(stats.totalAmount / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-muted-foreground mt-1">FCFA</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Payé</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{(stats.paidAmount / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-muted-foreground mt-1">FCFA</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">À Percevoir</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{(stats.remainingAmount / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-muted-foreground mt-1">FCFA</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Rechercher par client, bien..."
-              className="flex-1"
-            />
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(showFilters && 'bg-muted')}
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filtres
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
-                  1
-                </Badge>
-              )}
-            </Button>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-foreground">Paiements Mensuels</h1>
+            <p className="text-muted-foreground mt-1">Gérez et suivez tous les paiements de locations</p>
           </div>
+          <Button
+            onClick={() => navigate('/payments/add')}
+            className="bg-secondary hover:bg-secondary/90 text-white font-bold shadow-md"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter un paiement
+          </Button>
+        </div>
 
-          {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Statut du paiement" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="paid">Payé</SelectItem>
-                  <SelectItem value="partial">Partiel</SelectItem>
-                  <SelectItem value="unpaid">Non payé</SelectItem>
-                  <SelectItem value="late">En retard</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-highlight to-accent shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xs font-semibold text-secondary uppercase tracking-wider">Total Paiements</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-4xl font-black text-foreground">{stats.total}</p>
+                  <p className="text-xs text-muted-foreground mt-2 font-medium">{stats.paid} complètement payés</p>
+                </div>
+                <div className="text-5xl opacity-20">📊</div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  onClick={clearFilters}
-                  className="col-full sm:col-span-2"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Réinitialiser les filtres
-                </Button>
-              )}
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-highlight to-card shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Montant Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-4xl font-black text-foreground">{(stats.totalAmount / 1000).toFixed(0)}<span className="text-lg">K</span></p>
+                  <p className="text-xs text-muted-foreground mt-2 font-medium">FCFA</p>
+                </div>
+                <div className="text-5xl opacity-20">💰</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-highlight to-success shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xs font-semibold text-success uppercase tracking-wider">Montant Payé</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-4xl font-black text-success">{(stats.paidAmount / 1000).toFixed(0)}<span className="text-lg">K</span></p>
+                  <p className="text-xs text-muted-foreground mt-2 font-medium">FCFA</p>
+                </div>
+                <div className="text-5xl opacity-20">✅</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-highlight to-warning shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xs font-semibold text-warning uppercase tracking-wider">À Percevoir</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className={`text-4xl font-black ${stats.remainingAmount > 0 ? 'text-warning' : 'text-success'}`}>
+                    {(stats.remainingAmount / 1000).toFixed(0)}<span className="text-lg">K</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 font-medium">FCFA</p>
+                </div>
+                <div className="text-5xl opacity-20">{stats.remainingAmount > 0 ? '⏳' : '🎉'}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search and View Toggle */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4 border-b bg-card">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Rechercher par client, bien, propriété..."
+                  className="flex-1"
+                />
+                <div className="flex gap-2 border rounded-lg p-1 bg-muted">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="px-2"
+                    title="Vue cartes"
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="px-2"
+                    title="Vue liste"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={cn('w-full sm:w-auto', showFilters && 'bg-muted')}
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filtres
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
+                    1
+                  </Badge>
+                )}
+              </Button>
             </div>
-          )}
-        </CardHeader>
 
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Bien</TableHead>
-                  <TableHead>Période</TableHead>
-                  <TableHead className="text-right">Montant</TableHead>
-                  <TableHead className="text-right">Payé</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPayments.length > 0 ? (
-                  filteredPayments.map((payment) => {
+            {showFilters && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Statut du paiement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    <SelectItem value="paid">✅ Payé</SelectItem>
+                    <SelectItem value="partial">⏳ Partiel</SelectItem>
+                    <SelectItem value="unpaid">❌ Non payé</SelectItem>
+                    <SelectItem value="late">⚠️ En retard</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    className="col-full sm:col-span-2"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Réinitialiser les filtres
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardHeader>
+
+          {/* Cards View */}
+          {viewMode === 'cards' && (
+            <CardContent className="p-6">
+              {filteredPayments.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredPayments.map((payment) => {
                     const { daysLate, isInDerogation } = getPaymentDetails(payment);
                     const isPaid = payment.status === 'paid';
                     const isPartial = payment.status === 'partial';
                     const isLate = payment.status === 'late' || daysLate > 0;
 
+                    let clientName = 'Client inconnu';
+                    if (payment.clientName && payment.clientName.trim() && payment.clientName !== 'undefined undefined') {
+                      clientName = payment.clientName;
+                    } else if (payment.clientId) {
+                      const client = clients.find(c => c.id === payment.clientId);
+                      if (client && client.firstName && client.lastName) {
+                        clientName = `${client.firstName} ${client.lastName}`;
+                      }
+                    }
+
                     return (
-                      <TableRow
+                      <Card
                         key={payment.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        className="overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer border-muted-foreground/20"
                       >
-                        <TableCell className="font-medium">{payment.clientName}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {payment.propertyName}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {format(new Date(payment.periodStart), 'd MMM', { locale: fr })} -{' '}
-                          {format(new Date(payment.periodEnd), 'd MMM yyyy', { locale: fr })}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {(payment.amount).toLocaleString('fr-SN')}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span className={isPaid ? 'text-green-600 font-medium' : isPartial ? 'text-amber-600' : 'text-red-600'}>
-                            {(payment.paidAmount).toLocaleString('fr-SN')}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <BadgeStatut status={payment.status} />
-                            {isInDerogation && (
-                              <Badge variant="outline" className="text-amber-600">
-                                -5j
-                              </Badge>
-                            )}
-                            {isLate && !isInDerogation && (
-                              <Badge variant="outline" className="text-red-600">
-                                +{daysLate}j
-                              </Badge>
-                            )}
+                        {/* Header with status color */}
+                        <div className={`p-4 text-white relative overflow-hidden ${
+                          isPaid ? 'bg-gradient-to-br from-success to-success' :
+                          isPartial ? 'bg-gradient-to-br from-warning to-warning' :
+                          'bg-gradient-to-br from-destructive to-destructive'
+                        }`}>
+                          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform" />
+                          <div className="relative z-10">
+                            <h3 className="font-black text-lg text-white">{clientName}</h3>
+                            <p className="text-white/90 text-sm">{payment.propertyName || 'Bien inconnu'}</p>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-4 space-y-3">
+                          {/* Period */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase">Période</span>
+                            <span className="text-xs bg-muted px-2 py-1 rounded font-medium text-foreground">
+                              {format(new Date(payment.periodStart), 'd MMM', { locale: fr })} → {' '}
+                              {format(new Date(payment.periodEnd), 'd MMM yyyy', { locale: fr })}
+                            </span>
+                          </div>
+
+                          {/* Amounts Grid */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-muted p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground font-semibold">Montant</p>
+                              <p className="text-sm font-black text-foreground">{(payment.amount / 1000).toFixed(0)}K</p>
+                            </div>
+                            <div className="bg-muted p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground font-semibold">Payé</p>
+                              <p className="text-sm font-black text-foreground">{(payment.paidAmount / 1000).toFixed(0)}K</p>
+                            </div>
+                            <div className="bg-muted p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground font-semibold">Reste</p>
+                              <p className="text-sm font-black text-foreground">{((payment.amount - payment.paidAmount) / 1000).toFixed(0)}K</p>
+                            </div>
+                          </div>
+
+                          {/* Status & Late info */}
+                          <div className="flex items-center justify-between pt-2">
+                            <div className="flex gap-2">
+                              <BadgeStatut status={payment.status} size="sm" />
+                              {isInDerogation && (
+                                <Badge variant="outline" className="text-warning font-semibold">
+                                  -5j
+                                </Badge>
+                              )}
+                              {isLate && !isInDerogation && (
+                                <Badge variant="outline" className="text-destructive font-semibold">
+                                  +{daysLate}j
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 pt-3 border-t">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => navigate(`/payments/${payment.rentalId}`)}
-                              title="Voir les détails"
+                              className="flex-1 hover:bg-muted"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-4 h-4 mr-2" />
+                              Voir
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/payments/edit/${payment.id}`)}
+                              className="flex-1 hover:bg-muted"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Éditer
                             </Button>
                             <Button
                               variant="ghost"
@@ -329,33 +446,166 @@ export default function Payments() {
                                 };
                                 setModalDoc(docForPdf);
                               }}
-                              title="Télécharger reçu"
+                              className="hover:bg-muted"
                             >
                               <Download className="w-4 h-4" />
                             </Button>
                           </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-4">📋</div>
+                  <p className="text-foreground font-medium">Aucun paiement trouvé</p>
+                  <p className="text-muted-foreground text-sm mt-1">Ajoutez un nouveau paiement pour commencer</p>
+                </div>
+              )}
+              {filteredPayments.length > 0 && (
+                <div className="mt-6 pt-4 border-t text-center text-sm font-medium text-muted-foreground">
+                  📊 Affichage de {filteredPayments.length} paiement{filteredPayments.length > 1 ? 's' : ''}
+                </div>
+              )}
+            </CardContent>
+          )}
+
+          {/* List View */}
+          {viewMode === 'list' && (
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="font-bold">Client</TableHead>
+                      <TableHead className="font-bold">Bien</TableHead>
+                      <TableHead className="font-bold">Période</TableHead>
+                      <TableHead className="text-right font-bold">Montant</TableHead>
+                      <TableHead className="text-right font-bold">Payé</TableHead>
+                      <TableHead className="font-bold">Statut</TableHead>
+                      <TableHead className="text-right font-bold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPayments.length > 0 ? (
+                      filteredPayments.map((payment) => {
+                        const { daysLate, isInDerogation } = getPaymentDetails(payment);
+                        const isPaid = payment.status === 'paid';
+                        const isPartial = payment.status === 'partial';
+                        const isLate = payment.status === 'late' || daysLate > 0;
+
+                        let clientName = 'Client inconnu';
+                        if (payment.clientName && payment.clientName.trim() && payment.clientName !== 'undefined undefined') {
+                          clientName = payment.clientName;
+                        } else if (payment.clientId) {
+                          const client = clients.find(c => c.id === payment.clientId);
+                          if (client && client.firstName && client.lastName) {
+                            clientName = `${client.firstName} ${client.lastName}`;
+                          }
+                        }
+
+                        return (
+                          <TableRow
+                            key={payment.id}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          >
+                            <TableCell className="font-semibold text-foreground">{clientName}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground font-medium">{payment.propertyName || 'Bien inconnu'}</TableCell>
+                            <TableCell className="text-sm">
+                              <span className="text-xs bg-muted px-2 py-1 rounded font-medium">
+                                {format(new Date(payment.periodStart), 'd MMM', { locale: fr })} → {' '}
+                                {format(new Date(payment.periodEnd), 'd MMM yyyy', { locale: fr })}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-foreground">{(payment.amount / 1000).toFixed(0)}K</TableCell>
+                            <TableCell className="text-right">
+                              <span className={`font-bold text-sm ${isPaid ? 'text-success' : isPartial ? 'text-warning' : 'text-destructive'}`}>
+                                {(payment.paidAmount / 1000).toFixed(0)}K
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <BadgeStatut status={payment.status} size="sm" />
+                                {isInDerogation && (
+                                  <Badge variant="outline" className="text-warning font-semibold">
+                                    -5j
+                                  </Badge>
+                                )}
+                                {isLate && !isInDerogation && (
+                                  <Badge variant="outline" className="text-destructive font-semibold">
+                                    +{daysLate}j
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/payments/${payment.rentalId}`)}
+                                  title="Voir les détails"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/payments/edit/${payment.id}`)}
+                                  title="Éditer le paiement"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const record = payment.payments && payment.payments.length > 0 ? payment.payments[payment.payments.length - 1] : null;
+                                    const client = clients.find(c => c.id === payment.clientId);
+                                    const docForPdf: any = {
+                                      payerName: client ? `${client.firstName} ${client.lastName}` : payment.clientName,
+                                      payerPhone: client?.phone,
+                                      amount: record ? record.amount : payment.paidAmount || payment.amount,
+                                      uploadedAt: record ? record.date : new Date(),
+                                      name: `Reçu-${payment.id}`,
+                                      note: payment.propertyName || '',
+                                    };
+                                    setModalDoc(docForPdf);
+                                  }}
+                                  title="Télécharger reçu"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="text-4xl">📋</div>
+                            <p className="font-medium">Aucun paiement trouvé</p>
+                            <p className="text-xs">Ajoutez un nouveau paiement pour commencer</p>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      Aucun paiement trouvé
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-          {filteredPayments.length > 0 && (
-            <div className="mt-4 text-sm text-muted-foreground">
-              Affichage de {filteredPayments.length} paiement{filteredPayments.length > 1 ? 's' : ''}
-            </div>
+              {filteredPayments.length > 0 && (
+                <div className="px-6 py-3 border-t bg-muted/50 text-xs font-medium text-muted-foreground">
+                  📊 Affichage de {filteredPayments.length} paiement{filteredPayments.length > 1 ? 's' : ''}
+                </div>
+              )}
+            </CardContent>
           )}
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
       <SendDownloadModal document={modalDoc} onClose={() => setModalDoc(null)} />
     </div>
   );

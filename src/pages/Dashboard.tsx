@@ -223,11 +223,11 @@ export default function Dashboard() {
       </div>
 
       {/* Statistics Grid with Enhanced Styling */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 auto-rows-max">
+      <div className="grid gap-3 sm:gap-3 lg:gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 auto-rows-max">
         {statCards.map((stat) => (
           <div
             key={stat.title}
-            className="lg:col-span-1 xl:col-span-1 animate-fade-in"
+            className="animate-fade-in"
           >
             <CardStat
               title={stat.title}
@@ -239,6 +239,29 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* All clients paid message */}
+      {priorityClients.length === 0 && stats.totalRentals > 0 && (
+        <div className="relative overflow-hidden">
+          <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-green-600 dark:text-green-400">
+                    ✨ Tous les clients ont payé !
+                  </h3>
+                  <p className="text-sm text-green-600/80 dark:text-green-400/80 mt-1">
+                    Excellent travail ! Aucun paiement en attente pour le moment.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Priority Clients Table */}
       {priorityClients.length > 0 && (

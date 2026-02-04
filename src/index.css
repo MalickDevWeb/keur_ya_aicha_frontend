@@ -119,6 +119,212 @@
     --sidebar-border: 217 50% 20%;
     --sidebar-ring: 195 75% 85%;
   }
+
+  /* Additional theme: Orange (accentuated warm palette) */
+  .theme-orange {
+    --background: 30 95% 98%;
+    --foreground: 24 95% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 24 95% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 95% 10%;
+
+    /* Primary: Warm orange */
+    --primary: 28 90% 45%; /* #ff7a00 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Deep orange */
+    --secondary: 28 80% 35%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 30 100% 96%;
+    --muted-foreground: 24 60% 25%;
+
+    --accent: 25 90% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --highlight: 30 95% 85%;
+    --highlight-foreground: 24 95% 10%;
+
+    /* Status colors */
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 28 100% 50%; /* orange */
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 95% 92%;
+    --input: 30 95% 92%;
+    --ring: 28 90% 45%;
+
+    --sidebar-background: 24 95% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 30 95% 85%;
+    --sidebar-primary-foreground: 24 95% 10%;
+    --sidebar-accent: 28 80% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 24 50% 20%;
+    --sidebar-ring: 30 95% 85%;
+  }
+
+  /* Additional theme: Dark / Noir (high contrast dark theme) */
+  .theme-dark {
+    --background: 220 15% 6%; /* very dark */
+    --foreground: 0 0% 96%;
+
+    --card: 220 15% 10%;
+    --card-foreground: 0 0% 96%;
+
+    --popover: 220 15% 10%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 0 0% 100%; /* white as accent */
+    --primary-foreground: 220 15% 6%;
+
+    --secondary: 30 100% 50%; /* use orange accent on dark */
+    --secondary-foreground: 0 0% 6%;
+
+    --muted: 220 15% 12%;
+    --muted-foreground: 0 0% 80%;
+
+    --accent: 28 90% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --highlight: 28 90% 30%;
+    --highlight-foreground: 0 0% 100%;
+
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 28 100% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 12%;
+    --input: 220 15% 12%;
+    --ring: 28 90% 45%;
+
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 28 90% 45%;
+    --sidebar-primary-foreground: 0 0% 6%;
+    --sidebar-accent: 30 95% 85%;
+    --sidebar-accent-foreground: 220 15% 6%;
+    --sidebar-border: 220 15% 10%;
+    --sidebar-ring: 28 90% 45%;
+  }
+
+  /* Additional theme: Clinique (Noir + Orange, medical) */
+  .theme-clinic {
+    /* Core */
+    --background: 210 20% 98%;   /* #f8f9fa */
+    --foreground: 0 0% 10%;      /* #1a1a1a */
+
+    /* Surface */
+    --card: 0 0% 100%;           /* #ffffff */
+    --card-foreground: 0 0% 10%; /* #1a1a1a */
+
+    /* Primary / Accent */
+    /* Primary: #ff6b2c */
+    --primary: 18 100% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 10%;      /* #1a1a1a */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 96%;          /* #f3f4f6 */
+    --muted-foreground: 220 8% 46%; /* #6b7280 */
+
+    --accent: 20 100% 94%;      /* #fff3ed */
+    --accent-foreground: 0 0% 10%;
+
+    --highlight: 20 100% 94%;
+
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 96% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 69% 51%;   /* #dc2626 */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Charts */
+    --chart-1: 18 100% 59%;   /* #ff6b2c */
+    --chart-2: 216 92% 60%;  /* #3b82f6 */
+    --chart-3: 162 86% 40%;  /* #10b981 */
+    --chart-4: 260 90% 67%;  /* #8b5cf6 */
+    --chart-5: 38 96% 50%;   /* #f59e0b */
+
+    --border: 0 0% 92%;      /* approx rgba(0,0,0,0.08) */
+    --input: 0 0% 92%;
+    --ring: 18 100% 59%;     /* focus ring uses primary */
+
+    --sidebar-background: 0 0% 10%; /* #1a1a1a */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%; /* #2d2d2d */
+    --sidebar-accent-foreground: 0 0% 100%;
+
+    --switch-background: 0 0% 92%; /* #e5e7eb */
+
+    --radius: 0.625rem; /* 10px */
+  }
+
+  /* Additional theme: Gris / Blanc (neutral light) */
+  .theme-gray {
+    --background: 0 0% 100%;
+    --foreground: 210 5% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 5% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 5% 12%;
+
+    --primary: 210 6% 16%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 8% 24%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 98%;
+    --muted-foreground: 210 8% 70%;
+
+    --accent: 210 8% 24%;
+    --accent-foreground: 0 0% 100%;
+
+    --highlight: 0 0% 96%;
+    --highlight-foreground: 210 5% 12%;
+
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 10% 88%;
+    --input: 210 10% 88%;
+    --ring: 210 6% 16%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 210 5% 12%;
+    --sidebar-primary: 0 0% 96%;
+    --sidebar-primary-foreground: 210 5% 12%;
+    --sidebar-accent: 210 8% 24%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 10% 88%;
+    --sidebar-ring: 0 0% 96%;
+  }
 }
 
 @layer base {

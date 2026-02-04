@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Building2 } from 'lucide-react';
+import { Building2, Landmark } from 'lucide-react';
 
 interface ReceiptProps {
   type: 'payment' | 'deposit';
@@ -41,20 +41,25 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
         className="w-full max-w-2xl bg-white p-8 text-gray-900"
         style={{ fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif' }}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8 pb-4 border-b-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+        {/* Header with Logo */}
+        <div className="flex items-start justify-between mb-8 pb-6 border-b-2 border-blue-200">
+          <div className="flex items-center gap-4">
+            {/* Elegant Logo */}
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+                <Landmark className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestion Locative</h1>
-              <p className="text-sm text-gray-500">KeurYa Aïcha - Dakar</p>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Keur Ya Aïcha</h1>
+              <p className="text-sm font-semibold text-blue-600">Gestion Immobilière Professionnelle</p>
+              <p className="text-xs text-gray-500 mt-1">📍 Dakar, Sénégal</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-semibold">REÇU {isPayment ? 'DE PAIEMENT' : 'DE CAUTION'}</p>
-            <p className="text-xs text-gray-500">N° {receiptNumber}</p>
+          <div className="text-right bg-blue-50 px-4 py-3 rounded-lg border border-blue-200">
+            <p className="text-xs font-semibold text-blue-700 uppercase tracking-widest mb-1">Reçu {isPayment ? 'de Paiement' : 'de Caution'}</p>
+            <p className="text-lg font-bold text-gray-900">#{receiptNumber}</p>
           </div>
         </div>
 
@@ -150,18 +155,22 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
         </div>
 
         {/* Footer */}
-        <div className="border-t-2 pt-6 text-center text-xs text-gray-600">
-          <p className="mb-2">
-            Merci pour votre paiement. Ce reçu confirme la transaction mentionnée ci-dessus.
+        <div className="border-t-2 pt-6 text-center">
+          <div className="bg-green-50 border-l-4 border-green-600 p-4 rounded mb-4">
+            <p className="text-sm font-semibold text-green-800 mb-1">✓ Paiement Reçu</p>
+            <p className="text-xs text-gray-600">
+              Merci pour votre confiance. Ce reçu officiel valide la transaction mentionnée.
+            </p>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">
+            Généré le {format(now, 'dd MMMM yyyy à HH:mm', { locale: fr })}
           </p>
-          <p className="text-gray-400">
-            Généré le {format(now, 'dd/MM/yyyy à HH:mm', { locale: fr })}
-          </p>
+          <p className="text-xs text-gray-400 mt-2">© 2026 Keur Ya Aïcha - Tous droits réservés</p>
         </div>
 
         {/* Print Instruction */}
         <div className="mt-6 pt-6 border-t text-center text-xs text-gray-400 print:hidden">
-          <p>Imprimez ou enregistrez en PDF pour conserver une copie</p>
+          <p>💡 Imprimez ou téléchargez en PDF pour conserver une copie de ce reçu</p>
         </div>
       </div>
     );

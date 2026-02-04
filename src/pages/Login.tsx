@@ -1,10 +1,11 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, Lock, Volume2, VolumeX, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { User, Lock, Volume2, VolumeX, Eye, EyeOff, ArrowRight, Loader } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 // ─── 1. Validation schema ────────────────────────────────────────────
 const loginSchema = z.object({
@@ -124,6 +125,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const { addToast } = useToast();
 
   const [isMuted, setIsMuted] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -176,12 +178,30 @@ export default function LoginPage() {
     try {
       const success = await login(data.nomUtilisateur, data.motDePasse);
       if (success) {
+        addToast({
+          type: 'success',
+          title: 'Connexion réussie',
+          message: `Bienvenue !`,
+          duration: 2000,
+        });
         navigate("/dashboard", { replace: true });
       } else {
-        setLoginError("Identifiants invalides");
+        const msg = "Identifiants invalides";
+        setLoginError(msg);
+        addToast({
+          type: 'error',
+          title: 'Erreur de connexion',
+          message: msg,
+        });
       }
     } catch (e: any) {
-      setLoginError(e.message || "Erreur lors de la connexion");
+      const msg = e.message || "Erreur lors de la connexion";
+      setLoginError(msg);
+      addToast({
+        type: 'error',
+        title: 'Erreur',
+        message: msg,
+      });
     } finally {
       setLoading(false);
     }
@@ -570,8 +590,16 @@ export default function LoginPage() {
                   (e.currentTarget as any).style.transform = "translateY(0)";
                   (e.currentTarget as any).style.boxShadow = "0 4px 22px rgba(15,40,84,.3)";
                 }}
+                disabled={loading}
               >
-                {loading ? "Connexion…" : <>Se connecter <ArrowRight size={20} /></>}
+                {loading ? (
+                  <>
+                    <Loader size={20} className="animate-spin mr-2" />
+                    Connexion…
+                  </>
+                ) : (
+                  <>Se connecter <ArrowRight size={20} /></>
+                )}
               </button>
             </form>
 

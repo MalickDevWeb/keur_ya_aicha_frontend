@@ -132,7 +132,21 @@ export function DataProvider({ children }: DataProviderProps) {
     try {
       const dtos: ClientDTO[] = await fetchClients();
       console.log(`🔄 [DataContext] Loaded ${dtos.length} clients from API`);
-      const parsed = dtos.map(d => transformClientDTO(d));
+      const parsed = dtos.map(d => transformClientDTO(d))
+        .filter(client => {
+          // Filtrer les clients avec des noms invalides
+          if (!client.firstName || !client.lastName) {
+            console.warn(`⚠️ [DataContext] Filtered out client with invalid name: ${client.id}`);
+            return false;
+          }
+          return true;
+        });
+
+      const invalidCount = dtos.length - parsed.length;
+      if (invalidCount > 0) {
+        console.warn(`⚠️ [DataContext] Filtered out ${invalidCount} clients with invalid data`);
+      }
+
       setClients(parsed);
       setStats(calculateDashboardStats(parsed));
       console.log('✅ [DataContext] State updated with fetched clients');
@@ -152,11 +166,19 @@ export function DataProvider({ children }: DataProviderProps) {
   }, [reloadClients]);
 
   function transformClientDTO(dto: ClientDTO): Client {
+    // Valider les données du client
+    const firstName = dto.firstName && typeof dto.firstName === 'string' ? dto.firstName.trim() : '';
+    const lastName = dto.lastName && typeof dto.lastName === 'string' ? dto.lastName.trim() : '';
+
+    if (!firstName || !lastName) {
+      console.warn(`⚠️ [DataContext] Client ${dto.id} has invalid name:`, { firstName, lastName });
+    }
+
     return {
       id: dto.id,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      phone: dto.phone,
+      firstName: firstName,
+      lastName: lastName,
+      phone: dto.phone || '',
       cni: dto.cni || '',
       status: (dto.status as any) || 'active',
       createdAt: new Date(dto.createdAt),
@@ -164,11 +186,18 @@ export function DataProvider({ children }: DataProviderProps) {
         id: r.id,
         clientId: r.clientId,
         propertyType: (r.propertyType as any) || 'other',
-        propertyName: r.propertyName,
-        monthlyRent: r.monthlyRent,
+        propertyName: r.propertyName || 'Bien inconnu',
+        monthlyRent: r.monthlyRent || 0,
         startDate: new Date(r.startDate),
         deposit: r.deposit || { total: 0, paid: 0, payments: [] },
-        payments: r.payments || [],
+        payments: (r.payments || []).filter((p: any) => {
+          // Valider que chaque paiement a les données essentielles
+          if (!p.id || p.amount === undefined || p.amount === null) {
+            console.warn(`⚠️ [DataContext] Payment ${p.id} has invalid data:`, p);
+            return false;
+          }
+          return true;
+        }),
         documents: (r.documents || []).map((doc: any) => ({
           id: doc.id,
           name: doc.name,

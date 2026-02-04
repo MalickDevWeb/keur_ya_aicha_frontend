@@ -1,8 +1,12 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { loginUser } from '@/services/api';
 
 interface User {
+  id: string;
   username: string;
   name: string;
+  email: string;
+  role: string;
 }
 
 interface AuthContextType {
@@ -14,43 +18,45 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo credentials
-const DEMO_CREDENTIALS = {
-  username: 'admin',
-  password: 'admin123',
-  name: 'Administrateur',
-};
-
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('auth_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+
+  // Try to restore user session from sessionStorage (temporary session only, not localStorage)
+  useEffect(() => {
+    const saved = sessionStorage.getItem('auth_user');
+    if (saved) {
+      try {
+        setUser(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse saved user:', e);
+        sessionStorage.removeItem('auth_user');
+      }
+    }
+  }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
-      const userData: User = {
-        username: DEMO_CREDENTIALS.username,
-        name: DEMO_CREDENTIALS.name,
-      };
-      setUser(userData);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
-      return true;
+    try {
+      const userData = await loginUser(username, password);
+      if (userData) {
+        setUser(userData);
+        // Store in sessionStorage only (temporary, not persistent)
+        sessionStorage.setItem('auth_user', JSON.stringify(userData));
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Login error:', e);
+      return false;
     }
-
-    return false;
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('auth_user');
+    sessionStorage.removeItem('auth_user');
   }, []);
 
   return (

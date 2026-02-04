@@ -29,18 +29,65 @@ import { useData } from '@/contexts/DataContext';
 import { PropertyType, formatCurrency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } from '@/lib/pdfUtils';
+import { formatPhoneNumber, formatCNI, formatName } from '@/validators/clientValidator';
+
+// Validation helpers
+const validateSenegalNumber = (phone: string): boolean => {
+  const cleaned = phone.replace(/\s|-/g, '')
+  const patterns = [
+    /^\+22177\d{7}$/,
+    /^\+22178\d{7}$/,
+    /^77\d{7}$/,
+    /^78\d{7}$/,
+  ]
+  return patterns.some(pattern => pattern.test(cleaned))
+}
+
+const validateCNI = (cni: string): boolean => {
+  const cleaned = cni.replace(/\s|-/g, '')
+  return /^[A-Z0-9]{13}$/.test(cleaned)
+}
+
+const validateName = (name: string): boolean => {
+  const trimmed = name.trim()
+  if (trimmed.length < 2) return false
+  if (trimmed.length > 50) return false
+  return /^[a-zA-ZÀ-ÿ\s\-']+$/.test(trimmed)
+}
+
+const validatePropertyName = (name: string): boolean => {
+  const trimmed = name.trim()
+  if (trimmed.length < 1) return false
+  if (trimmed.length > 100) return false
+  return /^[a-zA-Z0-9À-ÿ\s\-',/#]+$/.test(trimmed)
+}
 
 const formSchema = z.object({
-  lastName: z.string().min(2, 'Minimum 2 caractères'),
-  firstName: z.string().min(2, 'Minimum 2 caractères'),
-  phone: z.string().min(8, 'Numéro de téléphone invalide'),
-  cni: z.string().min(5, 'CNI invalide'),
+  lastName: z
+    .string()
+    .min(1, 'Le nom est requis')
+    .refine(validateName, 'Le nom doit contenir au moins 2 lettres (pas de chiffres)'),
+  firstName: z
+    .string()
+    .min(1, 'Le prénom est requis')
+    .refine(validateName, 'Le prénom doit contenir au moins 2 lettres (pas de chiffres)'),
+  phone: z
+    .string()
+    .min(1, 'Le numéro de téléphone est requis')
+    .refine(validateSenegalNumber, 'Numéro sénégalais invalide. Format: +221 77 123 45 67'),
+  cni: z
+    .string()
+    .min(1, 'La CNI est requise')
+    .refine(validateCNI, 'La CNI doit contenir 13 caractères alphanumériques'),
   propertyType: z.enum(['studio', 'room', 'apartment', 'villa', 'other']),
-  propertyName: z.string().min(2, 'Minimum 2 caractères'),
-  startDate: z.string().min(1, 'Date requise'),
-  monthlyRent: z.number().min(1000, 'Montant minimum 1000'),
-  totalDeposit: z.number().min(0, 'Montant invalide'),
-  paidDeposit: z.number().min(0, 'Montant invalide'),
+  propertyName: z
+    .string()
+    .min(1, 'Le nom du bien est requis')
+    .refine(validatePropertyName, 'Le nom du bien est invalide'),
+  startDate: z.string().min(1, 'La date de début est requise'),
+  monthlyRent: z.number().min(1000, 'Le loyer minimum est 1000'),
+  totalDeposit: z.number().min(0, 'La caution totale invalide'),
+  paidDeposit: z.number().min(0, 'La caution payée invalide'),
 }).refine((data) => data.paidDeposit <= data.totalDeposit, {
   message: 'La caution payée ne peut pas dépasser le total',
   path: ['paidDeposit'],

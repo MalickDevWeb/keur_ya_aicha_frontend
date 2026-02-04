@@ -4,12 +4,34 @@ import { MonthlyPaymentDTO } from '@/dto/PaymentDTO'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+// Helper function to handle HTTP errors
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    // Handle authentication errors
+    if (res.status === 401) {
+      // Clear session and redirect to login (will be handled by context)
+      throw new Error('Unauthorized: Session has expired. Please log in again')
+    }
+    if (res.status === 403) {
+      throw new Error('Access forbidden')
+    }
+    if (res.status === 404) {
+      throw new Error('Resource not found')
+    }
+    if (res.status >= 500) {
+      throw new Error('Server error. Please try again later')
+    }
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.message || `HTTP Error: ${res.status}`)
+  }
+  return res.json()
+}
+
 export async function fetchClients(): Promise<ClientDTO[]> {
   console.log('📡 [API] GET /clients')
   try {
     const res = await fetch(`${API_BASE}/clients`)
-    if (!res.ok) throw new Error('Failed to fetch clients')
-    const data = await res.json()
+    const data = await handleResponse(res)
     console.log(`✅ [API] Fetched ${data.length} clients`)
     return data
   } catch (error) {
@@ -22,8 +44,7 @@ export async function fetchDocuments(): Promise<DocumentDTO[]> {
   console.log('📡 [API] GET /documents')
   try {
     const res = await fetch(`${API_BASE}/documents`)
-    if (!res.ok) throw new Error('Failed to fetch documents')
-    const data = await res.json()
+    const data = await handleResponse(res)
     console.log(`✅ [API] Fetched ${data.length} documents`)
     return data
   } catch (error) {
@@ -40,8 +61,7 @@ export async function postDocument(doc: Partial<DocumentDTO>) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(doc),
     })
-    if (!res.ok) throw new Error('Failed to post document')
-    const data = await res.json()
+    const data = await handleResponse(res)
     console.log('✅ [API] Document posted:', data)
     return data
   } catch (error) {
@@ -54,8 +74,7 @@ export async function deleteDocument(id: string) {
   console.log('📡 [API] DELETE /documents/' + id)
   try {
     const res = await fetch(`${API_BASE}/documents/${id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error('Failed to delete document')
-    const data = await res.json()
+    const data = await handleResponse(res)
     console.log('✅ [API] Document deleted')
     return data
   } catch (error) {
@@ -72,8 +91,7 @@ export async function createClient(client: Partial<ClientDTO>) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(client),
     })
-    if (!res.ok) throw new Error('Failed to create client')
-    const data = await res.json()
+    const data = await handleResponse(res)
     console.log('✅ [API] Client created:', data)
     return data
   } catch (error) {
@@ -90,8 +108,7 @@ export async function updateClient(id: string, data: Partial<ClientDTO>) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
-    if (!res.ok) throw new Error('Failed to update client')
-    const updatedData = await res.json()
+    const updatedData = await handleResponse(res)
     console.log('✅ [API] Client updated:', updatedData)
     return updatedData
   } catch (error) {
@@ -105,8 +122,7 @@ export async function postPaymentRecord(rentalId: string, paymentId: string, amo
   try {
     // First, update the nested payment inside the matching client -> rental -> payments
     const clientsRes = await fetch(`${API_BASE}/clients`)
-    if (!clientsRes.ok) throw new Error('Failed to fetch clients for payment processing')
-    const clients = await clientsRes.json()
+    const clients = await handleResponse(clientsRes)
 
     const client = clients.find(
       (c: any) => Array.isArray(c.rentals) && c.rentals.some((r: any) => r.id === rentalId)
@@ -144,8 +160,7 @@ export async function postPaymentRecord(rentalId: string, paymentId: string, amo
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(client),
     })
-    if (!putRes.ok) throw new Error('Failed to update client with payment')
-    const updatedClient = await putRes.json()
+    const updatedClient = await handleResponse(putRes)
     console.log('✅ [API] Client updated with payment:', { clientId: client.id, paymentId, amount })
 
     // Also append a flat payment record for audit/history in /payments collection
@@ -161,8 +176,8 @@ export async function postPaymentRecord(rentalId: string, paymentId: string, amo
           date: receipt.date,
         }),
       })
-      if (!res.ok) console.warn('⚠️ [API] Warning: failed to append flat payment record')
-      else console.log('✅ [API] Flat payment record appended')
+      const paymentRecord = await handleResponse(res)
+      console.log('✅ [API] Flat payment record appended')
     } catch (e) {
       console.warn('⚠️ [API] Could not append flat payment record', e)
     }
@@ -431,6 +446,147 @@ export async function uploadDocumentAndSave(
     return await postDocument(doc)
   } catch (error) {
     console.error('❌ [API] Error uploading document and saving:', error)
+    throw error
+  }
+}
+// Auth API
+export interface AuthUser {
+  id: string
+  username: string
+  name: string
+  email: string
+  role: string
+}
+
+export async function loginUser(username: string, password: string): Promise<AuthUser | null> {
+  console.log('📡 [API] POST /users (login)')
+  try {
+    const res = await fetch(`${API_BASE}/users?username=${username}&password=${password}`)
+    if (!res.ok) throw new Error('Failed to fetch user')
+    const data = await res.json()
+    if (data.length === 0) return null
+    const user = data[0]
+    console.log('✅ [API] User authenticated:', user.username)
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    }
+  } catch (error) {
+    console.error('❌ [API] Error logging in:', error)
+    throw error
+  }
+}
+
+// Settings API
+export async function getSetting(key: string): Promise<string | null> {
+  console.log(`📡 [API] GET /settings?key=${key}`)
+  try {
+    const res = await fetch(`${API_BASE}/settings?key=${key}`)
+    if (!res.ok) throw new Error('Failed to fetch setting')
+    const data = await res.json()
+    if (data.length === 0) return null
+    console.log(`✅ [API] Got setting ${key}:`, data[0].value)
+    return data[0].value
+  } catch (error) {
+    console.error(`❌ [API] Error fetching setting ${key}:`, error)
+    throw error
+  }
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  console.log(`📡 [API] PATCH /settings (${key}=${value})`)
+  try {
+    const res = await fetch(`${API_BASE}/settings?key=${key}`)
+    if (!res.ok) throw new Error('Failed to fetch existing setting')
+    const data = await res.json()
+    if (data.length === 0) {
+      // Create new setting
+      const newRes = await fetch(`${API_BASE}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: key, key, value }),
+      })
+      if (!newRes.ok) throw new Error('Failed to create setting')
+      console.log(`✅ [API] Created setting ${key}:`, value)
+    } else {
+      // Update existing setting
+      const settingId = data[0].id
+      const updateRes = await fetch(`${API_BASE}/settings/${settingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value }),
+      })
+      if (!updateRes.ok) throw new Error('Failed to update setting')
+      console.log(`✅ [API] Updated setting ${key}:`, value)
+    }
+  } catch (error) {
+    console.error(`❌ [API] Error setting ${key}:`, error)
+    throw error
+  }
+}
+
+// Work Items API
+export async function getWorkItems() {
+  console.log('📡 [API] GET /work_items')
+  try {
+    const res = await fetch(`${API_BASE}/work_items`)
+    if (!res.ok) throw new Error('Failed to fetch work items')
+    const data = await res.json()
+    console.log(`✅ [API] Fetched ${data.length} work items`)
+    return data
+  } catch (error) {
+    console.error('❌ [API] Error fetching work items:', error)
+    throw error
+  }
+}
+
+export async function postWorkItem(item: any) {
+  console.log('📡 [API] POST /work_items:', item)
+  try {
+    const res = await fetch(`${API_BASE}/work_items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    })
+    if (!res.ok) throw new Error('Failed to post work item')
+    const data = await res.json()
+    console.log('✅ [API] Work item posted:', data)
+    return data
+  } catch (error) {
+    console.error('❌ [API] Error posting work item:', error)
+    throw error
+  }
+}
+
+export async function updateWorkItem(id: string, item: any) {
+  console.log('📡 [API] PATCH /work_items/' + id, item)
+  try {
+    const res = await fetch(`${API_BASE}/work_items/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    })
+    if (!res.ok) throw new Error('Failed to update work item')
+    const data = await res.json()
+    console.log('✅ [API] Work item updated:', data)
+    return data
+  } catch (error) {
+    console.error('❌ [API] Error updating work item:', error)
+    throw error
+  }
+}
+
+export async function deleteWorkItem(id: string) {
+  console.log('📡 [API] DELETE /work_items/' + id)
+  try {
+    const res = await fetch(`${API_BASE}/work_items/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to delete work item')
+    console.log('✅ [API] Work item deleted')
+  } catch (error) {
+    console.error('❌ [API] Error deleting work item:', error)
     throw error
   }
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
 export type Language = 'fr' | 'en';
 
@@ -91,6 +91,21 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'detail.amount': 'Montant',
     'detail.paidAmount': 'Payé',
     'detail.remaining': 'Reste',
+
+    // Archive page
+    'archive.title': 'Clients Archivés',
+    'archive.description': 'Clients archivés et inactifs',
+    'archive.totalArchived': 'Total Archivés',
+    'archive.activeClients': 'Clients Actifs',
+    'archive.propertiesArchived': 'Propriétés Archivées',
+    'archive.table.fullName': 'Nom Complet',
+    'archive.table.phone': 'Téléphone',
+    'archive.table.cni': 'CNI',
+    'archive.table.properties': 'Propriétés',
+    'archive.table.archivedDate': "Date d'Archivage",
+    'archive.table.status': 'Statut',
+    'archive.table.actions': 'Actions',
+    'archive.empty': 'Aucun client archivé',
 
     // Payments
     'payment.add': 'Ajouter un paiement',
@@ -216,6 +231,21 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     'detail.paidAmount': 'Paid',
     'detail.remaining': 'Remaining',
 
+    // Archive page
+    'archive.title': 'Archived Clients',
+    'archive.description': 'Archived and inactive clients',
+    'archive.totalArchived': 'Total Archived',
+    'archive.activeClients': 'Active Clients',
+    'archive.propertiesArchived': 'Properties Archived',
+    'archive.table.fullName': 'Full name',
+    'archive.table.phone': 'Phone',
+    'archive.table.cni': 'ID Number',
+    'archive.table.properties': 'Properties',
+    'archive.table.archivedDate': 'Archived Date',
+    'archive.table.status': 'Status',
+    'archive.table.actions': 'Actions',
+    'archive.empty': 'No archived clients',
+
     // Payments
     'payment.add': 'Add Payment',
     'payment.amount': 'Amount',
@@ -268,14 +298,31 @@ interface I18nProviderProps {
 }
 
 export function I18nProvider({ children }: I18nProviderProps) {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('language');
-    return (saved as Language) || 'fr';
-  });
+  const [language, setLanguage] = useState<Language>('fr');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load language from server on mount
+  useEffect(() => {
+    async function loadLanguage() {
+      try {
+        const { getSetting } = await import('@/services/api');
+        const savedLang = await getSetting('language');
+        setLanguage((savedLang as Language) || 'fr');
+      } catch (e) {
+        console.error('Failed to load language:', e);
+        setLanguage('fr');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadLanguage();
+  }, []);
 
   const handleSetLanguage = useCallback((lang: Language) => {
     setLanguage(lang);
-    localStorage.setItem('language', lang);
+    // Save to server
+    const { setSetting } = require('@/services/api');
+    setSetting('language', lang).catch((e: any) => console.error('Failed to save language:', e));
   }, []);
 
   const t = useCallback(
@@ -284,6 +331,10 @@ export function I18nProvider({ children }: I18nProviderProps) {
     },
     [language]
   );
+
+  if (isLoading) {
+    return <div />;
+  }
 
   return (
     <I18nContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>

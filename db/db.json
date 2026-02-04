@@ -1,312 +1,225 @@
 {
   "clients": [
     {
+      "id": "client-1",
+      "status": "active",
+      "firstName": "Amadou",
+      "lastName": "Diallo",
+      "phone": "+221779876543",
+      "cni": "123456789",
+      "email": "amadou.diallo@email.com",
+      "address": "Plateau, Dakar",
+      "createdAt": "2026-01-15T10:30:00Z",
       "rentals": [
         {
-          "id": "client-1-rental-0",
+          "id": "a7lvuzclili",
           "clientId": "client-1",
           "propertyType": "apartment",
-          "propertyName": "Appartement A1",
+          "propertyName": "Appt 2 chambres Plateau",
           "monthlyRent": 150000,
-          "startDate": "2025-06-01T00:00:00.000Z",
+          "startDate": "2026-02-03T00:00:00.000Z",
           "deposit": {
             "total": 300000,
-            "paid": 300000,
-            "payments": [
-              {
-                "id": "dep-1",
-                "amount": 300000,
-                "date": "2025-06-01T00:00:00.000Z",
-                "receiptNumber": "DEP-202506-ABC123"
-              }
-            ]
+            "paid": 150000,
+            "payments": []
           },
           "payments": [
             {
-              "id": "pay-1",
-              "rentalId": "client-1-rental-0",
-              "periodStart": "2025-06-01T00:00:00.000Z",
-              "periodEnd": "2025-06-30T23:59:59.000Z",
-              "dueDate": "2025-07-05T00:00:00.000Z",
+              "id": "79w8sz98n5e",
+              "rentalId": "a7lvuzclili",
+              "periodStart": "2026-02-03T00:00:00.000Z",
+              "periodEnd": "2026-03-02T00:00:00.000Z",
+              "dueDate": "2026-03-07T00:00:00.000Z",
               "amount": 150000,
               "paidAmount": 150000,
               "status": "paid",
               "payments": [
                 {
-                  "id": "rec-1",
+                  "id": "stgbdaoh",
                   "amount": 150000,
-                  "date": "2025-06-05T10:00:00.000Z",
-                  "receiptNumber": "REC-202506-XYZ001"
-                }
-              ]
-            },
-            {
-              "id": "pay-2",
-              "rentalId": "client-1-rental-0",
-              "periodStart": "2025-07-01T00:00:00.000Z",
-              "periodEnd": "2025-07-31T23:59:59.000Z",
-              "dueDate": "2025-08-05T00:00:00.000Z",
-              "amount": 150000,
-              "paidAmount": 150000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "f4y0itwo",
-                  "amount": 150000,
-                  "date": "2026-02-02T14:25:48.879Z",
-                  "receiptNumber": "REC-1770042348879"
+                  "date": "2026-02-04T03:54:55.917Z",
+                  "receiptNumber": "REC-1770177295918"
                 }
               ]
             }
           ],
-          "documents": []
-        },
-        {
-          "id": "5xvt4d80dg9",
-          "clientId": "client-1",
-          "propertyType": "room",
-          "propertyName": "Appartement A1",
-          "monthlyRent": 11000,
-          "startDate": "2026-02-02T00:00:00.000Z",
-          "deposit": {
-            "total": 100000,
-            "paid": 100000,
-            "payments": [
-              {
-                "id": "a6osw6gw",
-                "amount": 100000,
-                "date": "2026-02-02T15:00:31.207Z",
-                "receiptNumber": "DEP-1770044431207"
-              }
-            ]
-          },
-          "payments": [
+          "documents": [
             {
-              "id": "kjgibnx77v",
-              "rentalId": "5xvt4d80dg9",
-              "periodStart": "2026-02-02T00:00:00.000Z",
-              "periodEnd": "2026-03-01T00:00:00.000Z",
-              "dueDate": "2026-03-06T00:00:00.000Z",
-              "amount": 11000,
-              "paidAmount": 11000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "itveor5m",
-                  "amount": 11000,
-                  "date": "2026-02-02T14:28:45.889Z",
-                  "receiptNumber": "REC-1770042525889"
-                }
-              ]
+              "id": "9i0z2wmlekg",
+              "name": "ggggggggggg",
+              "type": "contract",
+              "url": "https://res.cloudinary.com/djp423xyr/image/upload/v1770175246/doc6nwzsaf1u9c7ivsqt.pdf",
+              "signed": true,
+              "uploadedAt": "2026-02-04T03:20:45.738Z"
             }
-          ],
-          "documents": []
-        }
-      ],
-      "id": "client-1"
-    },
-    {
-      "id": "client-2",
-      "firstName": "Fatou",
-      "lastName": "Sow",
-      "phone": "+221 78 234 56 78",
-      "cni": "2345678901234",
-      "status": "active",
-      "createdAt": "2025-08-01T08:00:00.000Z",
-      "rentals": [
-        {
-          "id": "client-2-rental-0",
-          "clientId": "client-2",
-          "propertyType": "villa",
-          "propertyName": "Villa Palmier",
-          "monthlyRent": 300000,
-          "startDate": "2025-08-01T00:00:00.000Z",
-          "deposit": {
-            "total": 600000,
-            "paid": 300000,
-            "payments": [
-              {
-                "id": "dep-2",
-                "amount": 300000,
-                "date": "2025-08-01T00:00:00.000Z",
-                "receiptNumber": "DEP-202508-DEF456"
-              }
-            ]
-          },
-          "payments": [
-            {
-              "id": "pay-3",
-              "rentalId": "client-2-rental-0",
-              "periodStart": "2025-08-01T00:00:00.000Z",
-              "periodEnd": "2025-08-31T23:59:59.000Z",
-              "dueDate": "2025-09-05T00:00:00.000Z",
-              "amount": 300000,
-              "paidAmount": 300000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "rec-2",
-                  "amount": 300000,
-                  "date": "2025-08-10T11:30:00.000Z",
-                  "receiptNumber": "REC-202508-XYZ002"
-                }
-              ]
-            }
-          ],
-          "documents": []
+          ]
         }
       ]
     },
     {
-      "firstName": "TestClientUpdated",
+      "rentals": [
+        {
+          "id": "c9iyq5961j4",
+          "clientId": "client-2",
+          "propertyType": "apartment",
+          "propertyName": "Appartement A1",
+          "monthlyRent": 17000,
+          "startDate": "2026-02-04T00:00:00.000Z",
+          "deposit": {
+            "total": 1000,
+            "paid": 0,
+            "payments": []
+          },
+          "payments": [
+            {
+              "id": "fhfbhuq1h3",
+              "rentalId": "c9iyq5961j4",
+              "periodStart": "2026-02-04T00:00:00.000Z",
+              "periodEnd": "2026-03-03T00:00:00.000Z",
+              "dueDate": "2026-03-08T00:00:00.000Z",
+              "amount": 17000,
+              "paidAmount": 0,
+              "status": "unpaid",
+              "payments": []
+            }
+          ],
+          "documents": [
+            {
+              "id": "big55crf077",
+              "name": "ggg",
+              "type": "contract",
+              "url": "https://res.cloudinary.com/djp423xyr/image/upload/v1770175267/kpfyfmpbq4jmosqrjzwi.png",
+              "uploadedAt": "2026-02-04T03:21:07.244Z",
+              "signed": false
+            },
+            {
+              "id": "00vk1xr8iq1ue",
+              "name": "hhhhhhhh",
+              "type": "contract",
+              "url": "https://res.cloudinary.com/djp423xyr/image/upload/v1770177951/ku4ysrsmop3ki73wvmso.png",
+              "signed": true,
+              "uploadedAt": "2026-02-04T04:05:50.691Z"
+            }
+          ]
+        }
+      ],
+      "id": "client-2"
+    },
+    {
+      "rentals": [
+        {
+          "id": "rental-ahmadou-001",
+          "clientId": "client-test-123",
+          "propertyType": "house",
+          "propertyName": "Maison Kaolack",
+          "monthlyRent": 200000,
+          "startDate": "2025-01-10T00:00:00.000Z",
+          "deposit": {
+            "total": 400000,
+            "paid": 400000,
+            "payments": []
+          },
+          "payments": [],
+          "documents": [
+            {
+              "id": "7n8q8wdx209",
+              "name": "Image collée.png",
+              "type": "contract",
+              "url": "https://res.cloudinary.com/djp423xyr/image/upload/v1770177323/wkzjjtf6uexvvaufsd7f.png",
+              "signed": false,
+              "uploadedAt": "2026-02-04T03:55:23.162Z"
+            }
+          ]
+        }
+      ],
       "id": "client-test-123"
     },
     {
-      "id": "client-test-123",
-      "firstName": "TestClient",
-      "lastName": "FromAPI",
-      "phone": "+221 77 999 99 99",
-      "cni": "9999999999999",
-      "status": "active",
-      "createdAt": "2025-02-02T10:00:00.000Z",
+      "status": "archived",
+      "id": "2n6i5vp3iaz",
+      "firstName": "Hawa",
+      "lastName": "Ndiaye",
+      "phone": "+221775678901",
+      "cni": "654321987",
+      "email": "hawa.ndiaye@email.com",
+      "address": "Saint-Louis, Senegal",
+      "createdAt": "2024-11-05T11:20:00Z",
       "rentals": []
     },
     {
-      "id": "client-test-123",
-      "firstName": "TestClient",
-      "lastName": "FromAPI",
-      "phone": "+221 77 999 99 99",
-      "cni": "9999999999999",
+      "status": "archived",
+      "id": "u1fih15bmjl",
+      "firstName": "Cheikh",
+      "lastName": "Mbaye",
+      "phone": "+221774567890",
+      "cni": "789123456",
+      "email": "cheikh.mbaye@email.com",
+      "address": "Kolda, Senegal",
+      "createdAt": "2024-09-22T16:45:00Z",
+      "rentals": []
+    },
+    {
       "status": "active",
-      "createdAt": "2025-02-02T10:00:00.000Z",
+      "id": "blacklist-1"
+    },
+    {
+      "status": "blacklisted",
+      "id": "blacklist-2",
+      "firstName": "Dieynaba",
+      "lastName": "Toure",
+      "phone": "+221772345678",
+      "cni": "222333444",
+      "email": "dieynaba.toure@email.com",
+      "address": "Rufisque, Senegal",
+      "createdAt": "2024-07-22T10:45:00Z",
+      "rentals": []
+    },
+    {
+      "status": "blacklisted",
+      "id": "blacklist-3",
+      "firstName": "Ousmane",
+      "lastName": "Fall",
+      "phone": "+221773456789",
+      "cni": "333444555",
+      "email": "ousmane.fall@email.com",
+      "address": "Guédiawaye, Senegal",
+      "createdAt": "2024-06-10T15:30:00Z",
       "rentals": []
     }
   ],
   "documents": [],
   "payments": [
     {
-      "id": "payment-test-123",
-      "rentalId": "rental-1",
-      "paymentId": "monthly-1",
-      "amount": 150000
-    },
-    {
-      "id": "payment-test-123",
-      "rentalId": "rental-1",
-      "paymentId": "monthly-1",
-      "amount": 150000
-    },
-    {
-      "id": "payment-test-123",
-      "rentalId": "rental-1",
-      "paymentId": "monthly-1",
-      "amount": 150000
-    },
-    {
-      "id": "6bdb",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "2938",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "47fc",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "6416",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 15000
-    },
-    {
-      "id": "5658",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "8957",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "2ac9",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "92a8",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "66a9",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "5979",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "cd4c",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
-      "amount": 150000
-    },
-    {
-      "id": "efe8",
-      "rentalId": "client-1-rental-0",
-      "paymentId": "pay-2",
+      "id": "c74e",
+      "rentalId": "a7lvuzclili",
+      "paymentId": "79w8sz98n5e",
       "amount": 150000,
-      "receiptId": "f4y0itwo",
-      "date": "2026-02-02T14:25:48.879Z"
-    },
-    {
-      "id": "7df8",
-      "rentalId": "5xvt4d80dg9",
-      "paymentId": "kjgibnx77v",
-      "amount": 11000,
-      "receiptId": "itveor5m",
-      "date": "2026-02-02T14:28:45.889Z"
+      "receiptId": "stgbdaoh",
+      "date": "2026-02-04T03:54:55.917Z"
     }
   ],
-  "deposits": [
+  "deposits": [],
+  "users": [
     {
-      "id": "deposit-test-123",
-      "rentalId": "rental-1",
-      "amount": 300000
-    },
-    {
-      "id": "deposit-test-123",
-      "rentalId": "rental-1",
-      "amount": 300000
-    },
-    {
-      "id": "deposit-test-123",
-      "rentalId": "rental-1",
-      "amount": 300000
-    },
-    {
-      "id": "702d",
-      "rentalId": "5xvt4d80dg9",
-      "amount": 100000,
-      "receiptId": "a6osw6gw",
-      "date": "2026-02-02T15:00:31.207Z"
+      "id": "user-admin",
+      "username": "admin",
+      "password": "admin123",
+      "name": "Administrateur",
+      "email": "admin@keuryaaisha.com",
+      "role": "admin"
     }
-  ]
+  ],
+  "settings": [
+    {
+      "id": "app-theme",
+      "key": "app_theme",
+      "value": "light"
+    },
+    {
+      "id": "app-language",
+      "key": "language",
+      "value": "fr"
+    }
+  ],
+  "work_items": []
 }
