@@ -47,15 +47,30 @@ export async function generatePdfForDocument(doc: any) {
     imgEl.alt = 'Logo'
     header.appendChild(imgEl)
   } catch (e) {
-    const brandSvg = `
-      <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-        <rect width="72" height="72" rx="12" fill="#0ea5a4" />
-        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" fill="#ffffff">KY</text>
-      </svg>
-    `
-    const logoWrapper = document.createElement('div')
-    logoWrapper.innerHTML = brandSvg
-    header.appendChild(logoWrapper)
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.setAttribute('width', '72')
+    svg.setAttribute('height', '72')
+    svg.setAttribute('viewBox', '0 0 72 72')
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+    rect.setAttribute('width', '72')
+    rect.setAttribute('height', '72')
+    rect.setAttribute('rx', '12')
+    rect.setAttribute('fill', '#0ea5a4')
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+    text.setAttribute('x', '50%')
+    text.setAttribute('y', '52%')
+    text.setAttribute('dominant-baseline', 'middle')
+    text.setAttribute('text-anchor', 'middle')
+    text.setAttribute('font-size', '28')
+    text.setAttribute('font-family', 'Arial, sans-serif')
+    text.setAttribute('fill', '#ffffff')
+    text.textContent = 'KY'
+
+    svg.appendChild(rect)
+    svg.appendChild(text)
+    header.appendChild(svg)
   }
 
   const title = document.createElement('div')
@@ -84,19 +99,43 @@ export async function generatePdfForDocument(doc: any) {
 
   const left = document.createElement('div')
   left.style.maxWidth = '60%'
-  left.innerHTML = `
-    <div style="font-size:14px; font-weight:600;">Payeur</div>
-    <div style="margin-top:6px; font-size:13px">${doc.payerName || doc.clientName || ''}</div>
-    <div style="margin-top:8px; font-size:12px; color:#64748b">${doc.payerPhone || doc.clientPhone || ''}</div>
-  `
+  const leftTitle = document.createElement('div')
+  leftTitle.style.fontSize = '14px'
+  leftTitle.style.fontWeight = '600'
+  leftTitle.textContent = 'Payeur'
+  const leftName = document.createElement('div')
+  leftName.style.marginTop = '6px'
+  leftName.style.fontSize = '13px'
+  leftName.textContent = doc.payerName || doc.clientName || ''
+  const leftPhone = document.createElement('div')
+  leftPhone.style.marginTop = '8px'
+  leftPhone.style.fontSize = '12px'
+  leftPhone.style.color = '#64748b'
+  leftPhone.textContent = doc.payerPhone || doc.clientPhone || ''
+  left.appendChild(leftTitle)
+  left.appendChild(leftName)
+  left.appendChild(leftPhone)
 
   const right = document.createElement('div')
   right.style.textAlign = 'right'
-  right.innerHTML = `
-    <div style="font-size:12px; color:#64748b">Montant</div>
-    <div style="font-size:20px; font-weight:700; color:#0f172a; margin-top:6px">${(doc.amount || doc.value || 0).toLocaleString('fr-FR')} FCFA</div>
-    <div style="font-size:12px; color:#64748b; margin-top:8px">Date: ${new Date(doc.uploadedAt || Date.now()).toLocaleDateString('fr-FR')}</div>
-  `
+  const rightTitle = document.createElement('div')
+  rightTitle.style.fontSize = '12px'
+  rightTitle.style.color = '#64748b'
+  rightTitle.textContent = 'Montant'
+  const rightAmount = document.createElement('div')
+  rightAmount.style.fontSize = '20px'
+  rightAmount.style.fontWeight = '700'
+  rightAmount.style.color = '#0f172a'
+  rightAmount.style.marginTop = '6px'
+  rightAmount.textContent = `${(doc.amount || doc.value || 0).toLocaleString('fr-FR')} FCFA`
+  const rightDate = document.createElement('div')
+  rightDate.style.fontSize = '12px'
+  rightDate.style.color = '#64748b'
+  rightDate.style.marginTop = '8px'
+  rightDate.textContent = `Date: ${new Date(doc.uploadedAt || Date.now()).toLocaleDateString('fr-FR')}`
+  right.appendChild(rightTitle)
+  right.appendChild(rightAmount)
+  right.appendChild(rightDate)
 
   content.appendChild(left)
   content.appendChild(right)
@@ -106,7 +145,16 @@ export async function generatePdfForDocument(doc: any) {
   if (doc.note) {
     const note = document.createElement('div')
     note.style.marginTop = '18px'
-    note.innerHTML = `<div style="font-size:12px; color:#64748b">Note</div><div style="margin-top:6px; font-size:13px">${doc.note}</div>`
+    const noteTitle = document.createElement('div')
+    noteTitle.style.fontSize = '12px'
+    noteTitle.style.color = '#64748b'
+    noteTitle.textContent = 'Note'
+    const noteBody = document.createElement('div')
+    noteBody.style.marginTop = '6px'
+    noteBody.style.fontSize = '13px'
+    noteBody.textContent = doc.note
+    note.appendChild(noteTitle)
+    note.appendChild(noteBody)
     wrapper.appendChild(note)
   }
 

@@ -7,10 +7,12 @@ interface Props {
 }
 
 export default function PrivateAdminRoute({ children }: Props) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
+  if (isLoading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.username !== 'admin') return <Navigate to="/dashboard" replace />;
+  const role = String(user.role || '').toUpperCase();
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return <Navigate to="/dashboard" replace />;
 
   return children;
 }

@@ -8,9 +8,11 @@ export type ClientStatus = 'active' | 'archived' | 'blacklisted';
 
 export interface Client {
   id: string;
+  adminId?: string;
   firstName: string;
   lastName: string;
   phone: string;
+  email?: string;
   cni: string;
   status: ClientStatus;
   createdAt: Date;

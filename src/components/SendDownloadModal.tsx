@@ -4,6 +4,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { downloadBlob, generatePdfForDocument, shareBlobViaWebShare, uploadBlobToFileIo } from '@/lib/pdfUtils';
 import { useElectronAPI } from '@/hooks/useElectronAPI';
 
+// Dynamic import for os module (only available in Node.js/Electron context)
+const getHomeDir = async (): Promise<string> => {
+  try {
+    // @ts-ignore - os module is not typed in browser context
+    const os = await import('os');
+    return os.homedir();
+  } catch {
+    // Fallback for browser environment
+    return '/tmp';
+  }
+};
+
 interface Props {
   document: any | null;
   onClose: () => void;
@@ -80,7 +92,10 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
 
   const handleSendWhatsapp = async () => {
     // Open a blank window synchronously to avoid popup blockers, then navigate it later
-    const win = window.open('', '_blank');
+    const win = window.open('', '_blank', 'noopener,noreferrer');
+    if (win) {
+      try { win.opener = null; } catch {}
+    }
     try {
       setGenerating(true);
       console.log('🔄 handleSendWhatsapp: Début');
@@ -106,20 +121,44 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       if (!shared) {
         console.log('📤 Web Share unavailable or rejected, uploading to file.io...');
         try {
+          const allowUpload = window.confirm('Partager un lien nécessite un envoi du document vers un service externe. Continuer ?');
+          if (!allowUpload) {
+            console.log('⚠️ Upload refused by user, opening WhatsApp without link');
+            const text = `Voici le document ${doc.name || ''}`;
+            const webUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            if (win) win.location.href = webUrl;
+            else {
+              const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
+              if (popup) {
+                try { popup.opener = null; } catch {}
+              }
+            }
+            return;
+          }
           const link = await uploadBlobToFileIo(blob, `${doc.name || 'document'}.pdf`);
           console.log('✅ Upload successful:', link);
           const text = `Voici le document ${doc.name || ''} : ${link}`;
           console.log('📱 Navigating WhatsApp Web with link');
           const webUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
           if (win) win.location.href = webUrl;
-          else window.open(webUrl, '_blank');
+          else {
+            const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
+            if (popup) {
+              try { popup.opener = null; } catch {}
+            }
+          }
         } catch (uploadError: any) {
           console.error('❌ Upload failed:', uploadError?.message);
           console.log('🆘 Fallback: Opening WhatsApp without link');
           const text = `Voici le document ${doc.name || ''}`;
           const webUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
           if (win) win.location.href = webUrl;
-          else window.open(webUrl, '_blank');
+          else {
+            const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
+            if (popup) {
+              try { popup.opener = null; } catch {}
+            }
+          }
         }
       } else {
         console.log('✅ Web Share succeeded');
@@ -156,7 +195,8 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       };
 
       const typeFolderName = (typeMap as any)[docType] || docType;
-      const folderPath = `${require('os').homedir()}/Documents/KeurYaAicha_Documents/${typeFolderName}/${clientPhone}`;
+      const homeDir = await getHomeDir();
+      const folderPath = `${homeDir}/Documents/KeurYaAicha_Documents/${typeFolderName}/${clientPhone}`;
 
       await openFolder(folderPath);
     } catch (e: any) {

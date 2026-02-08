@@ -51,35 +51,32 @@ frontend/
 │   ├── pages/        # Pages de l'application
 │   ├── services/     # Services API
 │   └── validators/   # Validation Zod
-├── docs/             # Documentation détaillée
+├── docs/             # Documentation
 ├── templates/        # Modèles (CSV, Excel)
 └── server/          # Serveur Node.js
 ```
+
+## ✨ Fonctionnalités
+
+| Module | Fonctionnalités |
+|--------|-----------------|
+| **Authentification** | Login/Logout, session sécurisée |
+| **Gestion Clients** | Créer, modifier, archiver, blacklister |
+| **Locations** | Ajouter locations, suivre baux |
+| **Paiements** | Enregistrer paiements, historique |
+| **Dépôts** | Suivre dépôts de garantie |
+| **Documents** | Upload/download PDF & images |
+| **Paramètres** | Thème, langue |
 
 ## 📚 Documentation
 
 Voir le dossier [`docs/`](docs/) pour la documentation détaillée:
 
-| Fichier                                    | Description                      |
-| ------------------------------------------ | -------------------------------- |
-| [`docs/README.md`](docs/README.md)         | Guide principal                  |
-| [`docs/CLOUDINARY.md`](docs/CLOUDINARY.md) | Upload photos/PDF via Cloudinary |
-| [`docs/LOGGING.md`](docs/LOGGING.md)       | Système de logging et débogage   |
-| [`docs/PALETTE.md`](docs/PALETTE.md)       | Thèmes et couleurs               |
-| [`docs/API.md`](docs/API.md)               | Documentation API                |
-| [`docs/VALIDATION.md`](docs/VALIDATION.md) | Validation des formulaires       |
-
-## ✨ Fonctionnalités
-
-| Module               | Fonctionnalités                        |
-| -------------------- | -------------------------------------- |
-| **Authentification** | Login/Logout, session sécurisée        |
-| **Gestion Clients**  | Créer, modifier, archiver, blacklister |
-| **Locations**        | Ajouter locations, suivre baux         |
-| **Paiements**        | Enregistrer paiements, historique      |
-| **Dépôts**           | Suivre dépôts de garantie              |
-| **Documents**        | Upload/download PDF & images           |
-| **Paramètres**       | Thème, langue                          |
+- [`docs/CLOUDINARY.md`](docs/CLOUDINARY.md) - Upload photos/PDF via Cloudinary
+- [`docs/LOGGING.md`](docs/LOGGING.md) - Guide du système de logging
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - Architecture technique
+- [`docs/API.md`](docs/API.md) - Documentation API
+- [`docs/VALIDATION.md`](docs/VALIDATION.md) - Validation des formulaires
 
 ## 🛠️ Technologies
 
@@ -100,19 +97,6 @@ VITE_API_URL=http://localhost:4001
 VITE_CLOUDINARY_CLOUD_NAME=...
 VITE_CLOUDINARY_API_KEY=...
 VITE_CLOUDINARY_UPLOAD_PRESET=...
-```
-
-## 🧪 Tests
-
-```bash
-# Lancer les tests
-bun test
-
-# Tests unitaires
-bun run test:unit
-
-# Tests d'intégration
-bun run test:integration
 ```
 
 ## 📄 Licence

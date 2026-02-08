@@ -44,9 +44,14 @@ export function ReceiptModal({
 
   const handlePrint = () => {
     if (receiptRef.current) {
-      const printWindow = window.open('', '', 'width=800,height=600');
+      const printWindow = window.open('', '_blank', 'width=800,height=600,noopener,noreferrer');
       if (printWindow) {
-        printWindow.document.write(receiptRef.current.innerHTML);
+        try {
+          printWindow.opener = null;
+        } catch {}
+        const cloned = receiptRef.current.cloneNode(true);
+        printWindow.document.body.innerHTML = '';
+        printWindow.document.body.appendChild(cloned);
         printWindow.document.close();
         printWindow.print();
       }
@@ -71,11 +76,37 @@ export function ReceiptModal({
         const shared = await shareBlobViaWebShare(blob, `${docForPdf.name || 'recu'}.pdf`, `Reçu: ${docForPdf.name}`);
         if (!shared) {
           try {
+            const allowUpload = window.confirm('Partager un lien nécessite un envoi du PDF vers un service externe. Continuer ?');
+            if (!allowUpload) {
+              const win = window.open(
+                `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`,
+                '_blank',
+                'noopener,noreferrer'
+              );
+              if (win) {
+                try { win.opener = null; } catch {}
+              }
+              return;
+            }
             const { uploadBlobToFileIo } = await import('@/lib/pdfUtils');
             const link = await uploadBlobToFileIo(blob, `${docForPdf.name || 'recu'}.pdf`);
-            window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}: ${link}`)}`, '_blank');
+            const win = window.open(
+              `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}: ${link}`)}`,
+              '_blank',
+              'noopener,noreferrer'
+            );
+            if (win) {
+              try { win.opener = null; } catch {}
+            }
           } catch (e) {
-            window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`, '_blank');
+            const win = window.open(
+              `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`,
+              '_blank',
+              'noopener,noreferrer'
+            );
+            if (win) {
+              try { win.opener = null; } catch {}
+            }
           }
         }
       } catch (e: any) {

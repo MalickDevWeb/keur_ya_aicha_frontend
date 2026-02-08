@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Users, Home, CheckCircle, AlertCircle, Clock, Wallet, ArrowRight, DollarSign } from 'lucide-react';
+import { Users, Home, CheckCircle, AlertCircle, Clock, Wallet, ArrowRight, DollarSign, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { calculatePaymentStatus, formatCurrency, PaymentStatus, Client, Rental }
 interface OverdueClient {
   client: Client;
   rental: Rental;
+  payment: any;
   paymentStatus: PaymentStatus;
   amountDue: number;
   daysOverdue: number;
@@ -46,36 +47,44 @@ export default function Dashboard() {
         rental.payments.forEach((payment) => {
           const status = calculatePaymentStatus(payment);
 
-          if (status === 'unpaid' || status === 'late') {
-            const dueDate = new Date(payment.dueDate);
-            const today = new Date();
-            const daysOverdue = Math.floor(
-              (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
+          if (status === 'paid') return;
 
-            overdueList.push({
-              client,
-              rental,
-              paymentStatus: status,
-              amountDue: payment.amount - payment.paidAmount,
-              daysOverdue: Math.max(0, daysOverdue),
-            });
-          }
+          const amountDue = Math.max(0, payment.amount - payment.paidAmount);
+          if (amountDue <= 0) return;
+
+          const dueDate = payment.dueDate ? new Date(payment.dueDate) : null;
+          const today = new Date();
+          const daysOverdue =
+            dueDate && !Number.isNaN(dueDate.getTime())
+              ? Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+              : 0;
+
+          overdueList.push({
+            client,
+            rental,
+            payment,
+            paymentStatus: status,
+            amountDue,
+            daysOverdue: Math.max(0, daysOverdue),
+          });
         });
       });
     });
 
-    // Sort: unpaid first (priority with red color), then late (by days overdue)
+    // Sort: late first, then unpaid, then partial; tie-breaker by amount due
     return overdueList.sort((a, b) => {
-      if (a.paymentStatus === 'unpaid' && b.paymentStatus !== 'unpaid') return -1;
-      if (a.paymentStatus !== 'unpaid' && b.paymentStatus === 'unpaid') return 1;
-      if (a.paymentStatus === 'unpaid' && b.paymentStatus === 'unpaid') {
-        return b.amountDue - a.amountDue; // Higher amount first
-      }
+      const priorityOrder: Record<PaymentStatus, number> = {
+        late: 0,
+        unpaid: 1,
+        partial: 2,
+        paid: 3,
+      };
+      const prioDiff = priorityOrder[a.paymentStatus] - priorityOrder[b.paymentStatus];
+      if (prioDiff !== 0) return prioDiff;
       if (a.paymentStatus === 'late' && b.paymentStatus === 'late') {
-        return b.daysOverdue - a.daysOverdue; // More days overdue first
+        return b.daysOverdue - a.daysOverdue;
       }
-      return 0;
+      return b.amountDue - a.amountDue;
     });
   }, [clients]);
 
@@ -89,15 +98,11 @@ export default function Dashboard() {
       amountDue: item.amountDue,
     });
 
-    const payment = item.rental.payments.find(p =>
-      calculatePaymentStatus(p) === item.paymentStatus
-    );
-
-    console.log('🔵 [Dashboard] Found payment object:', payment);
+    console.log('🔵 [Dashboard] Found payment object:', item.payment);
 
     setSelectedPayment({
       item,
-      payment,
+      payment: item.payment,
       maxAmount: item.amountDue,
     });
     setPaymentModalOpen(true);
@@ -116,7 +121,7 @@ export default function Dashboard() {
       const { payment, item } = selectedPayment;
 
       console.log('🟢 [Dashboard] Paying total:', {
-        rentalId: payment.rentalId,
+        rentalId: item.rental.id,
         paymentId: payment.id,
         amount: selectedPayment.maxAmount,
         payment: payment,
@@ -124,7 +129,7 @@ export default function Dashboard() {
 
       // Enregistrer le paiement complet
       await addMonthlyPayment(
-        payment.rentalId,
+        item.rental.id,
         payment.id,
         selectedPayment.maxAmount
       );
@@ -151,14 +156,14 @@ export default function Dashboard() {
       const { payment, item } = selectedPayment;
 
       console.log('🔵 [Dashboard] Paying partial:', {
-        rentalId: payment.rentalId,
+        rentalId: item.rental.id,
         paymentId: payment.id,
         amount: amount,
       });
 
       // Enregistrer le paiement partiel
       await addMonthlyPayment(
-        payment.rentalId,
+        item.rental.id,
         payment.id,
         amount
       );
@@ -215,11 +220,22 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-black text-foreground">{t('dashboard.title')}</h1>
-        <p className="text-base text-muted-foreground">
-          {t('auth.welcome')}, <span className="font-semibold text-foreground">Administrateur</span>
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-foreground">{t('dashboard.title')}</h1>
+          <p className="text-base text-muted-foreground">
+            {t('auth.welcome')}, <span className="font-semibold text-foreground">Administrateur</span>
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/import/clients')}>
+            <Upload className="w-4 h-4 mr-2" />
+            Importer Excel
+          </Button>
+          <Button onClick={() => navigate('/clients/add')} className="bg-secondary hover:bg-secondary/90">
+            Ajouter client
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Grid with Enhanced Styling */}
@@ -317,9 +333,7 @@ export default function Dashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {new Date(item.rental.payments.find(p =>
-                          calculatePaymentStatus(p) === item.paymentStatus
-                        )?.periodStart || new Date()).toLocaleDateString('fr-FR', {
+                        {new Date(item.payment?.periodStart || new Date()).toLocaleDateString('fr-FR', {
                           month: 'short',
                           year: 'numeric',
                         })}

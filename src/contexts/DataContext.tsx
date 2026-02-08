@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Client, Rental, MonthlyPayment, DashboardStats, PaymentRecord, DepositPayment, PaymentStatus, Document } from '@/lib/types';
 
-import { fetchClients, createClient as apiCreateClient, updateClient as apiUpdateClient, postPaymentRecord, postDepositPayment, postDocument as apiPostDocument, deleteDocument as apiDeleteDocument, uploadToCloudinary } from '@/services/api';
+import { fetchClients, createClient as apiCreateClient, updateClient as apiUpdateClient, deleteClient as apiDeleteClient, postPaymentRecord, postDepositPayment, postDocument as apiPostDocument, deleteDocument as apiDeleteDocument, updateMonthlyPayment as apiUpdateMonthlyPayment, uploadToCloudinary } from '@/services/api';
+import { normalizeEmailForCompare, normalizePhoneForCompare, validateEmail, validateName, validateSenegalNumber } from '@/validators/clientValidator';
 import { ClientDTO } from '@/dto/ClientDTO';
 import { addMonths, addDays } from 'date-fns';
 
@@ -111,9 +112,11 @@ interface DataContextType {
   getClient: (id: string) => Client | undefined;
   addRental: (clientId: string, rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>) => Promise<void>;
   addMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => Promise<void>;
+  editMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => Promise<void>;
   addDepositPayment: (rentalId: string, amount: number) => Promise<void>;
   addDocument: (clientId: string, rentalId: string, doc: { name: string; type: 'contract' | 'receipt' | 'other'; signed?: boolean; file?: File | null }) => Promise<void>;
   deleteDocument: (clientId: string, rentalId: string, docId: string) => Promise<void>;
+  deleteClient: (clientId: string) => Promise<void>;
   refreshStats: () => void;
 }
 
@@ -170,15 +173,18 @@ export function DataProvider({ children }: DataProviderProps) {
     const firstName = dto.firstName && typeof dto.firstName === 'string' ? dto.firstName.trim() : '';
     const lastName = dto.lastName && typeof dto.lastName === 'string' ? dto.lastName.trim() : '';
 
-    if (!firstName || !lastName) {
-      console.warn(`⚠️ [DataContext] Client ${dto.id} has invalid name:`, { firstName, lastName });
+    // Only log invalid names in development (non-production)
+    if ((!firstName || !lastName) && import.meta.env.DEV) {
+      console.debug(`⚠️ [DataContext] Client ${dto.id} has invalid name:`, { firstName, lastName });
     }
 
     return {
       id: dto.id,
+      adminId: dto.adminId,
       firstName: firstName,
       lastName: lastName,
       phone: dto.phone || '',
+      email: dto.email || '',
       cni: dto.cni || '',
       status: (dto.status as any) || 'active',
       createdAt: new Date(dto.createdAt),
@@ -219,6 +225,41 @@ export function DataProvider({ children }: DataProviderProps) {
   ): Promise<Client> => {
     console.log('🟦 [DataContext] addClient called:', clientData);
 
+    const firstName = (clientData.firstName || '').trim();
+    const lastName = (clientData.lastName || '').trim();
+    const phone = (clientData.phone || '').trim();
+    const email = (clientData.email || '').trim();
+
+    if (!firstName || !validateName(firstName)) {
+      throw new Error('Prénom invalide');
+    }
+    if (!lastName || !validateName(lastName)) {
+      throw new Error('Nom invalide');
+    }
+    if (!phone || !validateSenegalNumber(phone)) {
+      throw new Error('Numéro de téléphone invalide');
+    }
+    if (email && !validateEmail(email)) {
+      throw new Error('Email invalide');
+    }
+
+    const normalizedPhone = normalizePhoneForCompare(phone);
+    const normalizedEmail = email ? normalizeEmailForCompare(email) : '';
+    if (normalizedPhone) {
+      const dup = clients.find((c) => normalizePhoneForCompare(c.phone || '') === normalizedPhone);
+      if (dup) {
+        console.warn('⚠️ [DataContext] Duplicate phone detected:', clientData.phone);
+        throw new Error('Client existe déjà avec ce numéro.');
+      }
+    }
+    if (normalizedEmail) {
+      const dup = clients.find((c) => normalizeEmailForCompare(c.email || '') === normalizedEmail);
+      if (dup) {
+        console.warn('⚠️ [DataContext] Duplicate email detected:', clientData.email);
+        throw new Error('Client existe déjà avec cet email.');
+      }
+    }
+
     const clientId = generateId();
     const rentalId = generateId();
     const startDate = clientData.rental.startDate;
@@ -250,9 +291,10 @@ export function DataProvider({ children }: DataProviderProps) {
 
     const newClient: Client = {
       id: clientId,
-      firstName: clientData.firstName,
-      lastName: clientData.lastName,
-      phone: clientData.phone,
+      firstName,
+      lastName,
+      phone,
+      email,
       cni: clientData.cni,
       status: clientData.status,
       createdAt: new Date(),
@@ -286,6 +328,16 @@ export function DataProvider({ children }: DataProviderProps) {
       console.log('✅ [DataContext] Clients reloaded after update');
     } catch (e) {
       console.error('❌ [DataContext] Failed to update client via API', e);
+      throw e;
+    }
+  }, [reloadClients]);
+
+  const deleteClient = useCallback(async (clientId: string): Promise<void> => {
+    try {
+      await apiDeleteClient(clientId);
+      await reloadClients();
+    } catch (e) {
+      console.error('❌ [DataContext] Failed to delete client via API', e);
       throw e;
     }
   }, [reloadClients]);
@@ -348,6 +400,19 @@ export function DataProvider({ children }: DataProviderProps) {
       console.log('✅ [DataContext] Clients reloaded after payment');
     } catch (e) {
       console.error('❌ [DataContext] Failed to post payment record via API', e);
+      throw e;
+    }
+  }, [reloadClients]);
+
+  const editMonthlyPayment = useCallback(async (rentalId: string, paymentId: string, amount: number): Promise<void> => {
+    console.log('🟦 [DataContext] editMonthlyPayment called:', { rentalId, paymentId, amount });
+    try {
+      await apiUpdateMonthlyPayment(rentalId, paymentId, amount);
+      console.log('✅ [DataContext] Monthly payment corrected via API');
+      await reloadClients();
+      console.log('✅ [DataContext] Clients reloaded after payment correction');
+    } catch (e) {
+      console.error('❌ [DataContext] Failed to update monthly payment via API', e);
       throw e;
     }
   }, [reloadClients]);
@@ -424,7 +489,7 @@ export function DataProvider({ children }: DataProviderProps) {
   }, [reloadClients]);
 
   return (
-    <DataContext.Provider value={{ clients, stats, addClient, updateClient, archiveClient, blacklistClient, getClient, addRental, addMonthlyPayment, addDepositPayment, addDocument, deleteDocument, refreshStats }}>
+    <DataContext.Provider value={{ clients, stats, addClient, updateClient, archiveClient, blacklistClient, getClient, addRental, addMonthlyPayment, editMonthlyPayment, addDepositPayment, addDocument, deleteDocument, deleteClient, refreshStats }}>
       {children}
     </DataContext.Provider>
   );

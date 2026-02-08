@@ -155,9 +155,23 @@ export default function Payments() {
         try {
           const { uploadBlobToFileIo } = await import('@/lib/pdfUtils');
           const link = await uploadBlobToFileIo(blob, `${docForPdf.name || 'recu'}.pdf`);
-          window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${docForPdf.payerName}: ${link}`)}`, '_blank');
+          const win = window.open(
+            `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${docForPdf.payerName}: ${link}`)}`,
+            '_blank',
+            'noopener,noreferrer'
+          );
+          if (win) {
+            try { win.opener = null; } catch {}
+          }
         } catch (e) {
-          window.open(`https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${docForPdf.payerName}`)}`, '_blank');
+          const win = window.open(
+            `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${docForPdf.payerName}`)}`,
+            '_blank',
+            'noopener,noreferrer'
+          );
+          if (win) {
+            try { win.opener = null; } catch {}
+          }
         }
       }
     } catch (e: any) {

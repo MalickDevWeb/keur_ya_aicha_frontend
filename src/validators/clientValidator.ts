@@ -8,7 +8,7 @@ import { z } from 'zod'
  * Validate Senegalese phone number
  * Accepts: +221 77 123 45 67 or 77123456 or 771234567 or +22177123456
  */
-const validateSenegalNumber = (phone: string): boolean => {
+export const validateSenegalNumber = (phone: string): boolean => {
   // Remove all spaces and hyphens
   const cleaned = phone.replace(/\s|-/g, '')
 
@@ -29,7 +29,7 @@ const validateSenegalNumber = (phone: string): boolean => {
  * Validate CNI (Carte Nationale d'Identité Sénégalaise)
  * Should be 13 digits only (for now)
  */
-const validateCNI = (cni: string): boolean => {
+export const validateCNI = (cni: string): boolean => {
   const cleaned = cni.replace(/\s|-/g, '')
   return /^[0-9]{13}$/.test(cleaned)
 }
@@ -39,7 +39,7 @@ const validateCNI = (cni: string): boolean => {
  * Only letters (including accented ones), spaces, hyphens, and apostrophes
  * Minimum 2 characters
  */
-const validateName = (name: string): boolean => {
+export const validateName = (name: string): boolean => {
   const trimmed = name.trim()
   if (trimmed.length < 2) return false
   if (trimmed.length > 50) return false
@@ -51,7 +51,7 @@ const validateName = (name: string): boolean => {
  * Validate property name
  * Allow letters, numbers, spaces, hyphens, apostrophes
  */
-const validatePropertyName = (name: string): boolean => {
+export const validatePropertyName = (name: string): boolean => {
   const trimmed = name.trim()
   if (trimmed.length < 1) return false
   if (trimmed.length > 100) return false
@@ -61,7 +61,7 @@ const validatePropertyName = (name: string): boolean => {
 /**
  * Validate amount (must be positive number)
  */
-const validateAmount = (amount: number | string): boolean => {
+export const validateAmount = (amount: number | string): boolean => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount
   return !isNaN(num) && num > 0 && num < 100000000
 }
@@ -69,7 +69,7 @@ const validateAmount = (amount: number | string): boolean => {
 /**
  * Validate date format
  */
-const validateDate = (date: string): boolean => {
+export const validateDate = (date: string): boolean => {
   if (!date) return false
   const d = new Date(date)
   return d instanceof Date && !isNaN(d.getTime())
@@ -202,6 +202,26 @@ export function formatPhoneNumber(phone: string): string {
     return `+221 ${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5, 7)} ${cleaned.slice(7)}`
   }
   return phone
+}
+
+/**
+ * Normalize phone for equality checks (Senegal numbers).
+ * Returns last 9 digits without country code.
+ */
+export function normalizePhoneForCompare(phone: string): string {
+  const digits = phone.replace(/[^\d]/g, '')
+  const withoutCountry = digits.startsWith('221') ? digits.slice(3) : digits
+  return withoutCountry.slice(-9)
+}
+
+export function normalizeEmailForCompare(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+export const validateEmail = (email: string): boolean => {
+  const trimmed = email.trim()
+  if (!trimmed) return false
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
 }
 
 /**

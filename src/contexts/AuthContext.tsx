@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { loginUser } from '@/services/api';
+import {
+  clearImpersonation as clearImpersonationApi,
+  getAuthContext,
+  ImpersonationState,
+  loginAuthContext,
+  logoutAuthContext,
+  setImpersonation as setImpersonationApi,
+} from '@/services/api';
 
 interface User {
   id: string;
@@ -7,13 +14,18 @@ interface User {
   name: string;
   email: string;
   role: string;
+  status?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  impersonation: ImpersonationState;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  setImpersonation: (payload: ImpersonationState) => Promise<void>;
+  clearImpersonation: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,27 +36,40 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [impersonation, setImpersonationState] = useState<ImpersonationState>(null);
 
-  // Try to restore user session from sessionStorage (temporary session only, not localStorage)
+  // Restore user session from backend (persistent)
   useEffect(() => {
-    const saved = sessionStorage.getItem('auth_user');
-    if (saved) {
+    let mounted = true;
+    const loadSession = async () => {
       try {
-        setUser(JSON.parse(saved));
+        const ctx = await getAuthContext();
+        if (!mounted) return;
+        setUser(ctx.user as User | null);
+        setImpersonationState(ctx.impersonation || null);
       } catch (e) {
-        console.error('Failed to parse saved user:', e);
-        sessionStorage.removeItem('auth_user');
+        if (!mounted) return;
+        setUser(null);
+        setImpersonationState(null);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-    }
+    };
+    loadSession();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     try {
-      const userData = await loginUser(username, password);
+      const payload = await loginAuthContext(username, password);
+      const userData = payload?.user;
       if (userData) {
-        setUser(userData);
-        // Store in sessionStorage only (temporary, not persistent)
-        sessionStorage.setItem('auth_user', JSON.stringify(userData));
+        setUser(userData as User);
+        setImpersonationState(null);
+        setIsLoading(false);
         return true;
       }
       return false;
@@ -56,7 +81,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(() => {
     setUser(null);
-    sessionStorage.removeItem('auth_user');
+    setImpersonationState(null);
+    logoutAuthContext();
+  }, []);
+
+  const setImpersonation = useCallback(async (payload: ImpersonationState) => {
+    if (!payload) return;
+    setImpersonationState(payload);
+    await setImpersonationApi(payload);
+  }, []);
+
+  const clearImpersonationState = useCallback(async () => {
+    setImpersonationState(null);
+    await clearImpersonationApi();
   }, []);
 
   return (
@@ -64,8 +101,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
+        impersonation,
         login,
         logout,
+        setImpersonation,
+        clearImpersonation: clearImpersonationState,
       }}
     >
       {children}

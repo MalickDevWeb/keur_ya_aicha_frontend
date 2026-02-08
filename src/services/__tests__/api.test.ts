@@ -16,13 +16,214 @@ import {
   updateDeposit,
   deleteDeposit,
 } from '@/services/api'
+import { vi } from 'vitest'
 
 /**
  * Test API CRUD operations
  * Run with: npm test src/services/__tests__/api.test.ts
  */
 
-describe('API CRUD Operations', () => {
+const useIntegration = process.env.VITE_RUN_INTEGRATION === 'true'
+const describeIf = describe
+
+type Db = {
+  clients: any[]
+  documents: any[]
+  payments: any[]
+  deposits: any[]
+}
+
+const initialDb: Db = {
+  clients: [
+    {
+      id: 'client-1',
+      firstName: 'Test',
+      lastName: 'Client',
+      phone: '+221 77 000 00 00',
+      rentals: [
+        {
+          id: 'rental-1',
+          payments: [
+            { id: 'payment-1', amount: 200000, paidAmount: 0, status: 'pending', payments: [] },
+          ],
+          deposit: { total: 300000, paid: 0, payments: [] },
+        },
+        {
+          id: 'rental-test',
+          payments: [
+            { id: 'payment-test', amount: 100000, paidAmount: 0, status: 'pending', payments: [] },
+          ],
+          deposit: { total: 100000, paid: 0, payments: [] },
+        },
+        {
+          id: 'rental-update-test',
+          payments: [
+            { id: 'payment-update', amount: 100000, paidAmount: 0, status: 'pending', payments: [] },
+          ],
+          deposit: { total: 250000, paid: 0, payments: [] },
+        },
+      ],
+    },
+  ],
+  documents: [],
+  payments: [],
+  deposits: [],
+}
+
+let db: Db = structuredClone(initialDb)
+
+const jsonResponse = (data: any, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+const parseBody = (init?: RequestInit) => {
+  if (!init?.body) return null
+  try {
+    return JSON.parse(init.body as string)
+  } catch {
+    return null
+  }
+}
+
+const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input.toString()
+  const method = (init?.method || 'GET').toUpperCase()
+  const { pathname } = new URL(url, 'http://localhost')
+
+  // Clients
+  if (pathname === '/clients' && method === 'GET') {
+    return jsonResponse(db.clients)
+  }
+  if (pathname.startsWith('/clients/') && method === 'GET') {
+    const id = pathname.split('/')[2]
+    const client = db.clients.find((c) => c.id === id)
+    if (!client) return jsonResponse({ message: 'Not found' }, 404)
+    return jsonResponse(client)
+  }
+  if (pathname === '/clients' && method === 'POST') {
+    const body = parseBody(init) || {}
+    const created = { id: body.id || `client-${Date.now()}`, ...body }
+    db.clients.push(created)
+    return jsonResponse(created, 201)
+  }
+  if (pathname.startsWith('/clients/') && method === 'PUT') {
+    const id = pathname.split('/')[2]
+    const body = parseBody(init) || {}
+    const idx = db.clients.findIndex((c) => c.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.clients[idx] = { ...body }
+    return jsonResponse(db.clients[idx])
+  }
+  if (pathname.startsWith('/clients/') && method === 'DELETE') {
+    const id = pathname.split('/')[2]
+    const idx = db.clients.findIndex((c) => c.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.clients.splice(idx, 1)
+    return jsonResponse({})
+  }
+
+  // Documents
+  if (pathname === '/documents' && method === 'GET') {
+    return jsonResponse(db.documents)
+  }
+  if (pathname === '/documents' && method === 'POST') {
+    const body = parseBody(init) || {}
+    const created = { id: body.id || `doc-${Date.now()}`, ...body }
+    db.documents.push(created)
+    return jsonResponse(created, 201)
+  }
+  if (pathname.startsWith('/documents/') && method === 'DELETE') {
+    const id = pathname.split('/')[2]
+    const idx = db.documents.findIndex((d) => d.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.documents.splice(idx, 1)
+    return jsonResponse({})
+  }
+
+  // Payments
+  if (pathname === '/payments' && method === 'GET') {
+    return jsonResponse(db.payments)
+  }
+  if (pathname === '/payments' && method === 'POST') {
+    const body = parseBody(init) || {}
+    const created = {
+      id: body.receiptId || body.id || `pay-${Date.now()}`,
+      ...body,
+    }
+    db.payments.push(created)
+    return jsonResponse(created, 201)
+  }
+  if (pathname.startsWith('/payments/') && method === 'PUT') {
+    const id = pathname.split('/')[2]
+    const body = parseBody(init) || {}
+    const idx = db.payments.findIndex((p) => p.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.payments[idx] = { ...db.payments[idx], ...body }
+    return jsonResponse(db.payments[idx])
+  }
+  if (pathname.startsWith('/payments/') && method === 'DELETE') {
+    const id = pathname.split('/')[2]
+    const idx = db.payments.findIndex((p) => p.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.payments.splice(idx, 1)
+    return jsonResponse({})
+  }
+
+  // Deposits
+  if (pathname === '/deposits' && method === 'GET') {
+    return jsonResponse(db.deposits)
+  }
+  if (pathname === '/deposits' && method === 'POST') {
+    const body = parseBody(init) || {}
+    const created = {
+      id: body.receiptId || body.id || `dep-${Date.now()}`,
+      ...body,
+    }
+    db.deposits.push(created)
+    return jsonResponse(created, 201)
+  }
+  if (pathname.startsWith('/deposits/') && method === 'PUT') {
+    const id = pathname.split('/')[2]
+    const body = parseBody(init) || {}
+    const idx = db.deposits.findIndex((d) => d.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.deposits[idx] = { ...db.deposits[idx], ...body }
+    return jsonResponse(db.deposits[idx])
+  }
+  if (pathname.startsWith('/deposits/') && method === 'DELETE') {
+    const id = pathname.split('/')[2]
+    const idx = db.deposits.findIndex((d) => d.id === id)
+    if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
+    db.deposits.splice(idx, 1)
+    return jsonResponse({})
+  }
+
+  return jsonResponse({ message: 'Not implemented' }, 501)
+})
+
+beforeAll(() => {
+  if (!useIntegration) {
+    db = structuredClone(initialDb)
+    vi.stubGlobal('fetch', mockFetch)
+  }
+})
+
+beforeEach(() => {
+  if (!useIntegration) {
+    db = structuredClone(initialDb)
+    mockFetch.mockClear()
+  }
+})
+
+afterAll(() => {
+  if (!useIntegration) {
+    vi.unstubAllGlobals()
+  }
+})
+
+describeIf('API CRUD Operations', () => {
   describe('Client Operations', () => {
     test('fetchClients - should fetch all clients', async () => {
       const clients = await fetchClients()
@@ -112,7 +313,7 @@ describe('API CRUD Operations', () => {
       const payment = await postPaymentRecord('rental-test', 'payment-test', 100000)
 
       // Then update it
-      const updated = await updatePayment(payment.id, {
+      const updated = await updatePayment(payment.receipt.id, {
         amount: 120000,
       })
       expect(updated).toBeDefined()
@@ -132,7 +333,7 @@ describe('API CRUD Operations', () => {
 
     test('updateDeposit - should update deposit', async () => {
       const deposit = await postDepositPayment('rental-update-test', 250000)
-      const updated = await updateDeposit(deposit.id, {
+      const updated = await updateDeposit(deposit.receipt.id, {
         amount: 350000,
       })
       expect(updated).toBeDefined()

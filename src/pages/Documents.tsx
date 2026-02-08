@@ -253,10 +253,16 @@ export default function Documents() {
         try {
           const link = await uploadBlobToFileIo(blob, `${modalDoc.name || 'document'}.pdf`);
           const text = `Voici le document ${modalDoc.name || ''} : ${link}`;
-          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+          const win = window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+          if (win) {
+            try { win.opener = null; } catch {}
+          }
         } catch (e) {
           const text = `Voici le document ${modalDoc.name || ''}`;
-          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+          const win = window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+          if (win) {
+            try { win.opener = null; } catch {}
+          }
         }
       }
     } catch (e: any) {

@@ -44,7 +44,7 @@ cleanup() {
   echo -e "\n${YELLOW}📤 Arrêt de tous les serveurs...${NC}"
 
   echo -e "${YELLOW}Arrêt de json-server...${NC}"
-  pkill -f "json-server.*db/db.json" 2>/dev/null || true
+  pkill -f "json-server-auth.mjs" 2>/dev/null || true
 
   echo -e "${YELLOW}Arrêt du serveur Cloudinary...${NC}"
   pkill -f "node.*server/index.js" 2>/dev/null || true
@@ -72,8 +72,8 @@ echo -e "${BLUE}Démarrage des serveurs...${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}\n"
 
 # JSON Server
-echo -e "${BLUE}1️⃣  Démarrage de json-server sur le port $JSON_PORT...${NC}"
-json-server --watch db/db.json --port $JSON_PORT 2>&1 &
+echo -e "${BLUE}1️⃣  Démarrage de json-server (auth) sur le port $JSON_PORT...${NC}"
+node scripts/json-server-auth.mjs 2>&1 &
 JSON_PID=$!
 sleep 2
 if ps -p $JSON_PID > /dev/null; then

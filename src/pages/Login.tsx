@@ -5,6 +5,7 @@ import { User, Lock, Volume2, VolumeX, Eye, EyeOff, ArrowRight, Loader } from "l
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getAuthContext } from "@/services/api";
 import { useToast } from "@/contexts/ToastContext";
 
 // ─── 1. Validation schema ────────────────────────────────────────────
@@ -124,7 +125,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
 // ─── 2. Main Page ─────────────────────────────────────────────────────
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const { addToast } = useToast();
 
   const [isMuted, setIsMuted] = useState(false);
@@ -184,7 +185,17 @@ export default function LoginPage() {
           message: `Bienvenue !`,
           duration: 2000,
         });
-        navigate("/dashboard", { replace: true });
+        try {
+          const ctx = await getAuthContext();
+          const role = String(ctx.user?.role || '').toUpperCase();
+          if (role === 'SUPER_ADMIN') {
+            navigate("/pmt/admin", { replace: true });
+          } else {
+            navigate("/dashboard", { replace: true });
+          }
+        } catch {
+          navigate("/dashboard", { replace: true });
+        }
       } else {
         const msg = "Identifiants invalides";
         setLoginError(msg);
@@ -207,10 +218,12 @@ export default function LoginPage() {
     }
   };
 
-  if (isAuthenticated) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
+  // Redirect if already authenticated (use useEffect to avoid render-time navigation)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   // ─── styles constants
   const NAVY = "#0F2854";
@@ -246,6 +259,20 @@ export default function LoginPage() {
           </clipPath>
         </defs>
       </svg>
+
+      {/* Pulsing animation for signup button */}
+      <style>
+        {`
+          @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 4px 20px rgba(74,124,255,.4); }
+            50% { box-shadow: 0 4px 35px rgba(74,124,255,.7), 0 0 15px rgba(139,92,246,.3); }
+          }
+          @keyframes slide-up {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}
+      </style>
 
       <div
         style={{
@@ -492,6 +519,63 @@ export default function LoginPage() {
               <p style={{ color: "#7a8fa8", fontSize: 17, fontWeight: 300, marginBottom: 48 }}>
                 Entrez vos identifiants pour accéder
               </p>
+              <p style={{ color: "#0F2854", fontSize: 15, fontWeight: 600, marginBottom: 14 }}>
+                Gérez vos clients en toute simplicité
+              </p>
+
+              {/* Enhanced Sign Up CTA Button */}
+              <button
+                type="button"
+                onClick={() => navigate("/admin/signup")}
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  border: "none",
+                  background: "linear-gradient(135deg, #4a7cff 0%, #6b5ce7 50%, #8b5cf6 100%)",
+                  color: "#fff",
+                  padding: "16px 36px",
+                  borderRadius: 50,
+                  fontWeight: 700,
+                  fontSize: 16,
+                  cursor: "pointer",
+                  marginBottom: 28,
+                  boxShadow: "0 4px 20px rgba(74,124,255,.4)",
+                  transition: "all 0.3s ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  animation: "pulse-glow 2.5s ease-in-out infinite",
+                  textTransform: "uppercase",
+                  letterSpacing: "1.2px",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as any).style.transform = "translateY(-3px) scale(1.02)";
+                  (e.currentTarget as any).style.boxShadow = "0 8px 35px rgba(74,124,255,.55)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as any).style.transform = "translateY(0) scale(1)";
+                  (e.currentTarget as any).style.boxShadow = "0 4px 20px rgba(74,124,255,.4)";
+                }}
+              >
+                {/* Icon */}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ animation: "slide-up 0.3s ease" }}
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+                S'inscrire
+              </button>
             </div>
 
             {/* Form */}
@@ -590,7 +674,6 @@ export default function LoginPage() {
                   (e.currentTarget as any).style.transform = "translateY(0)";
                   (e.currentTarget as any).style.boxShadow = "0 4px 22px rgba(15,40,84,.3)";
                 }}
-                disabled={loading}
               >
                 {loading ? (
                   <>
@@ -609,4 +692,3 @@ export default function LoginPage() {
     </>
   );
 }
-

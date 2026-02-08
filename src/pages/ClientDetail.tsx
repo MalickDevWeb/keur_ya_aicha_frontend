@@ -18,6 +18,7 @@ import { CardStat } from '@/components/CardStat';
 import { useI18n } from '@/lib/i18n';
 import { useData } from '@/contexts/DataContext';
 import { QuickPaymentModal } from '@/components/QuickPaymentModal';
+import { PaymentModal } from '@/components/PaymentModal';
 import { useToast } from '@/hooks/use-toast';
 import {
   formatCurrency,
@@ -32,10 +33,12 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t, language } = useI18n();
-  const { getClient, archiveClient, blacklistClient, addMonthlyPayment, addDepositPayment } = useData();
+  const { getClient, archiveClient, blacklistClient, addMonthlyPayment, editMonthlyPayment, addDepositPayment } = useData();
   const { toast } = useToast();
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<any>(null);
+  const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
   const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -296,25 +299,37 @@ export default function ClientDetail() {
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {!isPaid ? (
+                                  <div className="flex items-center gap-2 justify-end">
+                                    {!isPaid ? (
+                                      <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        onClick={() => {
+                                          setSelectedPayment({
+                                            payment,
+                                            rental,
+                                            maxAmount: payment.amount - payment.paidAmount,
+                                          });
+                                          setPaymentModalOpen(true);
+                                        }}
+                                      >
+                                        <DollarSign className="w-4 h-4 mr-1" />
+                                        Payer
+                                      </Button>
+                                    ) : (
+                                      <Badge className="bg-green-600">Payé</Badge>
+                                    )}
                                     <Button
                                       size="sm"
-                                      className="bg-green-600 hover:bg-green-700"
+                                      variant="outline"
                                       onClick={() => {
-                                        setSelectedPayment({
-                                          payment,
-                                          rental,
-                                          maxAmount: payment.amount - payment.paidAmount,
-                                        });
-                                        setPaymentModalOpen(true);
+                                        setEditPayment({ payment, rental });
+                                        setEditPaymentModalOpen(true);
                                       }}
                                     >
-                                      <DollarSign className="w-4 h-4 mr-1" />
-                                      Payer
+                                      Modifier
                                     </Button>
-                                  ) : (
-                                    <Badge className="bg-green-600">Payé</Badge>
-                                  )}
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             );
@@ -467,6 +482,45 @@ export default function ClientDetail() {
             }
           }}
           isLoading={isLoading}
+        />
+
+        <PaymentModal
+          open={editPaymentModalOpen}
+          onOpenChange={setEditPaymentModalOpen}
+          isEdit
+          maxAmount={editPayment?.payment?.amount}
+          defaultValues={{
+            amount: String(editPayment?.payment?.paidAmount || 0),
+            date: new Date().toISOString().split('T')[0],
+            receiptNumber: `CORR-${Date.now()}`,
+            notes: 'Correction',
+          }}
+          onSubmit={async (data) => {
+            if (!editPayment) return;
+            try {
+              setIsLoading(true);
+              await editMonthlyPayment(
+                editPayment.rental.id,
+                editPayment.payment.id,
+                Number(data.amount)
+              );
+              toast({
+                title: t('common.success'),
+                description: 'Paiement corrigé',
+              });
+              setEditPaymentModalOpen(false);
+              setEditPayment(null);
+            } catch (error) {
+              console.error('❌ [ClientDetail] Error during payment correction:', error);
+              toast({
+                title: 'Erreur',
+                description: 'Erreur lors de la correction du paiement',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsLoading(false);
+            }
+          }}
         />
 
         {/* Deposit Payment Modal */}

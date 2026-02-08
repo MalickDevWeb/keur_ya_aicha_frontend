@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, User } from 'lucide-react';
+import { ArrowLeft, Printer, User, Upload, MessageCircle } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -29,38 +29,16 @@ import { useData } from '@/contexts/DataContext';
 import { PropertyType, formatCurrency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } from '@/lib/pdfUtils';
-import { formatPhoneNumber, formatCNI, formatName } from '@/validators/clientValidator';
-
-// Validation helpers
-const validateSenegalNumber = (phone: string): boolean => {
-  const cleaned = phone.replace(/\s|-/g, '')
-  const patterns = [
-    /^\+22177\d{7}$/,
-    /^\+22178\d{7}$/,
-    /^77\d{7}$/,
-    /^78\d{7}$/,
-  ]
-  return patterns.some(pattern => pattern.test(cleaned))
-}
-
-const validateCNI = (cni: string): boolean => {
-  const cleaned = cni.replace(/\s|-/g, '')
-  return /^[A-Z0-9]{13}$/.test(cleaned)
-}
-
-const validateName = (name: string): boolean => {
-  const trimmed = name.trim()
-  if (trimmed.length < 2) return false
-  if (trimmed.length > 50) return false
-  return /^[a-zA-ZÀ-ÿ\s\-']+$/.test(trimmed)
-}
-
-const validatePropertyName = (name: string): boolean => {
-  const trimmed = name.trim()
-  if (trimmed.length < 1) return false
-  if (trimmed.length > 100) return false
-  return /^[a-zA-Z0-9À-ÿ\s\-',/#]+$/.test(trimmed)
-}
+import {
+  formatPhoneNumber,
+  formatCNI,
+  formatName,
+  validateSenegalNumber,
+  validateCNI,
+  validateName,
+  validatePropertyName,
+  validateEmail,
+} from '@/validators/clientValidator';
 
 const formSchema = z.object({
   lastName: z
@@ -79,6 +57,7 @@ const formSchema = z.object({
     .string()
     .min(1, 'La CNI est requise')
     .refine(validateCNI, 'La CNI doit contenir 13 caractères alphanumériques'),
+  email: z.string().optional().refine((value) => !value || validateEmail(value), 'Email invalide'),
   propertyType: z.enum(['studio', 'room', 'apartment', 'villa', 'other']),
   propertyName: z
     .string()
@@ -100,7 +79,14 @@ export default function AddClient() {
   const { t } = useI18n();
   const { addClient } = useData();
   const { toast } = useToast();
-  const [createdClient, setCreatedClient] = useState<{ id: string; name: string } | null>(null);
+  const [createdClient, setCreatedClient] = useState<{
+    id: string;
+    name: string;
+    phone: string;
+    propertyName: string;
+    monthlyRent: number;
+    startDate: string;
+  } | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -109,6 +95,7 @@ export default function AddClient() {
       firstName: '',
       phone: '',
       cni: '',
+      email: '',
       propertyType: 'apartment',
       propertyName: '',
       startDate: new Date().toISOString().split('T')[0],
@@ -127,6 +114,7 @@ export default function AddClient() {
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,
+      email: data.email,
       propertyName: data.propertyName,
       monthlyRent: data.monthlyRent,
       totalDeposit: data.totalDeposit,
@@ -138,6 +126,7 @@ export default function AddClient() {
         lastName: data.lastName,
         phone: data.phone,
         cni: data.cni,
+        email: data.email,
         status: 'active',
         rental: {
           propertyType: data.propertyType as PropertyType,
@@ -157,7 +146,14 @@ export default function AddClient() {
         },
       });
       console.log('✅ [AddClient] Client created successfully:', newClient);
-      setCreatedClient({ id: newClient.id, name: `${data.firstName} ${data.lastName}` });
+      setCreatedClient({
+        id: newClient.id,
+        name: `${data.firstName} ${data.lastName}`,
+        phone: data.phone,
+        propertyName: data.propertyName,
+        monthlyRent: data.monthlyRent,
+        startDate: data.startDate,
+      });
 
       toast({
         title: t('common.success'),
@@ -185,7 +181,7 @@ export default function AddClient() {
         amount: values.monthlyRent,
         note: `Contrat de location pour ${values.propertyName} - Début: ${new Date(values.startDate).toLocaleDateString('fr-FR')}`,
         uploadedAt: Date.now(),
-      } as any;
+      };
 
       const blob = await generatePdfForDocument(doc);
 
@@ -196,7 +192,10 @@ export default function AddClient() {
         downloadBlob(blob, filename);
         // Also open in new tab so user can print directly
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (win) {
+          try { win.opener = null; } catch {}
+        }
         setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
 
@@ -213,6 +212,21 @@ export default function AddClient() {
     }
   };
 
+  const handleSendWhatsApp = () => {
+    if (!createdClient) return;
+
+    // Extract first name from the full name
+    const nameParts = createdClient.name.split(' ');
+    const firstName = nameParts[0];
+
+    const phone = createdClient.phone.replace(/[^\d+]/g, '');
+    const message = encodeURIComponent(
+      `Bonjour ${firstName},\n\nVotre contrat de location pour ${createdClient.propertyName} est prêt !\n\nDétails :\n- Loyer mensuel : ${createdClient.monthlyRent.toLocaleString()} FCFA\n- Date de début : ${new Date(createdClient.startDate).toLocaleDateString('fr-FR')}\n\nPour toute question, contactez-nous.\n\nKeur Ya Aicha - Location Immobilier & Services`
+    );
+
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+  };
+
   if (createdClient) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -227,6 +241,14 @@ export default function AddClient() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleSendWhatsApp}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Envoyer WhatsApp
+            </Button>
             <Button
               variant="outline"
               className="w-full"
@@ -259,11 +281,17 @@ export default function AddClient() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">{t('addClient.title')}</h1>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/import/clients')}>
+          <Upload className="w-4 h-4 mr-2" />
+          Importer Excel
         </Button>
-        <h1 className="text-2xl font-bold text-foreground">{t('addClient.title')}</h1>
       </div>
 
       <Form {...form}>
@@ -321,6 +349,19 @@ export default function AddClient() {
                     <FormLabel>{t('clients.cni')}</FormLabel>
                     <FormControl>
                       <Input placeholder="1234567890123" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('clients.email')} (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="nom@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

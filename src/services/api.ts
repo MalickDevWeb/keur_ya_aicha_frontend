@@ -22,7 +22,7 @@ async function handleResponse(res: Response) {
       throw new Error('Server error. Please try again later')
     }
     const errorData = await res.json().catch(() => ({}))
-    throw new Error(errorData.message || `HTTP Error: ${res.status}`)
+    throw new Error(errorData.error || errorData.message || `HTTP Error: ${res.status}`)
   }
   return res.json()
 }
@@ -96,6 +96,56 @@ export async function createClient(client: Partial<ClientDTO>) {
     return data
   } catch (error) {
     console.error('❌ [API] Error creating client:', error)
+    throw error
+  }
+}
+
+export async function createImportRun(payload: any) {
+  console.log('📡 [API] POST /import_runs:', payload)
+  try {
+    const res = await fetch(`${API_BASE}/import_runs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data = await handleResponse(res)
+    console.log('✅ [API] Import run created:', data)
+    return data
+  } catch (error) {
+    console.error('❌ [API] Error creating import run:', error)
+    throw error
+  }
+}
+
+export async function fetchImportRuns() {
+  console.log('📡 [API] GET /import_runs')
+  try {
+    const res = await fetch(`${API_BASE}/import_runs`)
+    const data = await handleResponse(res)
+    const sorted = Array.isArray(data)
+      ? [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      : []
+    console.log(`✅ [API] Fetched ${sorted.length} import run(s)`)
+    return sorted
+  } catch (error) {
+    console.error('❌ [API] Error fetching import runs:', error)
+    throw error
+  }
+}
+
+export async function updateImportRun(id: string, payload: any) {
+  console.log('📡 [API] PATCH /import_runs/' + id, payload)
+  try {
+    const res = await fetch(`${API_BASE}/import_runs/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data = await handleResponse(res)
+    console.log('✅ [API] Import run updated:', data)
+    return data
+  } catch (error) {
+    console.error('❌ [API] Error updating import run:', error)
     throw error
   }
 }
@@ -185,6 +235,56 @@ export async function postPaymentRecord(rentalId: string, paymentId: string, amo
     return { updatedClient, receipt }
   } catch (error) {
     console.error('❌ [API] Error posting payment:', error)
+    throw error
+  }
+}
+
+export async function updateMonthlyPayment(rentalId: string, paymentId: string, amount: number) {
+  console.log('📡 [API] PUT monthly payment:', { rentalId, paymentId, amount })
+  try {
+    const clientsRes = await fetch(`${API_BASE}/clients`)
+    const clients = await handleResponse(clientsRes)
+
+    const client = clients.find(
+      (c: any) => Array.isArray(c.rentals) && c.rentals.some((r: any) => r.id === rentalId)
+    )
+    if (!client) throw new Error('Client with rentalId not found')
+
+    const rental = client.rentals.find((r: any) => r.id === rentalId)
+    if (!rental) throw new Error('Rental not found on client')
+
+    const payment = rental.payments.find((p: any) => p.id === paymentId)
+    if (!payment) throw new Error('Monthly payment entry not found')
+
+    const safeAmount = Math.max(0, Number(amount) || 0)
+    payment.paidAmount = safeAmount
+    payment.payments = [{
+      id: Math.random().toString(36).substring(2, 10),
+      amount: safeAmount,
+      date: new Date().toISOString(),
+      receiptNumber: `CORR-${Date.now()}`,
+      note: 'Correction',
+    }]
+
+    if (safeAmount >= payment.amount) {
+      payment.paidAmount = payment.amount
+      payment.status = 'paid'
+    } else if (safeAmount > 0) {
+      payment.status = 'partial'
+    } else {
+      payment.status = 'unpaid'
+    }
+
+    const putRes = await fetch(`${API_BASE}/clients/${client.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(client),
+    })
+    const updatedClient = await handleResponse(putRes)
+    console.log('✅ [API] Monthly payment corrected:', { clientId: client.id, paymentId })
+    return updatedClient
+  } catch (error) {
+    console.error('❌ [API] Error updating monthly payment:', error)
     throw error
   }
 }
@@ -456,16 +556,36 @@ export interface AuthUser {
   name: string
   email: string
   role: string
+  status?: string
+}
+
+export interface UserDTO extends AuthUser {
+  phone?: string
 }
 
 export async function loginUser(username: string, password: string): Promise<AuthUser | null> {
-  console.log('📡 [API] POST /users (login)')
+  console.log('📡 [API] Login (server session)')
+  const safeUsername = String(username || '').trim()
+  const safePassword = String(password || '').trim()
   try {
-    const res = await fetch(`${API_BASE}/users?username=${username}&password=${password}`)
-    if (!res.ok) throw new Error('Failed to fetch user')
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: safeUsername, password: safePassword }),
+    })
+    if (!res.ok) {
+      let message = 'Failed to authenticate user'
+      try {
+        const err = await res.json()
+        if (err?.error) message = err.error
+      } catch {
+        // ignore
+      }
+      throw new Error(message)
+    }
     const data = await res.json()
-    if (data.length === 0) return null
-    const user = data[0]
+    const user = data?.user || data
+    if (!user) return null
     console.log('✅ [API] User authenticated:', user.username)
     return {
       id: user.id,
@@ -473,11 +593,76 @@ export async function loginUser(username: string, password: string): Promise<Aut
       name: user.name,
       email: user.email,
       role: user.role,
+      status: user.status,
     }
   } catch (error) {
     console.error('❌ [API] Error logging in:', error)
     throw error
   }
+}
+
+export async function getSessionUser(): Promise<AuthUser | null> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/session`)
+    if (!res.ok) return null
+    const data = await res.json()
+    const user = data?.user
+    return user || null
+  } catch {
+    return null
+  }
+}
+
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST' })
+  } catch {
+    // ignore
+  }
+}
+
+export type ImpersonationState = null | { adminId: string; adminName: string; userId?: string | null }
+
+export async function getAuthContext(): Promise<{ user: AuthUser | null; impersonation: ImpersonationState }> {
+  const res = await fetch(`${API_BASE}/authContext`)
+  if (!res.ok) return { user: null, impersonation: null }
+  return res.json()
+}
+
+export async function loginAuthContext(username: string, password: string): Promise<{ user: AuthUser | null }> {
+  const res = await fetch(`${API_BASE}/authContext/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+  if (!res.ok) {
+    let message = 'Failed to authenticate user'
+    try {
+      const err = await res.json()
+      if (err?.error) message = err.error
+    } catch {
+      // ignore
+    }
+    throw new Error(message)
+  }
+  return res.json()
+}
+
+export async function logoutAuthContext(): Promise<void> {
+  await fetch(`${API_BASE}/authContext/logout`, { method: 'POST' })
+}
+
+export async function setImpersonation(payload: ImpersonationState): Promise<void> {
+  if (!payload) return
+  await fetch(`${API_BASE}/authContext/impersonate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function clearImpersonation(): Promise<void> {
+  await fetch(`${API_BASE}/authContext/clear-impersonation`, { method: 'POST' })
 }
 
 // Settings API
@@ -526,6 +711,194 @@ export async function setSetting(key: string, value: string): Promise<void> {
     console.error(`❌ [API] Error setting ${key}:`, error)
     throw error
   }
+}
+
+// Super Admin APIs
+export type AdminStatus =
+  | 'EN_ATTENTE'
+  | 'ACTIF'
+  | 'SUSPENDU'
+  | 'BLACKLISTE'
+  | 'ARCHIVE'
+
+export const ADMIN_STATUS_LABELS: Record<AdminStatus,
+  ADMIN_STATUS_LABELS,
+  ADMIN_STATUS_COLORS,
+  ADMIN_STATUS_BADGE_COLORS, string> = {
+  EN_ATTENTE: 'En attente',
+  ACTIF: 'Actif',
+  SUSPENDU: 'Suspendu',
+  BLACKLISTE: 'Blacklisté',
+  ARCHIVE: 'Archivé',
+}
+
+export const ADMIN_STATUS_COLORS: Record<AdminStatus,
+  ADMIN_STATUS_LABELS,
+  ADMIN_STATUS_COLORS,
+  ADMIN_STATUS_BADGE_COLORS, string> = {
+  EN_ATTENTE: 'bg-slate-100 text-slate-700 border-slate-300',
+  ACTIF: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  SUSPENDU: 'bg-amber-100 text-amber-700 border-amber-300',
+  BLACKLISTE: 'bg-red-100 text-red-700 border-red-300',
+  ARCHIVE: 'bg-gray-100 text-gray-700 border-gray-300',
+}
+
+export const ADMIN_STATUS_BADGE_COLORS: Record<AdminStatus,
+  ADMIN_STATUS_LABELS,
+  ADMIN_STATUS_COLORS,
+  ADMIN_STATUS_BADGE_COLORS, string> = {
+  EN_ATTENTE: 'bg-slate-500',
+  ACTIF: 'bg-emerald-500',
+  SUSPENDU: 'bg-amber-500',
+  BLACKLISTE: 'bg-red-500',
+  ARCHIVE: 'bg-gray-500',
+}
+
+// Button variant mappings for different statuses
+const STATUS_ACTION_VARIANTS: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
+  // For ACTIF admin
+  Suspendre: 'secondary',
+  Blacklister: 'destructive',
+  Archiver: 'outline',
+  // For SUSPENDU admin
+  Activer: 'default',
+  // For ARCHIVE admin
+}
+
+export interface AdminDTO {
+  id: string
+  userId: string
+  username: string
+  name: string
+  email: string
+  status: AdminStatus
+  entrepriseId?: string
+  createdAt?: string
+}
+
+export interface AdminRequestDTO {
+  id: string
+  username: string
+  name: string
+  email?: string
+  phone?: string
+  entrepriseName?: string
+  status: AdminStatus
+  createdAt?: string
+}
+
+export interface EntrepriseDTO {
+  id: string
+  name: string
+  adminId?: string
+  createdAt?: string
+}
+
+export interface AuditLogDTO {
+  id: string
+  actor?: string
+  action?: string
+  targetType?: string
+  targetId?: string
+  message?: string
+  createdAt?: string
+}
+
+export async function fetchAdmins(): Promise<AdminDTO[]> {
+  const res = await fetch(`${API_BASE}/admins`)
+  if (!res.ok) throw new Error('Failed to fetch admins')
+  return res.json()
+}
+
+export async function updateAdmin(id: string, payload: Partial<AdminDTO>): Promise<AdminDTO> {
+  const res = await fetch(`${API_BASE}/admins/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('Failed to update admin')
+  return res.json()
+}
+
+export async function fetchAdminRequests(): Promise<AdminRequestDTO[]> {
+  const res = await fetch(`${API_BASE}/admin_requests`)
+  if (!res.ok) throw new Error('Failed to fetch admin requests')
+  return res.json()
+}
+
+export async function updateAdminRequest(id: string, payload: Partial<AdminRequestDTO>): Promise<AdminRequestDTO> {
+  const res = await fetch(`${API_BASE}/admin_requests/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('Failed to update admin request')
+  return res.json()
+}
+
+export async function createAdminRequest(payload: AdminRequestDTO): Promise<AdminRequestDTO> {
+  const res = await fetch(`${API_BASE}/admin_requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('Failed to create admin request')
+  return res.json()
+}
+
+export async function createAdmin(payload: AdminDTO): Promise<AdminDTO> {
+  const res = await fetch(`${API_BASE}/admins`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  return handleResponse(res)
+}
+
+export async function createEntreprise(payload: EntrepriseDTO): Promise<EntrepriseDTO> {
+  const res = await fetch(`${API_BASE}/entreprises`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  return handleResponse(res)
+}
+
+export async function createUser(payload: any): Promise<any> {
+  const res = await fetch(`${API_BASE}/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  return handleResponse(res)
+}
+
+export async function fetchUsers(): Promise<UserDTO[]> {
+  const res = await fetch(`${API_BASE}/users`)
+  if (!res.ok) throw new Error('Failed to fetch users')
+  return res.json()
+}
+
+export async function updateUser(id: string, payload: any): Promise<any> {
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('Failed to update user')
+  return res.json()
+}
+
+export async function fetchEntreprises(): Promise<EntrepriseDTO[]> {
+  const res = await fetch(`${API_BASE}/entreprises`)
+  if (!res.ok) throw new Error('Failed to fetch entreprises')
+  return res.json()
+}
+
+export async function fetchAuditLogs(): Promise<AuditLogDTO[]> {
+  const res = await fetch(`${API_BASE}/audit_logs?_sort=createdAt&_order=desc&_limit=10`)
+  if (!res.ok) throw new Error('Failed to fetch audit logs')
+  return res.json()
 }
 
 // Work Items API

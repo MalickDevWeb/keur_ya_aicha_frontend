@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"json-server --watch db/db.json --port 4000\" \"ELECTRON_DEV=true electron .\" \"vite\"",
+    "dev": "concurrently \"node scripts/json-server-auth.mjs\" \"ELECTRON_DEV=true electron .\" \"vite\"",
     "dev:web": "vite",
     "dev:all": "bash start-dev.sh",
     "seed-db": "node scripts/seed-db.mjs",
@@ -15,8 +15,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start:api": "node backend/server.js",
-    "json:server": "json-server --watch db/db.json --port 4000"
+    "start:api": "node scripts/json-server-auth.mjs",
+    "json:server": "node scripts/json-server-auth.mjs"
   },
   "dependencies": {
     "@cloudinary/react": "^1.14.3",
@@ -56,6 +56,7 @@
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "form-data": "^4.0.5",
     "html2canvas": "^1.4.1",
@@ -64,6 +65,7 @@
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "node-fetch": "^2.7.0",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -83,6 +85,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

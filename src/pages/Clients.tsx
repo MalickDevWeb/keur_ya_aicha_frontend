@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Plus, Filter, X, Grid3x3, List, Archive } from 'lucide-react';
+import { Eye, Edit, Plus, Filter, X, Grid3x3, List, Archive, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -86,13 +86,19 @@ export default function Clients() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">{t('clients.title')}</h1>
-        <Button
-          onClick={() => navigate('/clients/add')}
-          className="bg-secondary hover:bg-secondary/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {t('nav.addClient')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/import/clients')}>
+            <Upload className="w-4 h-4 mr-2" />
+            Importer Excel
+          </Button>
+          <Button
+            onClick={() => navigate('/clients/add')}
+            className="bg-secondary hover:bg-secondary/90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t('nav.addClient')}
+          </Button>
+        </div>
       </div>
 
       <Card>

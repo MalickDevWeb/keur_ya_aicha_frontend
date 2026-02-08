@@ -14,6 +14,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import PrivateAdminRoute from '@/components/PrivateAdminRoute';
+import ImportClients from "./pages/ImportClients";
+import ImportErrors from "./pages/ImportErrors";
+import ImportSuccess from "./pages/ImportSuccess";
 import Clients from "./pages/Clients";
 import AddClient from "./pages/AddClient";
 import ClientDetail from "./pages/ClientDetail";
@@ -34,6 +37,12 @@ import BlacklistedClients from "./pages/BlacklistedClients";
 import Archive from "./pages/Archive";
 import { Work } from "./pages/Work";
 import NotFound from "./pages/NotFound";
+import SuperAdminPage from "./pages/SuperAdmin";
+import EntreprisesPage from "./pages/Entreprises";
+import AdminsPage from "./pages/Admins";
+import SuperAdminStatsPage from "./pages/SuperAdminStats";
+import AdminSignup from "./pages/AdminSignup";
+import DangerClients from "./pages/DangerClients";
 
 const queryClient = new QueryClient();
 
@@ -51,9 +60,17 @@ const App = () => (
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/admin/signup" element={<AdminSignup />} />
+                <Route path="/pmt/admin" element={<SuperAdminPage />} />
+                <Route path="/pmt/admin/entreprises" element={<EntreprisesPage />} />
+                <Route path="/pmt/admin/admins" element={<AdminsPage />} />
+                <Route path="/pmt/admin/stats" element={<SuperAdminStatsPage />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/import/clients" element={<ImportClients />} />
+                  <Route path="/import/errors" element={<ImportErrors />} />
+                  <Route path="/import/success" element={<ImportSuccess />} />
 
                   {/* Clients Routes */}
                   <Route path="/clients" element={<Clients />} />
@@ -102,6 +119,7 @@ const App = () => (
                   } />
                   <Route path="/archive" element={<Archive />} />
                   <Route path="/work" element={<Work />} />
+                  <Route path="/danger/clients" element={<DangerClients />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

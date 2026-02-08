@@ -23,13 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useData } from '@/contexts/DataContext';
-
-const validatePropertyName = (name: string): boolean => {
-  const trimmed = name.trim()
-  if (trimmed.length < 1) return false
-  if (trimmed.length > 100) return false
-  return /^[a-zA-Z0-9À-ÿ\s\-',/#]+$/.test(trimmed)
-}
+import { validatePropertyName } from '@/validators/clientValidator';
 
 const rentalSchema = z.object({
   propertyName: z

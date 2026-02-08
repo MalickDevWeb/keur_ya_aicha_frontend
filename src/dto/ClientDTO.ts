@@ -25,9 +25,11 @@ export interface RentalDTO {
 
 export interface ClientDTO {
   id: string
+  adminId?: string
   firstName: string
   lastName: string
   phone: string
+  email?: string
   cni?: string
   status: string
   createdAt: string // ISO date
