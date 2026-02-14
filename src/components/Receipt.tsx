@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Building2, Landmark } from 'lucide-react';
+import { Landmark } from 'lucide-react';
 
 interface ReceiptProps {
   type: 'payment' | 'deposit';

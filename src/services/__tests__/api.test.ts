@@ -10,11 +10,9 @@ import {
   fetchPayments,
   postPaymentRecord,
   updatePayment,
-  deletePayment,
   fetchDeposits,
   postDepositPayment,
   updateDeposit,
-  deleteDeposit,
 } from '@/services/api'
 import { vi } from 'vitest'
 
@@ -26,11 +24,12 @@ import { vi } from 'vitest'
 const useIntegration = process.env.VITE_RUN_INTEGRATION === 'true'
 const describeIf = describe
 
+type DbEntity = { id?: string; [key: string]: unknown }
 type Db = {
-  clients: any[]
-  documents: any[]
-  payments: any[]
-  deposits: any[]
+  clients: DbEntity[]
+  documents: DbEntity[]
+  payments: DbEntity[]
+  deposits: DbEntity[]
 }
 
 const initialDb: Db = {
@@ -72,13 +71,13 @@ const initialDb: Db = {
 
 let db: Db = structuredClone(initialDb)
 
-const jsonResponse = (data: any, status = 200) =>
+const jsonResponse = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json' },
   })
 
-const parseBody = (init?: RequestInit) => {
+const parseBody = (init?: RequestInit): unknown => {
   if (!init?.body) return null
   try {
     return JSON.parse(init.body as string)
@@ -103,14 +102,14 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
     return jsonResponse(client)
   }
   if (pathname === '/clients' && method === 'POST') {
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const created = { id: body.id || `client-${Date.now()}`, ...body }
     db.clients.push(created)
     return jsonResponse(created, 201)
   }
   if (pathname.startsWith('/clients/') && method === 'PUT') {
     const id = pathname.split('/')[2]
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const idx = db.clients.findIndex((c) => c.id === id)
     if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
     db.clients[idx] = { ...body }
@@ -129,7 +128,7 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
     return jsonResponse(db.documents)
   }
   if (pathname === '/documents' && method === 'POST') {
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const created = { id: body.id || `doc-${Date.now()}`, ...body }
     db.documents.push(created)
     return jsonResponse(created, 201)
@@ -147,7 +146,7 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
     return jsonResponse(db.payments)
   }
   if (pathname === '/payments' && method === 'POST') {
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const created = {
       id: body.receiptId || body.id || `pay-${Date.now()}`,
       ...body,
@@ -157,7 +156,7 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
   }
   if (pathname.startsWith('/payments/') && method === 'PUT') {
     const id = pathname.split('/')[2]
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const idx = db.payments.findIndex((p) => p.id === id)
     if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
     db.payments[idx] = { ...db.payments[idx], ...body }
@@ -176,7 +175,7 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
     return jsonResponse(db.deposits)
   }
   if (pathname === '/deposits' && method === 'POST') {
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const created = {
       id: body.receiptId || body.id || `dep-${Date.now()}`,
       ...body,
@@ -186,7 +185,7 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
   }
   if (pathname.startsWith('/deposits/') && method === 'PUT') {
     const id = pathname.split('/')[2]
-    const body = parseBody(init) || {}
+    const body = (parseBody(init) || {}) as DbEntity
     const idx = db.deposits.findIndex((d) => d.id === id)
     if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
     db.deposits[idx] = { ...db.deposits[idx], ...body }

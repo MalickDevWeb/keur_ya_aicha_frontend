@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import {
   clearImpersonation as clearImpersonationApi,
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!mounted) return;
         setUser(ctx.user as User | null);
         setImpersonationState(ctx.impersonation || null);
-      } catch (e) {
+      } catch {
         if (!mounted) return;
         setUser(null);
         setImpersonationState(null);
@@ -73,15 +74,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return true;
       }
       return false;
-    } catch (e) {
-      console.error('Login error:', e);
-      return false;
+    } catch (err) {
+      throw err;
     }
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     setImpersonationState(null);
+    sessionStorage.removeItem('superadminSecondAuth');
     logoutAuthContext();
   }, []);
 

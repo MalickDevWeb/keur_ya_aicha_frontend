@@ -1,11 +1,8 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -23,49 +20,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-
-const depositSchema = z.object({
-  amount: z
-    .string()
-    .min(1, 'Le montant est requis')
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0,
-      'Le montant doit être un nombre positif'
-    )
-    .refine(
-      (val) => Number(val) < 100000000,
-      'Le montant semble être invalide'
-    ),
-  date: z
-    .string()
-    .min(1, 'La date est requise'),
-  receiptNumber: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || /^[a-zA-Z0-9\-/]+$/.test(val),
-      'Le numéro de reçu est invalide'
-    ),
-  notes: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val.length <= 500,
-      'Les notes ne peuvent pas dépasser 500 caractères'
-    ),
-});
-
-type DepositFormData = z.infer<typeof depositSchema>;
+import { cautionModalSchema, CautionModalFormData } from '@/validators/frontend';
 
 interface DepositModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: DepositFormData) => void;
+  onSubmit: (data: CautionModalFormData) => void;
   isLoading?: boolean;
   maxAmount?: number;
   currentPaid?: number;
   totalDeposit?: number;
-  defaultValues?: Partial<DepositFormData>;
+  defaultValues?: Partial<CautionModalFormData>;
   isEdit?: boolean;
 }
 
@@ -80,8 +45,8 @@ export function DepositModal({
   defaultValues,
   isEdit = false,
 }: DepositModalProps) {
-  const form = useForm<DepositFormData>({
-    resolver: zodResolver(depositSchema),
+  const form = useForm<CautionModalFormData>({
+    resolver: zodResolver(cautionModalSchema),
     defaultValues: {
       amount: defaultValues?.amount || '',
       date: defaultValues?.date || new Date().toISOString().split('T')[0],
@@ -90,7 +55,7 @@ export function DepositModal({
     },
   });
 
-  const handleSubmit = (data: DepositFormData) => {
+  const handleSubmit = (data: CautionModalFormData) => {
     if (maxAmount && Number(data.amount) > maxAmount) {
       form.setError('amount', {
         type: 'manual',

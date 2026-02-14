@@ -10,9 +10,10 @@ interface SearchInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
 }
 
-export function SearchInput({ value, onChange, placeholder, className }: SearchInputProps) {
+export function SearchInput({ value, onChange, placeholder, className, inputClassName }: SearchInputProps) {
   const { t } = useI18n();
   const [isFocused, setIsFocused] = useState(false);
 
@@ -41,7 +42,10 @@ export function SearchInput({ value, onChange, placeholder, className }: SearchI
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         placeholder={placeholder || t('clients.searchPlaceholder')}
-        className="pl-9 pr-9 focus-visible:ring-0 focus-visible:ring-offset-0"
+        className={cn(
+          "pl-9 pr-9 focus-visible:ring-0 focus-visible:ring-offset-0",
+          inputClassName
+        )}
       />
       {value && (
         <Button

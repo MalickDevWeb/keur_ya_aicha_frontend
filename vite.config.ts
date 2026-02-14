@@ -19,4 +19,14 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          pdf: ['jspdf', 'html2canvas'],
+          excel: ['exceljs'],
+        },
+      },
+    },
+  },
 }))

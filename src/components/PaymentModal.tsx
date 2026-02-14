@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
@@ -21,47 +19,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-
-const paymentSchema = z.object({
-  amount: z
-    .string()
-    .min(1, 'Le montant est requis')
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0,
-      'Le montant doit être un nombre positif'
-    )
-    .refine(
-      (val) => Number(val) < 100000000,
-      'Le montant semble être invalide'
-    ),
-  date: z
-    .string()
-    .min(1, 'La date est requise'),
-  receiptNumber: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || /^[a-zA-Z0-9\-/]+$/.test(val),
-      'Le numéro de reçu est invalide'
-    ),
-  notes: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val.length <= 500,
-      'Les notes ne peuvent pas dépasser 500 caractères'
-    ),
-});
-
-type PaymentFormData = z.infer<typeof paymentSchema>;
+import { paiementModalSchema, PaiementModalFormData } from '@/validators/frontend';
 
 interface PaymentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: PaymentFormData) => void;
+  onSubmit: (data: PaiementModalFormData) => void;
   isLoading?: boolean;
   maxAmount?: number;
-  defaultValues?: Partial<PaymentFormData>;
+  defaultValues?: Partial<PaiementModalFormData>;
   isEdit?: boolean;
 }
 
@@ -74,8 +40,8 @@ export function PaymentModal({
   defaultValues,
   isEdit = false,
 }: PaymentModalProps) {
-  const form = useForm<PaymentFormData>({
-    resolver: zodResolver(paymentSchema),
+  const form = useForm<PaiementModalFormData>({
+    resolver: zodResolver(paiementModalSchema),
     defaultValues: {
       amount: defaultValues?.amount || '',
       date: defaultValues?.date || new Date().toISOString().split('T')[0],
@@ -84,7 +50,7 @@ export function PaymentModal({
     },
   });
 
-  const handleSubmit = (data: PaymentFormData) => {
+  const handleSubmit = (data: PaiementModalFormData) => {
     if (maxAmount && Number(data.amount) > maxAmount) {
       form.setError('amount', {
         type: 'manual',

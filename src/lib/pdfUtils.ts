@@ -1,17 +1,45 @@
+type PdfDocumentInput = {
+  payerName?: string
+  clientName?: string
+  payerPhone?: string
+  clientPhone?: string
+  amount?: number
+  value?: number
+  uploadedAt?: string | number | Date
+  note?: string
+}
+
+type Html2Canvas = (element: HTMLElement, options?: { scale?: number }) => Promise<HTMLCanvasElement>
+
+type JsPdfInstance = {
+  internal: {
+    pageSize: {
+      getWidth: () => number
+      getHeight: () => number
+    }
+  }
+  addImage: (data: string, format: string, x: number, y: number, width: number, height: number) => void
+  output: (type: 'blob') => Blob
+  getImageProperties?: (data: string) => { width: number; height: number }
+}
+
+type JsPdfConstructor = new (options: { unit: string; format: string }) => JsPdfInstance
+
 // Utility to generate a styled PDF from a document object and offer download + share
-export async function generatePdfForDocument(doc: any) {
+export async function generatePdfForDocument(doc: PdfDocumentInput) {
   // dynamic imports so the app still builds if deps are not installed yet
-  let html2canvasModule: any
-  let jspdfModule: any
+  let html2canvasModule: unknown
+  let jspdfModule: unknown
   try {
     html2canvasModule = await import('html2canvas')
     jspdfModule = await import('jspdf')
-  } catch (e) {
+  } catch {
     throw new Error('Please install html2canvas and jspdf: npm install html2canvas jspdf')
   }
 
-  const html2canvas = html2canvasModule.default || html2canvasModule
-  const { jsPDF } = jspdfModule
+  const html2canvas = (html2canvasModule as { default?: Html2Canvas }).default
+    ?? (html2canvasModule as Html2Canvas)
+  const { jsPDF } = jspdfModule as { jsPDF: JsPdfConstructor }
 
   // Build a small HTML receipt element
   const wrapper = document.createElement('div')
@@ -46,7 +74,7 @@ export async function generatePdfForDocument(doc: any) {
     imgEl.style.objectFit = 'contain'
     imgEl.alt = 'Logo'
     header.appendChild(imgEl)
-  } catch (e) {
+  } catch {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     svg.setAttribute('width', '72')
     svg.setAttribute('height', '72')
@@ -127,12 +155,18 @@ export async function generatePdfForDocument(doc: any) {
   rightAmount.style.fontWeight = '700'
   rightAmount.style.color = '#0f172a'
   rightAmount.style.marginTop = '6px'
-  rightAmount.textContent = `${(doc.amount || doc.value || 0).toLocaleString('fr-FR')} FCFA`
+  const amountValue = typeof doc.amount === 'number'
+    ? doc.amount
+    : typeof doc.value === 'number'
+      ? doc.value
+      : 0
+  rightAmount.textContent = `${amountValue.toLocaleString('fr-FR')} FCFA`
   const rightDate = document.createElement('div')
   rightDate.style.fontSize = '12px'
   rightDate.style.color = '#64748b'
   rightDate.style.marginTop = '8px'
-  rightDate.textContent = `Date: ${new Date(doc.uploadedAt || Date.now()).toLocaleDateString('fr-FR')}`
+  const dateValue = doc.uploadedAt ? new Date(doc.uploadedAt) : new Date()
+  rightDate.textContent = `Date: ${dateValue.toLocaleDateString('fr-FR')}`
   right.appendChild(rightTitle)
   right.appendChild(rightAmount)
   right.appendChild(rightDate)
@@ -174,9 +208,8 @@ export async function generatePdfForDocument(doc: any) {
 
   const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = pdf.internal.pageSize.getWidth()
-  const pageHeight = pdf.internal.pageSize.getHeight()
   // image width fits page with small margins
-  const imgProps = (pdf as any).getImageProperties(imgData)
+  const imgProps = pdf.getImageProperties ? pdf.getImageProperties(imgData) : { width: canvas.width, height: canvas.height }
   const imgWidth = pageWidth - 48
   const imgHeight = (imgProps.height * imgWidth) / imgProps.width
   pdf.addImage(imgData, 'PNG', 24, 24, imgWidth, imgHeight)
@@ -199,11 +232,15 @@ export function downloadBlob(blob: Blob, filename = 'document.pdf') {
 export async function shareBlobViaWebShare(blob: Blob, filename = 'document.pdf', text = '') {
   try {
     const file = new File([blob], filename, { type: 'application/pdf' })
-    if ((navigator as any).canShare && (navigator as any).canShare({ files: [file] })) {
-      await (navigator as any).share({ files: [file], title: filename, text })
+    const shareApi = navigator as Navigator & {
+      canShare?: (data: { files: File[] }) => boolean
+      share?: (data: { files: File[]; title?: string; text?: string }) => Promise<void>
+    }
+    if (shareApi.canShare && shareApi.canShare({ files: [file] })) {
+      await shareApi.share?.({ files: [file], title: filename, text })
       return true
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
   return false
@@ -223,7 +260,8 @@ export async function uploadBlobToFileIo(blob: Blob, filename = 'document.pdf') 
     if (data && data.success && data.link) return data.link
     if (data && data.link) return data.link
     throw new Error('Upload failed')
-  } catch (e: any) {
-    throw new Error(e?.message || 'Upload to file.io failed')
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Upload to file.io failed'
+    throw new Error(message)
   }
 }

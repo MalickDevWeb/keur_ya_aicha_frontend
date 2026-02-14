@@ -3,7 +3,7 @@ import {
   validateName,
   validateSenegalNumber,
   validateCNI,
-} from '@/validators/clientValidator'
+} from '@/validators/frontend'
 
 export type ClientImportMapping = {
   firstName?: number
@@ -184,12 +184,12 @@ export function guessMapping(
   }
 }
 
-function toStringSafe(val: any): string {
+function toStringSafe(val: unknown): string {
   if (val === null || val === undefined) return ''
   return String(val).trim()
 }
 
-function parseNumber(val: any): number | undefined {
+function parseNumber(val: unknown): number | undefined {
   if (val === null || val === undefined || val === '') return undefined
   if (typeof val === 'number') return val
   const cleaned = String(val).replace(/\s/g, '').replace(',', '.')
@@ -197,7 +197,7 @@ function parseNumber(val: any): number | undefined {
   return Number.isFinite(num) ? num : undefined
 }
 
-function parseDate(val: any): Date | null {
+function parseDate(val: unknown): Date | null {
   if (!val) return null
   if (val instanceof Date && !Number.isNaN(val.getTime())) return val
   if (typeof val === 'number') {

@@ -1,0 +1,47 @@
+export const LABELS = {
+  FIRST_NAME: 'app.labels.firstName',
+  LAST_NAME: 'app.labels.lastName',
+  PHONE: 'app.labels.phone',
+  EMAIL: 'app.labels.email',
+  CNI: 'app.labels.cni',
+  ADDRESS: 'app.labels.address',
+  CITY: 'app.labels.city',
+  AMOUNT: 'app.labels.amount',
+  DATE: 'app.labels.date',
+  NOTES: 'app.labels.notes',
+  SEARCH: 'app.labels.search',
+  FILTER: 'app.labels.filter',
+  SORT: 'app.labels.sort',
+} as const
+
+export const LABELS_FR: Record<string, string> = {
+  [LABELS.FIRST_NAME]: 'Prénom',
+  [LABELS.LAST_NAME]: 'Nom',
+  [LABELS.PHONE]: 'Téléphone',
+  [LABELS.EMAIL]: 'Email',
+  [LABELS.CNI]: 'CNI',
+  [LABELS.ADDRESS]: 'Adresse',
+  [LABELS.CITY]: 'Ville',
+  [LABELS.AMOUNT]: 'Montant',
+  [LABELS.DATE]: 'Date',
+  [LABELS.NOTES]: 'Notes',
+  [LABELS.SEARCH]: 'Rechercher',
+  [LABELS.FILTER]: 'Filtrer',
+  [LABELS.SORT]: 'Trier',
+}
+
+export const LABELS_EN: Record<string, string> = {
+  [LABELS.FIRST_NAME]: 'First Name',
+  [LABELS.LAST_NAME]: 'Last Name',
+  [LABELS.PHONE]: 'Phone',
+  [LABELS.EMAIL]: 'Email',
+  [LABELS.CNI]: 'ID Number',
+  [LABELS.ADDRESS]: 'Address',
+  [LABELS.CITY]: 'City',
+  [LABELS.AMOUNT]: 'Amount',
+  [LABELS.DATE]: 'Date',
+  [LABELS.NOTES]: 'Notes',
+  [LABELS.SEARCH]: 'Search',
+  [LABELS.FILTER]: 'Filter',
+  [LABELS.SORT]: 'Sort',
+}

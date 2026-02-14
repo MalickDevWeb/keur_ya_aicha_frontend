@@ -1,0 +1,10 @@
+// Pages communes utilisées par tous les utilisateurs
+export { default as Login } from './Login'
+export { default as Index } from './Index'
+export { default as NotFound } from './NotFound'
+export { default as AdminSignup } from './AdminSignup'
+export { AuthLoginCard } from './AuthLoginCard'
+export { ForbiddenMessage } from './ForbiddenMessage'
+export { PageHeader } from './PageHeader'
+export { SectionWrapper } from './SectionWrapper'
+export { StatsCards } from './StatsCards'

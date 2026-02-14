@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
 export type Language = 'fr' | 'en';
@@ -305,26 +306,35 @@ export function I18nProvider({ children }: I18nProviderProps) {
 
   // Load language from server on mount
   useEffect(() => {
+    let mounted = true;
     async function loadLanguage() {
       try {
         const { getSetting } = await import('@/services/api');
         const savedLang = await getSetting('language');
+        if (!mounted) return;
         setLanguage((savedLang as Language) || 'fr');
-      } catch (e) {
-        console.error('Failed to load language:', e);
+      } catch {
+        if (!mounted) return;
         setLanguage('fr');
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
     loadLanguage();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleSetLanguage = useCallback((lang: Language) => {
     setLanguage(lang);
     // Save to server
-    const { setSetting } = require('@/services/api');
-    setSetting('language', lang).catch((e: any) => console.error('Failed to save language:', e));
+    void (async () => {
+      const { setSetting } = await import('@/services/api');
+      await setSetting('language', lang);
+    })().catch(() => {});
   }, []);
 
   const t = useCallback(

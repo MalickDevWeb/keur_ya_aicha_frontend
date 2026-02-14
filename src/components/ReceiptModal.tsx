@@ -48,7 +48,9 @@ export function ReceiptModal({
       if (printWindow) {
         try {
           printWindow.opener = null;
-        } catch {}
+        } catch (err) {
+          void err;
+        }
         const cloned = receiptRef.current.cloneNode(true);
         printWindow.document.body.innerHTML = '';
         printWindow.document.body.appendChild(cloned);
@@ -63,7 +65,14 @@ export function ReceiptModal({
     (async () => {
       try {
         const { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } = await import('@/lib/pdfUtils');
-        const docForPdf: any = {
+        const docForPdf: {
+          payerName: string;
+          payerPhone: string;
+          amount: number;
+          uploadedAt: Date;
+          name: string;
+          note?: string;
+        } = {
           payerName: clientName,
           payerPhone: '',
           amount,
@@ -84,7 +93,11 @@ export function ReceiptModal({
                 'noopener,noreferrer'
               );
               if (win) {
-                try { win.opener = null; } catch {}
+                try {
+                  win.opener = null;
+                } catch (err) {
+                  void err;
+                }
               }
               return;
             }
@@ -96,21 +109,31 @@ export function ReceiptModal({
               'noopener,noreferrer'
             );
             if (win) {
-              try { win.opener = null; } catch {}
+              try {
+                win.opener = null;
+              } catch (err) {
+                void err;
+              }
             }
-          } catch (e) {
+          } catch (err) {
+            void err;
             const win = window.open(
               `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`,
               '_blank',
               'noopener,noreferrer'
             );
             if (win) {
-              try { win.opener = null; } catch {}
+              try {
+                win.opener = null;
+              } catch (err) {
+                void err;
+              }
             }
           }
         }
-      } catch (e: any) {
-        alert(e?.message || 'Impossible de générer le PDF.');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Impossible de générer le PDF.';
+        alert(message);
       }
     })();
   };

@@ -1,0 +1,6 @@
+export * from './ClientCreateDTO'
+export * from './ClientUpdateDTO'
+export * from './DocumentCreateDTO'
+export * from './DepositUpdateDTO'
+export * from './PaymentMonthlyUpdateDTO'
+export * from './PaymentUpdateDTO'

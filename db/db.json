@@ -1,2082 +1,623 @@
 {
-  "clients": [
-    {
-      "status": "active",
-      "id": "2n6i5vp3iaz",
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "status": "archived",
-      "id": "u1fih15bmjl",
-      "firstName": "Cheikh",
-      "lastName": "Mbaye",
-      "phone": "+221774567890",
-      "cni": "789123456",
-      "email": "cheikh.mbaye@email.com",
-      "address": "Kolda, Senegal",
-      "createdAt": "2024-09-22T16:45:00Z",
-      "rentals": [],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "status": "blacklisted",
-      "id": "blacklist-3",
-      "firstName": "Ousmane",
-      "lastName": "Fall",
-      "phone": "+221773456789",
-      "cni": "333444555",
-      "email": "ousmane.fall@email.com",
-      "address": "Guédiawaye, Senegal",
-      "createdAt": "2024-06-10T15:30:00Z",
-      "rentals": [],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "status": "archived",
-      "adminId": "admin-7jsvr0ly",
-      "id": "ncrcy151c2s"
-    },
-    {
-      "rentals": [
-        {
-          "id": "iyctgtmxdi",
-          "clientId": "c262mqhvjpo",
-          "propertyType": "apartment",
-          "propertyName": "Petit Mbao ",
-          "monthlyRent": 100000,
-          "startDate": "2026-02-07T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "su1glsgmdp",
-              "rentalId": "iyctgtmxdi",
-              "periodStart": "2026-02-07T00:00:00.000Z",
-              "periodEnd": "2026-03-06T00:00:00.000Z",
-              "dueDate": "2026-03-11T00:00:00.000Z",
-              "amount": 100000,
-              "paidAmount": 100000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "4zmdqslo",
-                  "amount": 100000,
-                  "date": "2026-02-07T21:50:19.607Z",
-                  "receiptNumber": "REC-1770501019607"
-                }
-              ]
-            }
-          ],
-          "documents": []
-        },
-        {
-          "id": "f2hdyywn94n",
-          "clientId": "c262mqhvjpo",
-          "propertyType": "room",
-          "propertyName": "Appartement A1er",
-          "monthlyRent": 5000,
-          "startDate": "2026-02-22T00:00:00.000Z",
-          "deposit": {
-            "total": 30000,
-            "paid": 2000,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "ootbdpqbkz",
-              "rentalId": "f2hdyywn94n",
-              "periodStart": "2026-02-22T00:00:00.000Z",
-              "periodEnd": "2026-03-21T00:00:00.000Z",
-              "dueDate": "2026-03-26T00:00:00.000Z",
-              "amount": 5000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "id": "c262mqhvjpo",
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "y8gdjd6nw9",
-      "firstName": "Awa",
-      "lastName": "Diop",
-      "phone": "+221771234567",
-      "cni": "1234567890123",
-      "status": "active",
-      "createdAt": "2026-02-07T19:19:59.642Z",
-      "rentals": [
-        {
-          "id": "05itd7fb8ovg",
-          "clientId": "y8gdjd6nw9",
-          "propertyType": "apartment",
-          "propertyName": "apartment",
-          "monthlyRent": 150000,
-          "startDate": "2026-02-01T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "ci0k55ofysr",
-              "rentalId": "05itd7fb8ovg",
-              "periodStart": "2026-02-01T00:00:00.000Z",
-              "periodEnd": "2026-02-28T00:00:00.000Z",
-              "dueDate": "2026-03-05T00:00:00.000Z",
-              "amount": 150000,
-              "paidAmount": 150000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "bluwazdg",
-                  "amount": 150000,
-                  "date": "2026-02-07T21:50:09.769Z",
-                  "receiptNumber": "REC-1770501009769"
-                }
-              ]
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "u97tfx78f",
-      "firstName": "Moussa",
-      "lastName": "Ndiaye",
-      "phone": "771112233",
-      "cni": "",
-      "status": "active",
-      "createdAt": "2026-02-07T19:19:59.707Z",
-      "rentals": [
-        {
-          "id": "l3wv7e67i9k",
-          "clientId": "u97tfx78f",
-          "propertyType": "studio",
-          "propertyName": "studio",
-          "monthlyRent": 80000,
-          "startDate": "2026-02-05T00:00:00.000Z",
-          "deposit": {
-            "total": 100000,
-            "paid": 50000,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "9fxw0eq954c",
-              "rentalId": "l3wv7e67i9k",
-              "periodStart": "2026-02-05T00:00:00.000Z",
-              "periodEnd": "2026-03-04T00:00:00.000Z",
-              "dueDate": "2026-03-09T00:00:00.000Z",
-              "amount": 80000,
-              "paidAmount": 80000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "psfhi1rp",
-                  "amount": 80000,
-                  "date": "2026-02-08T00:43:13.854Z",
-                  "receiptNumber": "REC-1770511393854"
-                }
-              ]
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "i6aetdi5jkc",
-      "firstName": "Awa",
-      "lastName": "Diop",
-      "phone": "+221771234566",
-      "email": "awa.diop@email.com",
-      "cni": "1234567890123",
-      "status": "active",
-      "createdAt": "2026-02-07T21:20:19.094Z",
-      "rentals": [
-        {
-          "id": "20n8472eexn",
-          "clientId": "i6aetdi5jkc",
-          "propertyType": "apartment",
-          "propertyName": "apartment",
-          "monthlyRent": 150000,
-          "startDate": "2026-02-01T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "9ynqw15c8cm",
-              "rentalId": "20n8472eexn",
-              "periodStart": "2026-02-01T00:00:00.000Z",
-              "periodEnd": "2026-02-28T00:00:00.000Z",
-              "dueDate": "2026-03-05T00:00:00.000Z",
-              "amount": 150000,
-              "paidAmount": 150000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "it6qfuim",
-                  "amount": 150000,
-                  "date": "2026-02-07T21:50:16.298Z",
-                  "receiptNumber": "REC-1770501016298"
-                }
-              ]
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "ow84iz0ybt8",
-      "firstName": "Moussa",
-      "lastName": "Ndiaye",
-      "phone": "771112245",
-      "email": "",
-      "cni": "",
-      "status": "active",
-      "createdAt": "2026-02-07T21:20:19.178Z",
-      "rentals": [
-        {
-          "id": "offg4i9b0s9",
-          "clientId": "ow84iz0ybt8",
-          "propertyType": "studio",
-          "propertyName": "studio",
-          "monthlyRent": 80000,
-          "startDate": "2026-02-05T00:00:00.000Z",
-          "deposit": {
-            "total": 100000,
-            "paid": 50000,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "7qcnat6utlg",
-              "rentalId": "offg4i9b0s9",
-              "periodStart": "2026-02-05T00:00:00.000Z",
-              "periodEnd": "2026-03-04T00:00:00.000Z",
-              "dueDate": "2026-03-09T00:00:00.000Z",
-              "amount": 80000,
-              "paidAmount": 80000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "geiixn98",
-                  "amount": 50000,
-                  "date": "2026-02-08T00:57:22.599Z",
-                  "receiptNumber": "REC-1770512242599"
-                },
-                {
-                  "id": "sxhnec91",
-                  "amount": 30000,
-                  "date": "2026-02-08T00:57:45.661Z",
-                  "receiptNumber": "REC-1770512265661"
-                }
-              ]
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "nx6yh7ratpq",
-      "firstName": "Papa",
-      "lastName": "TEUW",
-      "phone": "+221771719017",
-      "email": "malickteuw.devweb@gmail.com",
-      "cni": "1111111111111",
-      "status": "active",
-      "createdAt": "2026-02-08T01:00:15.568Z",
-      "rentals": [
-        {
-          "id": "5g0mamrnzit",
-          "clientId": "nx6yh7ratpq",
-          "propertyType": "apartment",
-          "propertyName": "qqq",
-          "monthlyRent": 100000,
-          "startDate": "2026-02-08T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "l7o4gjr2cck",
-              "rentalId": "5g0mamrnzit",
-              "periodStart": "2026-02-08T00:00:00.000Z",
-              "periodEnd": "2026-03-07T00:00:00.000Z",
-              "dueDate": "2026-03-12T00:00:00.000Z",
-              "amount": 100000,
-              "paidAmount": 100000,
-              "status": "paid",
-              "payments": [
-                {
-                  "id": "wn3kvbsu",
-                  "amount": 100000,
-                  "date": "2026-02-08T01:01:02.390Z",
-                  "receiptNumber": "REC-1770512462390"
-                }
-              ]
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "rentals": [
-        {
-          "id": "u603mj7c5td",
-          "clientId": "7fyd0qz0z5r",
-          "propertyType": "room",
-          "propertyName": "Petit Mbao pres ",
-          "monthlyRent": 1000,
-          "startDate": "2026-02-15T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 20000,
-            "payments": [
-              {
-                "id": "8d5f6cc5-599a-4d87-9e35-efaead83e677",
-                "amount": 20000,
-                "date": "2026-02-08T01:10:42.733Z",
-                "receiptNumber": "DEP-MLD1R31P"
-              }
-            ]
-          },
-          "payments": [
-            {
-              "id": "jvbrffbgpgg",
-              "rentalId": "u603mj7c5td",
-              "periodStart": "2026-02-15T00:00:00.000Z",
-              "periodEnd": "2026-03-14T00:00:00.000Z",
-              "dueDate": "2026-03-19T00:00:00.000Z",
-              "amount": 1000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        },
-        {
-          "id": "prwolblhlw",
-          "clientId": "7fyd0qz0z5r",
-          "propertyType": "villa",
-          "propertyName": "Appartement A1",
-          "monthlyRent": 3000,
-          "startDate": "2026-02-08T00:00:00.000Z",
-          "deposit": {
-            "total": 3000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "3vxli0nknli",
-              "rentalId": "prwolblhlw",
-              "periodStart": "2026-02-08T00:00:00.000Z",
-              "periodEnd": "2026-03-07T00:00:00.000Z",
-              "dueDate": "2026-03-12T00:00:00.000Z",
-              "amount": 3000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "id": "7fyd0qz0z5r",
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "054bfxyxdy68",
-      "firstName": "Papa",
-      "lastName": "TEUW",
-      "phone": "+221771719012",
-      "email": "papa@gmail.com",
-      "cni": "1111111111111",
-      "status": "active",
-      "createdAt": "2026-02-08T01:37:58.444Z",
-      "rentals": [
-        {
-          "id": "rcr3v14e1cm",
-          "clientId": "054bfxyxdy68",
-          "propertyType": "apartment",
-          "propertyName": "Appartement A1",
-          "monthlyRent": 100000,
-          "startDate": "2026-02-08T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "dgefxmb01u",
-              "rentalId": "rcr3v14e1cm",
-              "periodStart": "2026-02-08T00:00:00.000Z",
-              "periodEnd": "2026-03-07T00:00:00.000Z",
-              "dueDate": "2026-03-12T00:00:00.000Z",
-              "amount": 100000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "u2onjq7b4t",
-      "firstName": "Awa",
-      "lastName": "Diop",
-      "phone": "+221779234567",
-      "email": "awa.diope@email.com",
-      "cni": "1234567890123",
-      "status": "active",
-      "createdAt": "2026-02-08T02:39:32.139Z",
-      "rentals": [
-        {
-          "id": "pl6bouuvcl",
-          "clientId": "u2onjq7b4t",
-          "propertyType": "apartment",
-          "propertyName": "apartment",
-          "monthlyRent": 150000,
-          "startDate": "2026-02-01T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "dv7qtsfv9fv",
-              "rentalId": "pl6bouuvcl",
-              "periodStart": "2026-02-01T00:00:00.000Z",
-              "periodEnd": "2026-02-28T00:00:00.000Z",
-              "dueDate": "2026-03-05T00:00:00.000Z",
-              "amount": 150000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "286j3116p6l",
-      "firstName": "Moussa",
-      "lastName": "Ndiaye",
-      "phone": "771112223",
-      "email": "",
-      "cni": "",
-      "status": "active",
-      "createdAt": "2026-02-08T02:39:32.187Z",
-      "rentals": [
-        {
-          "id": "jent2wjpwls",
-          "clientId": "286j3116p6l",
-          "propertyType": "studio",
-          "propertyName": "studio",
-          "monthlyRent": 80000,
-          "startDate": "2026-02-05T00:00:00.000Z",
-          "deposit": {
-            "total": 100000,
-            "paid": 50000,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "4ic2yxlnof3",
-              "rentalId": "jent2wjpwls",
-              "periodStart": "2026-02-05T00:00:00.000Z",
-              "periodEnd": "2026-03-04T00:00:00.000Z",
-              "dueDate": "2026-03-09T00:00:00.000Z",
-              "amount": 80000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "aew9k7ony86",
-      "firstName": "Moussa",
-      "lastName": "Ndiaye",
-      "phone": "774112233",
-      "email": "",
-      "cni": "",
-      "status": "active",
-      "createdAt": "2026-02-08T02:41:02.142Z",
-      "rentals": [
-        {
-          "id": "efqfuhiyst8",
-          "clientId": "aew9k7ony86",
-          "propertyType": "studio",
-          "propertyName": "studio",
-          "monthlyRent": 80000,
-          "startDate": "2026-02-05T00:00:00.000Z",
-          "deposit": {
-            "total": 100000,
-            "paid": 50000,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "74ga8f83ggf",
-              "rentalId": "efqfuhiyst8",
-              "periodStart": "2026-02-05T00:00:00.000Z",
-              "periodEnd": "2026-03-04T00:00:00.000Z",
-              "dueDate": "2026-03-09T00:00:00.000Z",
-              "amount": 80000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "mvrfdj36c7q",
-      "firstName": "Awa",
-      "lastName": "Diop",
-      "phone": "+221771234563",
-      "email": "aawa.diop@email.com",
-      "cni": "1234567890123",
-      "status": "active",
-      "createdAt": "2026-02-08T02:41:39.130Z",
-      "rentals": [
-        {
-          "id": "u1j5nekntlg",
-          "clientId": "mvrfdj36c7q",
-          "propertyType": "apartment",
-          "propertyName": "apartment",
-          "monthlyRent": 150000,
-          "startDate": "2026-02-01T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "eud351m8g7v",
-              "rentalId": "u1j5nekntlg",
-              "periodStart": "2026-02-01T00:00:00.000Z",
-              "periodEnd": "2026-02-28T00:00:00.000Z",
-              "dueDate": "2026-03-05T00:00:00.000Z",
-              "amount": 150000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ],
-      "adminId": "admin-7jsvr0ly"
-    },
-    {
-      "id": "vq9otgvxoz",
-      "firstName": "Moussa",
-      "lastName": "Ndiaye",
-      "phone": "771192233",
-      "email": "",
-      "cni": "",
-      "status": "active",
-      "createdAt": "2026-02-08T12:03:09.155Z",
-      "rentals": [
-        {
-          "id": "8iij8n0i6u",
-          "clientId": "vq9otgvxoz",
-          "propertyType": "studio",
-          "propertyName": "studio",
-          "monthlyRent": 80000,
-          "startDate": "2026-02-05T00:00:00.000Z",
-          "deposit": {
-            "total": 100000,
-            "paid": 50000,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "ujnnb2v2oea",
-              "rentalId": "8iij8n0i6u",
-              "periodStart": "2026-02-05T00:00:00.000Z",
-              "periodEnd": "2026-03-04T00:00:00.000Z",
-              "dueDate": "2026-03-09T00:00:00.000Z",
-              "amount": 80000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ]
-    },
-    {
-      "id": "7n6abldrqzm",
-      "firstName": "Awa",
-      "lastName": "Diop",
-      "phone": "+221771223467",
-      "email": "awa.vdiop@email.com",
-      "cni": "1234567890123",
-      "status": "active",
-      "createdAt": "2026-02-08T12:04:05.403Z",
-      "rentals": [
-        {
-          "id": "ohnswryowf",
-          "clientId": "7n6abldrqzm",
-          "propertyType": "apartment",
-          "propertyName": "apartment",
-          "monthlyRent": 150000,
-          "startDate": "2026-02-01T00:00:00.000Z",
-          "deposit": {
-            "total": 200000,
-            "paid": 0,
-            "payments": []
-          },
-          "payments": [
-            {
-              "id": "6czvgo4m2jt",
-              "rentalId": "ohnswryowf",
-              "periodStart": "2026-02-01T00:00:00.000Z",
-              "periodEnd": "2026-02-28T00:00:00.000Z",
-              "dueDate": "2026-03-05T00:00:00.000Z",
-              "amount": 150000,
-              "paidAmount": 0,
-              "status": "unpaid",
-              "payments": []
-            }
-          ],
-          "documents": []
-        }
-      ]
-    }
-  ],
-  "documents": [
-    {
-      "id": "doc-1",
-      "clientId": "y8gdjd6nw9",
-      "name": "Contrat de location",
-      "type": "contract",
-      "url": "/documents/contract-awa-diop.pdf",
-      "uploadedAt": "2026-02-07T21:35:00.000Z"
-    }
-  ],
-  "rentals": [
-    {
-      "id": "rent-1",
-      "clientId": "y8gdjd6nw9",
-      "propertyId": "prop-1",
-      "propertyName": "Appartement A1",
-      "propertyType": "apartment",
-      "startDate": "2026-02-01T00:00:00.000Z",
-      "monthlyRent": 150000,
-      "status": "active",
-      "depositTotal": 200000,
-      "depositPaid": 0,
-      "createdAt": "2026-02-07T21:34:00.000Z"
-    },
-    {
-      "id": "rent-2",
-      "clientId": "u97tfx78f",
-      "propertyId": "prop-2",
-      "propertyName": "Studio B2",
-      "propertyType": "studio",
-      "startDate": "2026-02-05T00:00:00.000Z",
-      "monthlyRent": 80000,
-      "status": "active",
-      "depositTotal": 100000,
-      "depositPaid": 50000,
-      "createdAt": "2026-02-07T21:34:10.000Z"
-    }
-  ],
-  "rental_payments": [
-    {
-      "id": "rp-1",
-      "rentalId": "rent-1",
-      "periodStart": "2026-02-01T00:00:00.000Z",
-      "periodEnd": "2026-02-28T00:00:00.000Z",
-      "dueDate": "2026-03-05T00:00:00.000Z",
-      "amount": 150000,
-      "paidAmount": 0,
-      "status": "unpaid"
-    },
-    {
-      "id": "rp-2",
-      "rentalId": "rent-2",
-      "periodStart": "2026-02-05T00:00:00.000Z",
-      "periodEnd": "2026-03-04T00:00:00.000Z",
-      "dueDate": "2026-03-09T00:00:00.000Z",
-      "amount": 80000,
-      "paidAmount": 0,
-      "status": "unpaid"
-    }
-  ],
-  "receipts": [
-    {
-      "id": "rec-1",
-      "rentalId": "rent-1",
-      "paymentId": "rp-1",
-      "amount": 150000,
-      "date": "2026-02-07T21:36:00.000Z",
-      "receiptNumber": "REC-202602-0001"
-    }
-  ],
-  "notifications": [
-    {
-      "id": "notif-1",
-      "targetType": "client",
-      "targetId": "y8gdjd6nw9",
-      "title": "Paiement en attente",
-      "message": "Le loyer de février est dû.",
-      "status": "unread",
-      "createdAt": "2026-02-07T21:37:00.000Z"
-    }
-  ],
-  "audit_logs": [
-    {
-      "id": "log-1",
-      "actorId": "user-admin",
-      "actorRole": "ADMIN",
-      "action": "CREATE_RENTAL",
-      "entityType": "rental",
-      "entityId": "rent-1",
-      "createdAt": "2026-02-07T21:34:00.000Z"
-    }
-  ],
-  "superadmin_logs": [
-    {
-      "id": "slog-1",
-      "actorId": "user-superadmin",
-      "action": "VIEW_DASHBOARD",
-      "createdAt": "2026-02-07T21:38:00.000Z"
-    }
-  ],
-  "client_notes": [
-    {
-      "id": "note-1",
-      "clientId": "y8gdjd6nw9",
-      "content": "Client ponctuel, aucun incident signalé.",
-      "createdAt": "2026-02-07T21:39:00.000Z"
-    }
-  ],
-  "properties": [
-    {
-      "id": "prop-1",
-      "name": "Appartement A1",
-      "type": "apartment",
-      "locationId": "loc-1",
-      "address": "Petit Mbao, Dakar",
-      "createdAt": "2026-02-07T21:33:00.000Z"
-    },
-    {
-      "id": "prop-2",
-      "name": "Studio B2",
-      "type": "studio",
-      "locationId": "loc-1",
-      "address": "Petit Mbao, Dakar",
-      "createdAt": "2026-02-07T21:33:10.000Z"
-    }
-  ],
-  "locations": [
-    {
-      "id": "loc-1",
-      "name": "Petit Mbao",
-      "city": "Dakar",
-      "country": "SN",
-      "createdAt": "2026-02-07T21:32:00.000Z"
-    }
-  ],
-  "maintenance_requests": [
-    {
-      "id": "maint-1",
-      "propertyId": "prop-2",
-      "clientId": "u97tfx78f",
-      "title": "Fuite d’eau",
-      "status": "open",
-      "createdAt": "2026-02-07T21:40:00.000Z"
-    }
-  ],
-  "file_uploads": [
-    {
-      "id": "file-1",
-      "name": "contrat-awa-diop.pdf",
-      "url": "/uploads/contrat-awa-diop.pdf",
-      "uploadedAt": "2026-02-07T21:35:10.000Z"
-    }
-  ],
-  "import_errors": [
-    {
-      "id": "imp-err-1",
-      "importRunId": "05f7",
-      "rowNumber": 2,
-      "message": "Client existe déjà avec ce numéro",
-      "createdAt": "2026-02-07T21:18:41.295Z"
-    }
-  ],
-  "payments": [
-    {
-      "id": "c74e",
-      "rentalId": "a7lvuzclili",
-      "paymentId": "79w8sz98n5e",
-      "amount": 150000,
-      "receiptId": "stgbdaoh",
-      "date": "2026-02-04T03:54:55.917Z"
-    },
-    {
-      "id": "7b86",
-      "rentalId": "v575y7gl0tk",
-      "paymentId": "efsoclkbm3v",
-      "amount": 1000,
-      "receiptId": "rhe78a1k",
-      "date": "2026-02-06T15:47:59.506Z"
-    },
-    {
-      "id": "b11b",
-      "rentalId": "z935pnbz81",
-      "paymentId": "2hbrtm36skb",
-      "amount": 10000,
-      "receiptId": "qwn5zoia",
-      "date": "2026-02-06T16:11:45.850Z"
-    },
-    {
-      "id": "532f",
-      "rentalId": "05itd7fb8ovg",
-      "paymentId": "ci0k55ofysr",
-      "amount": 150000,
-      "receiptId": "bluwazdg",
-      "date": "2026-02-07T21:50:09.769Z"
-    },
-    {
-      "id": "4687",
-      "rentalId": "20n8472eexn",
-      "paymentId": "9ynqw15c8cm",
-      "amount": 150000,
-      "receiptId": "it6qfuim",
-      "date": "2026-02-07T21:50:16.298Z"
-    },
-    {
-      "id": "2055",
-      "rentalId": "iyctgtmxdi",
-      "paymentId": "su1glsgmdp",
-      "amount": 100000,
-      "receiptId": "4zmdqslo",
-      "date": "2026-02-07T21:50:19.607Z"
-    },
-    {
-      "id": "dee0",
-      "rentalId": "z935pnbz81",
-      "paymentId": "2hbrtm36skb",
-      "amount": 90000,
-      "receiptId": "x0s7di3z",
-      "date": "2026-02-08T00:43:07.930Z"
-    },
-    {
-      "id": "d06d",
-      "rentalId": "l3wv7e67i9k",
-      "paymentId": "9fxw0eq954c",
-      "amount": 80000,
-      "receiptId": "psfhi1rp",
-      "date": "2026-02-08T00:43:13.854Z"
-    },
-    {
-      "id": "3c83",
-      "rentalId": "offg4i9b0s9",
-      "paymentId": "7qcnat6utlg",
-      "amount": 50000,
-      "receiptId": "geiixn98",
-      "date": "2026-02-08T00:57:22.599Z"
-    },
-    {
-      "id": "3dfd",
-      "rentalId": "offg4i9b0s9",
-      "paymentId": "7qcnat6utlg",
-      "amount": 30000,
-      "receiptId": "sxhnec91",
-      "date": "2026-02-08T00:57:45.661Z"
-    },
-    {
-      "id": "396b",
-      "rentalId": "5g0mamrnzit",
-      "paymentId": "l7o4gjr2cck",
-      "amount": 100000,
-      "receiptId": "wn3kvbsu",
-      "date": "2026-02-08T01:01:02.390Z"
-    }
-  ],
-  "deposits": [
-    {
-      "id": "93a9",
-      "rentalId": "a7lvuzclili",
-      "amount": 150000,
-      "receiptId": "0uaqgthd",
-      "date": "2026-02-06T15:48:40.846Z"
-    },
-    {
-      "id": "e592",
-      "rentalId": "z935pnbz81",
-      "amount": 200000,
-      "receiptId": "ivi3jt3q",
-      "date": "2026-02-08T00:58:18.392Z"
-    },
-    {
-      "id": "ae5d",
-      "rentalId": "z935pnbz81",
-      "amount": 0,
-      "receiptId": "grhnth7i",
-      "date": "2026-02-08T00:59:01.437Z"
-    },
-    {
-      "id": "177b",
-      "rentalId": "z935pnbz81",
-      "amount": 0,
-      "receiptId": "7e2w8oou",
-      "date": "2026-02-08T02:47:57.140Z"
-    },
-    {
-      "id": "77f5",
-      "rentalId": "z935pnbz81",
-      "amount": 0,
-      "receiptId": "0atfbnov",
-      "date": "2026-02-08T02:49:40.886Z"
-    }
-  ],
   "users": [
-    {
-      "id": "user-admin",
-      "username": "admin",
-      "password": "admin123",
-      "name": "Administrateur",
-      "email": "admin@keuryaaisha.com",
-      "role": "ADMIN",
-      "status": "ACTIF"
-    },
     {
       "id": "user-superadmin",
       "username": "superadmin",
-      "password": "superadmin123",
+      "password": "PaMaT1732",
       "name": "Super Admin",
       "email": "superadmin@keuryaaisha.com",
+      "phone": "771718013",
       "role": "SUPER_ADMIN",
       "status": "ACTIF",
-      "createdAt": "2026-02-01"
+      "createdAt": "2026-02-10T07:30:00.000Z",
+      "updatedAt": "2026-02-10T07:30:00.000Z"
     },
     {
-      "id": "user-byqkajzj",
-      "username": "admin",
-      "password": "admin123",
-      "name": "malickdevweb",
-      "email": "malickteuw.devweb@gmail.com",
+      "status": "ACTIF",
+      "id": "user-admin1"
+    },
+    {
+      "status": "BLACKLISTE",
+      "id": "user-admin2"
+    },
+    {
+      "id": "user-client1",
+      "username": "client1",
+      "password": "client123",
+      "name": "Awa Diop",
+      "email": "awa.diop@email.com",
+      "phone": "771111111",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-11T09:00:00.000Z",
+      "updatedAt": "2026-02-11T09:00:00.000Z"
+    },
+    {
+      "id": "user-client2",
+      "username": "client2",
+      "password": "client123",
+      "name": "Moussa Ndiaye",
+      "email": "moussa.ndiaye@email.com",
+      "phone": "772222222",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-12T10:00:00.000Z",
+      "updatedAt": "2026-02-12T10:00:00.000Z"
+    },
+    {
+      "id": "user-client3",
+      "username": "client3",
+      "password": "client123",
+      "name": "Fatou Sarr",
+      "email": "fatou.sarr@email.com",
+      "phone": "773333333",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-11T11:30:00.000Z",
+      "updatedAt": "2026-02-11T11:30:00.000Z"
+    },
+    {
+      "id": "user-client4",
+      "username": "client4",
+      "password": "client123",
+      "name": "Ibrahima Ba",
+      "email": "ibrahima.ba@email.com",
+      "phone": "774444444",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-12T12:10:00.000Z",
+      "updatedAt": "2026-02-12T12:10:00.000Z"
+    },
+    {
+      "id": "313ab44c-2eaa-41dc-b38d-7ede8340263a",
+      "username": "313ab44c-2eaa-41dc-b38d-7ede8340263a",
+      "password": "PaMaT1732",
+      "name": "Ndiaye Papa",
+      "email": "pppttt@gmail.com",
+      "phone": "770000020",
       "role": "ADMIN",
       "status": "ACTIF",
-      "createdAt": "2026-02-07T21:43:46.481Z"
+      "entrepriseName": "KYA",
+      "paid": true,
+      "paidAt": "2026-02-14T01:12:39.908Z",
+      "createdAt": "2026-02-14T01:10:21.917Z",
+      "updatedAt": "2026-02-14T01:12:39.916Z"
     },
     {
-      "id": "user-b6ne9yg8",
-      "username": "admin1",
-      "password": "admin123",
-      "name": "pmt",
-      "email": "malickteuw.devweb@gmail.com",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T21:44:09.788Z"
+      "id": "c9e5b9fb-6121-4adc-9a93-93d8172542a8",
+      "username": "c9e5b9fb-6121-4adc-9a93-93d8172542a8",
+      "password": "client123",
+      "name": "Awa Diop",
+      "email": "awa.diop@email.com",
+      "phone": "+221771234567",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-14T01:19:51.764Z",
+      "updatedAt": "2026-02-14T01:19:51.764Z"
     },
     {
-      "id": "user-srzldrhw",
-      "username": "adminq",
-      "password": "admin123",
-      "name": "posgres",
-      "email": "pmtfromd@admin.com",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T21:44:10.829Z"
-    },
-    {
-      "id": "user-mabghwgv",
-      "username": "adminq",
-      "password": "admin123",
-      "name": "db_posgres",
-      "email": "malickteuw.devweb@gmail.com",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T23:10:09.871Z"
-    },
-    {
-      "id": "user-2pxgomok",
-      "username": "Papa",
-      "password": "superadmin123",
-      "name": "TEUW",
+      "id": "6719d68b-690e-4279-8920-fdf44180e3f4",
+      "username": "6719d68b-690e-4279-8920-fdf44180e3f4",
+      "password": "client123",
+      "name": "Moussa Ndiaye",
       "email": "",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-08T00:04:18.941Z"
+      "phone": "771112233",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-14T01:19:51.816Z",
+      "updatedAt": "2026-02-14T01:19:51.816Z"
     },
     {
-      "id": "user-ztoce8bf",
-      "username": "papa1",
-      "password": "superadmin123",
-      "name": "TEUW",
+      "id": "2f6e72e4-e403-403e-b75b-c1f40a4e37a9",
+      "username": "2f6e72e4-e403-403e-b75b-c1f40a4e37a9",
+      "password": "PaMaT1732",
+      "name": "Modou Kakk",
+      "email": "kall@gmail.com",
+      "phone": "770001010",
+      "role": "ADMIN",
+      "status": "ACTIF",
+      "entrepriseName": "Kall",
+      "paid": true,
+      "paidAt": "2026-02-14T01:43:08.283Z",
+      "createdAt": "2026-02-14T01:40:17.383Z",
+      "updatedAt": "2026-02-14T01:43:08.290Z"
+    },
+    {
+      "id": "a010a077-eca8-4c7d-9e48-8df7091d2a9c",
+      "username": "a010a077-eca8-4c7d-9e48-8df7091d2a9c",
+      "password": "PaMaT1732",
+      "name": "Fallou Teuw",
       "email": "",
+      "phone": "771111112",
       "role": "ADMIN",
       "status": "ACTIF",
-      "createdAt": "2026-02-08T00:12:55.345Z"
+      "entrepriseName": "Fallou Teuw 112",
+      "paid": true,
+      "paidAt": "2026-02-14T02:07:48.718Z",
+      "createdAt": "2026-02-14T01:45:06.760Z",
+      "updatedAt": "2026-02-14T02:07:48.728Z"
     },
     {
-      "id": "user-wf742vpm",
-      "username": "dddd",
-      "password": "superadmin123",
-      "name": "ddddddd",
+      "id": "5c75864f-4635-4286-9831-9444cc1ab38b",
+      "username": "5c75864f-4635-4286-9831-9444cc1ab38b",
+      "password": "PaMaT1732",
+      "name": "Modou Ndiaye",
       "email": "",
+      "phone": "778000001",
       "role": "ADMIN",
       "status": "ACTIF",
-      "createdAt": "2026-02-08T00:31:28.667Z"
+      "entrepriseName": "mm",
+      "paid": true,
+      "paidAt": "2026-02-14T02:24:41.156Z",
+      "createdAt": "2026-02-14T02:09:16.047Z",
+      "updatedAt": "2026-02-14T02:24:41.164Z"
     },
     {
-      "id": "user-2caw4jce",
-      "username": "hhh",
-      "password": "superadmin123",
-      "name": "TEUW",
-      "email": "jjjjjjjj",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-08T00:37:02.930Z"
-    },
-    {
-      "id": "user-e50sa39e",
-      "username": "jjjjjj",
-      "password": "superadmin123",
-      "name": "TEUW",
+      "id": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "username": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "password": "PaMaT1732",
+      "name": "Modou Diop",
       "email": "",
+      "phone": "770000102",
       "role": "ADMIN",
       "status": "ACTIF",
-      "createdAt": "2026-02-08T00:38:48.810Z"
+      "entrepriseName": "Modou Diop 102",
+      "paid": true,
+      "paidAt": "2026-02-14T02:24:54.292Z",
+      "createdAt": "2026-02-14T02:14:04.595Z",
+      "updatedAt": "2026-02-14T02:24:54.299Z"
     },
     {
-      "id": "user-crctrth6",
-      "username": "vOOOOb",
-      "password": "admin123",
-      "name": "jpapap",
-      "email": "admin@admin.com",
+      "id": "user-idehzn8g",
+      "username": "mmmmmmmmmm",
+      "password": "papapapa",
+      "name": "jjjjjjjjjjj",
+      "email": "",
+      "phone": "771712222",
       "role": "ADMIN",
       "status": "ACTIF",
-      "createdAt": "2026-02-08T03:23:06.438Z"
-    },
-    {
-      "id": "user-hywmwwhn",
-      "username": "vOOOObb",
-      "password": "admin123",
-      "name": "jpapap",
-      "email": "admin@admin.com",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-08T03:23:11.509Z"
-    },
-    {
-      "id": "user-y6so34yf",
-      "username": "fffffffffff",
-      "password": "superadmin123",
-      "name": "fffffffffffffffff",
-      "email": "c",
-      "phone": "superadmin",
-      "role": "ADMIN",
-      "status": "ACTIF",
-      "createdAt": "2026-02-08T03:37:22.658Z"
-    }
-  ],
-  "admin_requests": [
-    {
-      "id": "a7f664d8-5fa2-46c6-9953-d9597d9757b1",
-      "username": "admin",
-      "name": "malickdevweb",
-      "email": "malickteuw.devweb@gmail.com",
-      "entrepriseName": "MDC",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T21:29:42.074Z"
-    },
-    {
-      "id": "0dd8aa24-cb1e-4570-bb6d-43aed24d5171",
-      "username": "admin1",
-      "name": "pmt",
-      "email": "malickteuw.devweb@gmail.com",
-      "entrepriseName": "MDC",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T21:30:04.405Z"
-    },
-    {
-      "id": "abb49e0d-51dd-4fda-a80b-0688f4500bd1",
-      "username": "adminq",
-      "name": "posgres",
-      "email": "pmtfromd@admin.com",
-      "entrepriseName": "MDCq",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T21:30:32.969Z"
-    },
-    {
-      "id": "b57bbbf9-6f17-47c3-9c6c-0458eee49e48",
-      "username": "adminq",
-      "name": "db_posgres",
-      "email": "malickteuw.devweb@gmail.com",
-      "entrepriseName": "pppp",
-      "status": "ACTIF",
-      "createdAt": "2026-02-07T23:09:55.926Z"
-    },
-    {
-      "id": "36bf883e-608a-4c62-b6b2-5955545f037e",
-      "username": "ssssss",
-      "name": "malickdevweb",
-      "email": "pmtfromd@admin.com",
-      "entrepriseName": "MDC",
-      "status": "EN_ATTENTE",
-      "createdAt": "2026-02-08T00:43:33.192Z"
-    },
-    {
-      "id": "62df3d7e-c699-405b-b074-b2abf9997eab",
-      "username": "vOOOOvv",
-      "name": "jpapap",
-      "email": "admin@admin.com",
-      "entrepriseName": "ODC",
-      "status": "EN_ATTENTE",
-      "createdAt": "2026-02-08T02:51:18.519Z"
+      "createdAt": "2026-02-14T02:19:54.198Z"
     }
   ],
   "admins": [
     {
-      "id": "admin-7jsvr0ly",
-      "userId": "user-byqkajzj",
-      "username": "admin",
-      "name": "malickdevweb",
-      "email": "malickteuw.devweb@gmail.com",
-      "status": "ACTIF",
-      "entrepriseId": "ent-ie8jacox",
-      "createdAt": "2026-02-07T21:43:46.481Z"
-    },
-    {
-      "id": "admin-565awds0",
-      "userId": "user-b6ne9yg8",
-      "username": "admin1",
-      "name": "pmt",
-      "email": "malickteuw.devweb@gmail.com",
-      "status": "ACTIF",
-      "entrepriseId": "ent-olt8sb51",
-      "createdAt": "2026-02-07T21:44:09.788Z"
-    },
-    {
-      "id": "admin-9nwb7p1y",
-      "userId": "user-srzldrhw",
-      "username": "adminq",
-      "name": "posgres",
-      "email": "pmtfromd@admin.com",
-      "status": "SUSPENDU",
-      "entrepriseId": "ent-tcjgpgks",
-      "createdAt": "2026-02-07T21:44:10.829Z"
-    },
-    {
-      "id": "admin-x1gx2hmy",
-      "userId": "user-mabghwgv",
-      "username": "adminq",
-      "name": "db_posgres",
-      "email": "malickteuw.devweb@gmail.com",
-      "status": "ACTIF",
-      "entrepriseId": "ent-m0ns49hh",
-      "createdAt": "2026-02-07T23:10:09.871Z"
-    },
-    {
-      "id": "admin-eavffkjn",
-      "userId": "user-2pxgomok",
-      "username": "Papa",
-      "name": "TEUW",
-      "email": "",
-      "status": "ACTIF",
-      "entrepriseId": "ent-jm5jo8mg",
-      "createdAt": "2026-02-08T00:04:18.941Z"
-    },
-    {
-      "id": "admin-ov10wwgv",
-      "userId": "user-ztoce8bf",
-      "username": "papa1",
-      "name": "TEUW",
-      "email": "",
-      "status": "ACTIF",
-      "entrepriseId": "ent-83zwn0rb",
-      "createdAt": "2026-02-08T00:12:55.345Z"
-    },
-    {
-      "id": "admin-rm6erns3",
-      "userId": "user-wf742vpm",
-      "username": "dddd",
-      "name": "ddddddd",
-      "email": "",
-      "status": "ACTIF",
-      "entrepriseId": "ent-b5od95z1",
-      "createdAt": "2026-02-08T00:31:28.667Z"
-    },
-    {
-      "id": "admin-786azoy7",
-      "userId": "user-2caw4jce",
-      "username": "hhh",
-      "name": "TEUW",
-      "email": "jjjjjjjj",
-      "status": "ACTIF",
-      "entrepriseId": "ent-7xfv3ekz",
-      "createdAt": "2026-02-08T00:37:02.930Z"
-    },
-    {
-      "id": "admin-tsqjlf38",
-      "userId": "user-e50sa39e",
-      "username": "jjjjjj",
-      "name": "TEUW",
-      "email": "",
       "status": "ARCHIVE",
-      "entrepriseId": "",
-      "createdAt": "2026-02-08T00:38:48.810Z"
+      "id": "user-admin1"
     },
     {
-      "id": "admin-6po6m57x",
-      "userId": "user-crctrth6",
-      "username": "vOOOOb",
-      "name": "jpapap",
-      "email": "admin@admin.com",
+      "status": "BLACKLISTE",
+      "id": "user-admin2"
+    },
+    {
+      "id": "313ab44c-2eaa-41dc-b38d-7ede8340263a",
+      "entrepriseId": "KYA",
+      "paid": true,
+      "paidAt": "2026-02-14T01:12:39.908Z"
+    },
+    {
+      "id": "2f6e72e4-e403-403e-b75b-c1f40a4e37a9",
+      "entrepriseId": "Kall",
+      "paid": true,
+      "paidAt": "2026-02-14T01:43:08.283Z",
+      "status": "ACTIF"
+    },
+    {
+      "id": "a010a077-eca8-4c7d-9e48-8df7091d2a9c",
+      "entrepriseId": "Fallou Teuw 112",
+      "paid": true,
+      "paidAt": "2026-02-14T02:07:48.718Z",
+      "status": "ACTIF"
+    },
+    {
+      "id": "user-idehzn8g",
+      "userId": "user-idehzn8g",
+      "username": "mmmmmmmmmm",
+      "name": "jjjjjjjjjjj",
+      "email": "",
       "status": "ACTIF",
-      "entrepriseId": "ent-qvx9eqfk",
-      "createdAt": "2026-02-08T03:23:06.438Z"
+      "entrepriseId": "cccccc",
+      "createdAt": "2026-02-14T02:19:54.198Z"
     },
     {
-      "id": "admin-alrj1fa4",
-      "userId": "user-y6so34yf",
-      "username": "fffffffffff",
-      "name": "fffffffffffffffff",
-      "email": "c",
-      "status": "ACTIF",
-      "entrepriseId": "ent-t5fzam7z",
-      "createdAt": "2026-02-08T03:37:22.658Z"
+      "id": "5c75864f-4635-4286-9831-9444cc1ab38b",
+      "entrepriseId": "mm",
+      "paid": true,
+      "paidAt": "2026-02-14T02:24:41.156Z",
+      "status": "ACTIF"
+    },
+    {
+      "id": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "entrepriseId": "Modou Diop 102",
+      "paid": true,
+      "paidAt": "2026-02-14T02:24:54.292Z",
+      "status": "ACTIF"
     }
   ],
-  "entreprises": [
+  "superadmins": [
     {
-      "id": "ent-ie8jacox",
-      "name": "MDC",
-      "adminId": "admin-7jsvr0ly",
-      "createdAt": "2026-02-07T21:43:46.481Z"
-    },
-    {
-      "id": "ent-olt8sb51",
-      "name": "MDC",
-      "adminId": "admin-565awds0",
-      "createdAt": "2026-02-07T21:44:09.788Z"
-    },
-    {
-      "id": "ent-tcjgpgks",
-      "name": "MDCq",
-      "adminId": "admin-9nwb7p1y",
-      "createdAt": "2026-02-07T21:44:10.829Z"
-    },
-    {
-      "id": "ent-m0ns49hh",
-      "name": "pppp",
-      "adminId": "admin-x1gx2hmy",
-      "createdAt": "2026-02-07T23:10:09.871Z"
-    },
-    {
-      "id": "ent-jm5jo8mg",
-      "name": "hhhhhh",
-      "adminId": "admin-eavffkjn",
-      "createdAt": "2026-02-08T00:04:18.941Z"
-    },
-    {
-      "id": "ent-83zwn0rb",
-      "name": "dddd",
-      "adminId": "admin-ov10wwgv",
-      "createdAt": "2026-02-08T00:12:55.345Z"
-    },
-    {
-      "id": "ent-b5od95z1",
-      "name": "dddddd",
-      "adminId": "admin-rm6erns3",
-      "createdAt": "2026-02-08T00:31:28.667Z"
-    },
-    {
-      "id": "ent-7xfv3ekz",
-      "name": "jjjjjj",
-      "adminId": "admin-786azoy7",
-      "createdAt": "2026-02-08T00:37:02.930Z"
-    },
-    {
-      "id": "ent-t5fzam7z",
-      "name": "vvvbbb",
-      "adminId": "admin-alrj1fa4",
-      "createdAt": "2026-02-08T03:37:22.658Z"
+      "id": "user-superadmin",
+      "permissions": [
+        "ALL"
+      ]
     }
   ],
-  "settings": [
+  "clients": [
     {
-      "id": "app-theme",
-      "key": "app_theme",
-      "value": "light"
+      "id": "user-client1",
+      "status": "active"
     },
     {
-      "id": "app-language",
-      "key": "language",
-      "value": "fr"
+      "id": "user-client2",
+      "status": "active"
     },
     {
-      "id": "import_report_format",
-      "key": "import_report_format",
-      "value": "xlsx"
+      "id": "user-client3",
+      "status": "active"
     },
     {
-      "id": "import_clients_aliases",
-      "key": "import_clients_aliases",
-      "value": "{\"firstName\":[\"prenom\",\"prénom\",\"first name\",\"firstname\"],\"lastName\":[\"nom\",\"lastname\",\"last name\",\"surname\",\"family\"],\"phone\":[\"telephone\",\"téléphone\",\"phone\",\"tel\",\"mobile\"],\"email\":[\"email\",\"e-mail\",\"mail\"],\"cni\":[\"cni\",\"cin\",\"identite\",\"identité\",\"id\"],\"propertyType\":[\"type\",\"property type\",\"type de bien\"],\"propertyName\":[\"bien\",\"property\",\"adresse\",\"location\",\"logement\"],\"startDate\":[\"date\",\"start\",\"debut\",\"début\"],\"monthlyRent\":[\"loyer\",\"rent\",\"monthly\"],\"depositTotal\":[\"caution\",\"deposit total\",\"deposit\"],\"depositPaid\":[\"payee\",\"payé\",\"paid\",\"avance\"],\"status\":[\"status\",\"statut\"]}"
+      "id": "user-client4",
+      "status": "active"
+    },
+    {
+      "id": "c9e5b9fb-6121-4adc-9a93-93d8172542a8",
+      "adminId": "313ab44c-2eaa-41dc-b38d-7ede8340263a",
+      "firstName": "Awa",
+      "lastName": "Diop",
+      "phone": "+221771234567",
+      "email": "awa.diop@email.com",
+      "cni": "1234567890123",
+      "status": "active",
+      "createdAt": "2026-02-14T01:19:51.753Z",
+      "rentals": [
+        {
+          "id": "e813c31e-3fd4-49cc-af8a-92d5225ad098",
+          "clientId": "c9e5b9fb-6121-4adc-9a93-93d8172542a8",
+          "propertyType": "apartment",
+          "propertyName": "apartment",
+          "monthlyRent": 150000,
+          "startDate": "2026-02-01T00:00:00.000Z",
+          "deposit": {
+            "total": 200000,
+            "paid": 0,
+            "payments": []
+          },
+          "payments": [
+            {
+              "id": "e06c33e7-c22d-43b6-b15d-dbe2b28a1d41",
+              "rentalId": "e813c31e-3fd4-49cc-af8a-92d5225ad098",
+              "periodStart": "2026-02-01T00:00:00.000Z",
+              "periodEnd": "2026-02-28T00:00:00.000Z",
+              "dueDate": "2026-03-05T00:00:00.000Z",
+              "amount": 150000,
+              "paidAmount": 150000,
+              "status": "paid",
+              "payments": [
+                {
+                  "id": "7a4464a2-2f6e-4e03-aeed-3c2b5c6af104",
+                  "amount": 150000,
+                  "date": "2026-02-14T01:20:32.539Z",
+                  "receiptNumber": "REC-1771032032539"
+                }
+              ]
+            }
+          ],
+          "documents": []
+        }
+      ]
+    },
+    {
+      "id": "6719d68b-690e-4279-8920-fdf44180e3f4",
+      "firstName": "Moussa",
+      "lastName": "Ndiaye",
+      "phone": "771112233",
+      "email": "",
+      "status": "active",
+      "createdAt": "2026-02-14T01:19:51.806Z",
+      "rentals": [
+        {
+          "id": "9226bd8e-e91b-4f70-a01c-9adbd17049ba",
+          "clientId": "6719d68b-690e-4279-8920-fdf44180e3f4",
+          "propertyType": "studio",
+          "propertyName": "studio",
+          "monthlyRent": 80000,
+          "startDate": "2026-02-05T00:00:00.000Z",
+          "deposit": {
+            "total": 100000,
+            "paid": 50000,
+            "payments": []
+          },
+          "payments": [
+            {
+              "id": "ef31ca85-5d13-42e9-85e8-0f33a679ca84",
+              "rentalId": "9226bd8e-e91b-4f70-a01c-9adbd17049ba",
+              "periodStart": "2026-02-05T00:00:00.000Z",
+              "periodEnd": "2026-03-04T00:00:00.000Z",
+              "dueDate": "2026-03-09T00:00:00.000Z",
+              "amount": 80000,
+              "paidAmount": 0,
+              "status": "unpaid",
+              "payments": []
+            }
+          ],
+          "documents": []
+        }
+      ]
     }
   ],
-  "work_items": [],
-  "import_runs": [
+  "admin_clients": [
     {
-      "id": "05f7",
-      "createdAt": "2026-02-07T21:18:41.295Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "Client existe déjà avec ce numéro"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "Client existe déjà avec ce numéro"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
+      "adminId": "user-admin1",
+      "clientId": "user-client1",
+      "createdAt": "2026-02-12T10:30:00.000Z",
+      "id": "a801"
     },
     {
-      "id": "5bfe",
-      "createdAt": "2026-02-07T21:20:19.275Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [
-        {
-          "id": "i6aetdi5jkc",
-          "firstName": "Awa",
-          "lastName": "Diop",
-          "phone": "+221771234566",
-          "email": "awa.diop@email.com"
-        },
-        {
-          "id": "ow84iz0ybt8",
-          "firstName": "Moussa",
-          "lastName": "Ndiaye",
-          "phone": "771112245",
-          "email": ""
-        }
-      ],
-      "errors": [],
-      "ignored": false
+      "adminId": "user-admin1",
+      "clientId": "user-client2",
+      "createdAt": "2026-02-12T10:30:00.000Z",
+      "id": "c4e9"
     },
     {
-      "id": "fc5f",
-      "createdAt": "2026-02-08T01:44:21.789Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
+      "adminId": "user-admin2",
+      "clientId": "user-client3",
+      "createdAt": "2026-02-12T10:35:00.000Z",
+      "id": "ab4b"
     },
     {
-      "id": "da63",
-      "createdAt": "2026-02-08T01:57:05.319Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
+      "adminId": "user-admin2",
+      "clientId": "user-client4",
+      "createdAt": "2026-02-12T10:35:00.000Z",
+      "id": "3eab"
     },
     {
-      "id": "5642",
-      "createdAt": "2026-02-08T01:57:36.197Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
+      "adminId": "313ab44c-2eaa-41dc-b38d-7ede8340263a",
+      "clientId": "c9e5b9fb-6121-4adc-9a93-93d8172542a8",
+      "createdAt": "2026-02-14T01:19:51.764Z",
+      "id": "c664"
     },
     {
-      "id": "d6ab",
-      "createdAt": "2026-02-08T02:01:52.682Z",
-      "fileName": "import_clients_template.csv",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 3,
-          "errors": [
-            "CNI invalide"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiayeg",
-            "phone": "771112233",
-            "email": "",
-            "cni": "studio",
-            "propertyType": "studio",
-            "propertyName": "Studio 5B",
-            "startDate": "+080000-01-01T00:00:00.000Z",
-            "monthlyRent": 100000,
-            "depositTotal": 50000,
-            "status": ""
-          }
-        }
-      ],
-      "ignored": false
-    },
-    {
-      "id": "b25e",
-      "createdAt": "2026-02-08T02:02:17.667Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
-    },
-    {
-      "id": "c449",
-      "createdAt": "2026-02-08T02:03:14.266Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
-    },
-    {
-      "id": "cad7",
-      "createdAt": "2026-02-08T02:07:45.929Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": false
-    },
-    {
-      "id": "a98d",
-      "createdAt": "2026-02-08T02:08:49.118Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": true
-    },
-    {
-      "id": "2219",
-      "createdAt": "2026-02-08T02:12:08.702Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active"
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "HTTP Error: 409"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active"
-          }
-        }
-      ],
-      "ignored": true
-    },
-    {
-      "id": "ee97",
-      "createdAt": "2026-02-08T02:17:19.788Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [
-        {
-          "id": "u2onjq7b4t",
-          "firstName": "Awa",
-          "lastName": "Diop",
-          "phone": "+221779234567",
-          "email": "awa.diope@email.com"
-        },
-        {
-          "id": "286j3116p6l",
-          "firstName": "Moussa",
-          "lastName": "Ndiaye",
-          "phone": "771112223",
-          "email": ""
-        }
-      ],
-      "errors": [],
-      "ignored": false
-    },
-    {
-      "id": "4cf7",
-      "createdAt": "2026-02-08T02:41:02.368Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [
-        {
-          "id": "aew9k7ony86",
-          "firstName": "Moussa",
-          "lastName": "Ndiaye",
-          "phone": "774112233",
-          "email": ""
-        },
-        {
-          "id": "mvrfdj36c7q",
-          "firstName": "Awa",
-          "lastName": "Diop",
-          "phone": "+221771234563",
-          "email": "aawa.diop@email.com"
-        }
-      ],
-      "errors": [],
-      "ignored": false
-    },
-    {
-      "id": "b2e8",
-      "createdAt": "2026-02-08T02:45:37.628Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "Numéro déjà utilisé par Awa Diop (+221771234567)",
-            "Email déjà utilisé par Awa Diop (awa.diop@email.com)"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active",
-            "_duplicateOwner": {
-              "id": "y8gdjd6nw9",
-              "firstName": "Awa",
-              "lastName": "Diop",
-              "phone": "+221771234567",
-              "email": ""
-            }
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "Numéro déjà utilisé par Moussa Ndiaye (771112233)"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active",
-            "_duplicateOwner": {
-              "id": "u97tfx78f",
-              "firstName": "Moussa",
-              "lastName": "Ndiaye",
-              "phone": "771112233",
-              "email": ""
-            }
-          }
-        }
-      ],
-      "ignored": true
-    },
-    {
-      "id": "2a0d",
-      "createdAt": "2026-02-08T02:46:54.646Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [],
-      "errors": [
-        {
-          "rowNumber": 2,
-          "errors": [
-            "Numéro déjà utilisé par Awa Diop (+221771234567)",
-            "Email déjà utilisé par Awa Diop (awa.diop@email.com)"
-          ],
-          "parsed": {
-            "firstName": "Awa",
-            "lastName": "Diop",
-            "phone": "+221771234567",
-            "email": "awa.diop@email.com",
-            "cni": "1234567890123",
-            "propertyType": "apartment",
-            "propertyName": "apartment",
-            "startDate": "2026-02-01T00:00:00.000Z",
-            "monthlyRent": 150000,
-            "depositTotal": 200000,
-            "depositPaid": 0,
-            "status": "active",
-            "_duplicateOwner": {
-              "id": "y8gdjd6nw9",
-              "firstName": "Awa",
-              "lastName": "Diop",
-              "phone": "+221771234567",
-              "email": ""
-            }
-          }
-        },
-        {
-          "rowNumber": 3,
-          "errors": [
-            "Numéro déjà utilisé par Moussa Ndiaye (771112233)"
-          ],
-          "parsed": {
-            "firstName": "Moussa",
-            "lastName": "Ndiaye",
-            "phone": "771112233",
-            "email": "",
-            "cni": "",
-            "propertyType": "studio",
-            "propertyName": "studio",
-            "startDate": "2026-02-05T00:00:00.000Z",
-            "monthlyRent": 80000,
-            "depositTotal": 100000,
-            "depositPaid": 50000,
-            "status": "active",
-            "_duplicateOwner": {
-              "id": "u97tfx78f",
-              "firstName": "Moussa",
-              "lastName": "Ndiaye",
-              "phone": "771112233",
-              "email": ""
-            }
-          }
-        }
-      ],
-      "ignored": true
-    },
-    {
-      "id": "74b9",
-      "createdAt": "2026-02-08T12:02:46.347Z",
-      "fileName": "import_clients_template.xlsx",
-      "totalRows": 3,
-      "inserted": [
-        {
-          "id": "vq9otgvxoz",
-          "firstName": "Moussa",
-          "lastName": "Ndiaye",
-          "phone": "771192233",
-          "email": ""
-        },
-        {
-          "id": "7n6abldrqzm",
-          "firstName": "Awa",
-          "lastName": "Diop",
-          "phone": "+221771223467",
-          "email": "awa.vdiop@email.com"
-        }
-      ],
-      "errors": [],
-      "ignored": false
+      "adminId": "313ab44c-2eaa-41dc-b38d-7ede8340263a",
+      "clientId": "6719d68b-690e-4279-8920-fdf44180e3f4",
+      "createdAt": "2026-02-14T01:19:51.816Z",
+      "id": "3a0a"
     }
   ],
-  "sessions": [],
-  "authContext": {
-    "userId": "user-superadmin",
-    "impersonation": null,
-    "updatedAt": "2026-02-08T12:04:17.294Z"
-  }
+  "rentals": [
+    {
+      "id": "rental-1",
+      "clientId": "user-client1",
+      "propertyType": "apartment",
+      "propertyName": "Dakar Plateau A1",
+      "monthlyRent": 150000,
+      "startDate": "2026-02-01",
+      "deposit": 200000
+    },
+    {
+      "id": "rental-2",
+      "clientId": "user-client2",
+      "propertyType": "studio",
+      "propertyName": "Almadies S2",
+      "monthlyRent": 90000,
+      "startDate": "2026-02-10",
+      "deposit": 120000
+    },
+    {
+      "id": "rental-3",
+      "clientId": "user-client3",
+      "propertyType": "apartment",
+      "propertyName": "Sacré-Coeur B3",
+      "monthlyRent": 130000,
+      "startDate": "2026-02-05",
+      "deposit": 180000
+    },
+    {
+      "id": "rental-4",
+      "clientId": "user-client4",
+      "propertyType": "room",
+      "propertyName": "Parcelles R5",
+      "monthlyRent": 60000,
+      "startDate": "2026-02-12",
+      "deposit": 80000
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-mllng8dk-jcqf",
+      "user_id": "user-superadmin",
+      "type": "ADMIN_REQUEST",
+      "message": "Nouvelle demande admin: Modou Kakk (770001010)",
+      "is_read": true,
+      "created_at": "2026-02-14T01:40:17.383Z"
+    },
+    {
+      "id": "notif-mllnmfns-1fzc",
+      "user_id": "user-superadmin",
+      "type": "ADMIN_REQUEST",
+      "message": "Nouvelle demande admin: Fallou Teuw (771111112)",
+      "is_read": true,
+      "created_at": "2026-02-14T01:45:06.760Z"
+    },
+    {
+      "id": "notif-mllohhxr-2k11",
+      "user_id": "user-superadmin",
+      "type": "ADMIN_REQUEST",
+      "message": "Nouvelle demande admin: Modou Ndiaye (778000001)",
+      "is_read": true,
+      "created_at": "2026-02-14T02:09:16.047Z"
+    },
+    {
+      "id": "notif-mllonokz-81cc",
+      "user_id": "user-superadmin",
+      "type": "ADMIN_REQUEST",
+      "message": "Nouvelle demande admin: Modou Diop (770000102)",
+      "is_read": true,
+      "created_at": "2026-02-14T02:14:04.595Z"
+    }
+  ],
+  "otp": [],
+  "audit_logs": [
+    {
+      "id": "log-mllofmk8-bjrl",
+      "actor": "user-superadmin",
+      "action": "ADMIN_REQUEST_STATUS",
+      "targetType": "admin_request",
+      "targetId": "a010a077-eca8-4c7d-9e48-8df7091d2a9c",
+      "message": "Demande admin Fallou Teuw : EN_ATTENTE → ACTIF",
+      "createdAt": "2026-02-14T02:07:48.728Z"
+    },
+    {
+      "id": "log-mllohhxr-8aon",
+      "actor": "system",
+      "action": "ADMIN_REQUEST_CREATE",
+      "targetType": "admin_request",
+      "targetId": "5c75864f-4635-4286-9831-9444cc1ab38b",
+      "message": "Nouvelle demande admin: Modou Ndiaye",
+      "createdAt": "2026-02-14T02:09:16.047Z"
+    },
+    {
+      "id": "log-mllonokz-5818",
+      "actor": "system",
+      "action": "ADMIN_REQUEST_CREATE",
+      "targetType": "admin_request",
+      "targetId": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "message": "Nouvelle demande admin: Modou Diop",
+      "createdAt": "2026-02-14T02:14:04.595Z"
+    },
+    {
+      "id": "log-mllp1brg-s6ez",
+      "actor": "user-superadmin",
+      "action": "ADMIN_REQUEST_STATUS",
+      "targetType": "admin_request",
+      "targetId": "5c75864f-4635-4286-9831-9444cc1ab38b",
+      "message": "Demande admin Modou Ndiaye : EN_ATTENTE → ACTIF",
+      "createdAt": "2026-02-14T02:24:41.164Z"
+    },
+    {
+      "id": "log-mllp1lwc-4rph",
+      "actor": "user-superadmin",
+      "action": "ADMIN_REQUEST_STATUS",
+      "targetType": "admin_request",
+      "targetId": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "message": "Demande admin Modou Diop : EN_ATTENTE → ACTIF",
+      "createdAt": "2026-02-14T02:24:54.300Z"
+    },
+    {
+      "id": "log-mllphf84-oqxw",
+      "actor": "user-superadmin",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "user-admin2",
+      "message": "Admin user-admin2: N/A → ARCHIVE",
+      "createdAt": "2026-02-14T02:37:12.148Z"
+    },
+    {
+      "id": "log-mllphg7r-9h08",
+      "actor": "user-superadmin",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "user-admin2",
+      "message": "Admin user-admin2: ARCHIVE → BLACKLISTE",
+      "createdAt": "2026-02-14T02:37:13.431Z"
+    },
+    {
+      "id": "log-mllphgsx-0zda",
+      "actor": "user-superadmin",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "user-admin2",
+      "message": "Admin user-admin2: BLACKLISTE → SUSPENDU",
+      "createdAt": "2026-02-14T02:37:14.193Z"
+    },
+    {
+      "id": "log-mllphhor-9xyj",
+      "actor": "user-superadmin",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "user-admin2",
+      "message": "Admin user-admin2: SUSPENDU → BLACKLISTE",
+      "createdAt": "2026-02-14T02:37:15.339Z"
+    },
+    {
+      "id": "log-mllpkhz8-snga",
+      "actor": "user-superadmin",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "user-admin1",
+      "message": "Admin user-admin1: ACTIF → SUSPENDU",
+      "createdAt": "2026-02-14T02:39:35.684Z"
+    },
+    {
+      "id": "log-mllpkj19-to7c",
+      "actor": "user-superadmin",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "user-admin1",
+      "message": "Admin user-admin1: SUSPENDU → ARCHIVE",
+      "createdAt": "2026-02-14T02:39:37.053Z"
+    },
+    {
+      "id": "a4d7",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T02:56:33.961Z"
+    },
+    {
+      "id": "2b66",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:20:27.059Z"
+    },
+    {
+      "id": "103d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:20:47.862Z"
+    },
+    {
+      "id": "ccb1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:21:18.896Z"
+    },
+    {
+      "id": "a10f",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:21:21.157Z"
+    },
+    {
+      "id": "acb7",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:21:28.228Z"
+    },
+    {
+      "id": "3eb1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:21:30.513Z"
+    }
+  ],
+  "entreprises": []
 }

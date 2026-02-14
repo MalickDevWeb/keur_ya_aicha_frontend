@@ -17,9 +17,8 @@ export function useApiHandler() {
   )
 
   const handleError = useCallback(
-    (error: any, defaultMessage: string = 'Une erreur est survenue') => {
-      const message = error?.message || defaultMessage
-      console.error('API Error:', error)
+    (error: unknown, defaultMessage: string = 'Une erreur est survenue') => {
+      const message = error instanceof Error ? error.message : defaultMessage
       addToast({
         type: 'error',
         title: 'Erreur',

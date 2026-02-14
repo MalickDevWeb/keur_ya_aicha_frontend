@@ -58,7 +58,6 @@ export function useApiCall() {
 
           // Wait before retrying
           if (attempt < retries) {
-            console.log(`🔄 Retry attempt ${attempt + 1}/${retries} after ${retryDelay}ms`)
             await new Promise((resolve) => setTimeout(resolve, retryDelay))
           }
         }
