@@ -4,7 +4,7 @@ const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
 
 const CLOUDINARY_UPLOAD_URL = CLOUDINARY_CLOUD_NAME
-  ? `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
+  ? `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`
   : ''
 
 export class CloudinaryUploader implements FileUploader {
@@ -28,6 +28,7 @@ export class CloudinaryUploader implements FileUploader {
     if (options?.folder) {
       formData.append('folder', options.folder)
     }
+    formData.append('resource_type', 'raw')
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()

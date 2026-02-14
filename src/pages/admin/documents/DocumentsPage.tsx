@@ -230,6 +230,7 @@ export default function DocumentsPage() {
       </SectionWrapper>
 
       <SectionWrapper>
+        <div id="upload-document" />
         <DocumentsUploadSection
           clients={clients}
           clientId={clientId}

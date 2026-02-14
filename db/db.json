@@ -177,6 +177,18 @@
       "role": "ADMIN",
       "status": "ACTIF",
       "createdAt": "2026-02-14T02:19:54.198Z"
+    },
+    {
+      "id": "d3015dce-3d60-4e8b-b99e-ca70e572f390",
+      "username": "d3015dce-3d60-4e8b-b99e-ca70e572f390",
+      "password": "client123",
+      "name": "Modou Papa",
+      "email": "",
+      "phone": "770000000",
+      "role": "CLIENT",
+      "status": "active",
+      "createdAt": "2026-02-14T04:00:24.531Z",
+      "updatedAt": "2026-02-14T04:00:24.531Z"
     }
   ],
   "admins": [
@@ -243,8 +255,51 @@
   ],
   "clients": [
     {
-      "id": "user-client1",
-      "status": "active"
+      "rentals": [
+        {
+          "id": "rental-1",
+          "clientId": "user-client1",
+          "propertyType": "apartment",
+          "propertyName": "Dakar Plateau A1",
+          "monthlyRent": 150000,
+          "startDate": "2026-02-01T00:00:00.000Z",
+          "deposit": {
+            "total": 200000,
+            "paid": 0,
+            "payments": []
+          },
+          "payments": [],
+          "documents": []
+        },
+        {
+          "id": "34958f21-a60b-446e-a99c-b17930688c52",
+          "clientId": "user-client1",
+          "propertyType": "apartment",
+          "propertyName": "kkkkkkkkkkkk",
+          "monthlyRent": 9000,
+          "startDate": "2026-02-14T00:00:00.000Z",
+          "deposit": {
+            "total": 12000,
+            "paid": 0,
+            "payments": []
+          },
+          "payments": [
+            {
+              "id": "f6944a91-54cb-4dab-b168-1ccf4de70ce7",
+              "rentalId": "34958f21-a60b-446e-a99c-b17930688c52",
+              "periodStart": "2026-02-14T00:00:00.000Z",
+              "periodEnd": "2026-03-13T00:00:00.000Z",
+              "dueDate": "2026-03-18T00:00:00.000Z",
+              "amount": 9000,
+              "paidAmount": 0,
+              "status": "unpaid",
+              "payments": []
+            }
+          ],
+          "documents": []
+        }
+      ],
+      "id": "user-client1"
     },
     {
       "id": "user-client2",
@@ -265,9 +320,9 @@
       "lastName": "Diop",
       "phone": "+221771234567",
       "email": "awa.diop@email.com",
-      "cni": "1234567890123",
+      "cni": "",
       "status": "active",
-      "createdAt": "2026-02-14T01:19:51.753Z",
+      "createdAt": "2026-02-14T01:19:51.764Z",
       "rentals": [
         {
           "id": "e813c31e-3fd4-49cc-af8a-92d5225ad098",
@@ -278,8 +333,27 @@
           "startDate": "2026-02-01T00:00:00.000Z",
           "deposit": {
             "total": 200000,
-            "paid": 0,
-            "payments": []
+            "paid": 200000,
+            "payments": [
+              {
+                "id": "d7a8d1b7-e782-4129-90b0-5e1af99689eb",
+                "amount": 200000,
+                "date": "2026-02-14T03:39:15.719Z",
+                "receiptNumber": "DEP-1771040355719"
+              },
+              {
+                "id": "47e5b7bc-eadf-437c-8d8f-90020b1f355e",
+                "amount": 0,
+                "date": "2026-02-14T03:39:46.627Z",
+                "receiptNumber": "DEP-1771040386627"
+              },
+              {
+                "id": "a3470149-ed45-4741-8fb7-06eca8298176",
+                "amount": 0,
+                "date": "2026-02-14T03:39:52.335Z",
+                "receiptNumber": "DEP-1771040392335"
+              }
+            ]
           },
           "payments": [
             {
@@ -297,6 +371,47 @@
                   "amount": 150000,
                   "date": "2026-02-14T01:20:32.539Z",
                   "receiptNumber": "REC-1771032032539"
+                }
+              ]
+            }
+          ],
+          "documents": []
+        },
+        {
+          "id": "8db9e2c8-c8b4-466e-80fc-5adde5b964c1",
+          "clientId": "c9e5b9fb-6121-4adc-9a93-93d8172542a8",
+          "propertyType": "apartment",
+          "propertyName": "bhjjjj",
+          "monthlyRent": 9000,
+          "startDate": "2026-02-14T00:00:00.000Z",
+          "deposit": {
+            "total": 10000,
+            "paid": 10000,
+            "payments": [
+              {
+                "id": "07d872b2-6cd1-4d1a-9fcf-4a16ef2c0bf9",
+                "amount": 10000,
+                "date": "2026-02-14T03:41:11.153Z",
+                "receiptNumber": "DEP-1771040471153"
+              }
+            ]
+          },
+          "payments": [
+            {
+              "id": "1c37c85f-0c29-4ce7-a265-67bd5596fb03",
+              "rentalId": "8db9e2c8-c8b4-466e-80fc-5adde5b964c1",
+              "periodStart": "2026-02-14T00:00:00.000Z",
+              "periodEnd": "2026-03-13T00:00:00.000Z",
+              "dueDate": "2026-03-18T00:00:00.000Z",
+              "amount": 9000,
+              "paidAmount": 9000,
+              "status": "paid",
+              "payments": [
+                {
+                  "id": "0940f7be-81d2-4f2c-b5f4-3e580a6b1331",
+                  "amount": 9000,
+                  "date": "2026-02-14T03:40:50.830Z",
+                  "receiptNumber": "REC-1771040450830"
                 }
               ]
             }
@@ -334,6 +449,46 @@
               "periodEnd": "2026-03-04T00:00:00.000Z",
               "dueDate": "2026-03-09T00:00:00.000Z",
               "amount": 80000,
+              "paidAmount": 0,
+              "status": "unpaid",
+              "payments": []
+            }
+          ],
+          "documents": []
+        }
+      ]
+    },
+    {
+      "id": "d3015dce-3d60-4e8b-b99e-ca70e572f390",
+      "adminId": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "firstName": "Modou",
+      "lastName": "Papa",
+      "phone": "770000000",
+      "email": "",
+      "cni": "1188188188822",
+      "status": "active",
+      "createdAt": "2026-02-14T04:00:24.521Z",
+      "rentals": [
+        {
+          "id": "b1093e29-bfad-42d7-972f-f1797f0b8c0e",
+          "clientId": "d3015dce-3d60-4e8b-b99e-ca70e572f390",
+          "propertyType": "apartment",
+          "propertyName": "Petit Mbao ",
+          "monthlyRent": 100000,
+          "startDate": "2026-02-14T00:00:00.000Z",
+          "deposit": {
+            "total": 200000,
+            "paid": 0,
+            "payments": []
+          },
+          "payments": [
+            {
+              "id": "b7530606-6c15-4ad4-a2f3-99e9a9e60d63",
+              "rentalId": "b1093e29-bfad-42d7-972f-f1797f0b8c0e",
+              "periodStart": "2026-02-14T00:00:00.000Z",
+              "periodEnd": "2026-03-13T00:00:00.000Z",
+              "dueDate": "2026-03-18T00:00:00.000Z",
+              "amount": 100000,
               "paidAmount": 0,
               "status": "unpaid",
               "payments": []
@@ -380,6 +535,11 @@
       "clientId": "6719d68b-690e-4279-8920-fdf44180e3f4",
       "createdAt": "2026-02-14T01:19:51.816Z",
       "id": "3a0a"
+    },
+    {
+      "adminId": "16b05c8c-fef1-4ead-a240-66c4c8837ba3",
+      "clientId": "d3015dce-3d60-4e8b-b99e-ca70e572f390",
+      "createdAt": "2026-02-14T04:00:24.531Z"
     }
   ],
   "rentals": [
@@ -617,7 +777,548 @@
       "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
       "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
       "createdAt": "2026-02-14T03:21:30.513Z"
+    },
+    {
+      "id": "7b5c",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:29:19.950Z"
+    },
+    {
+      "id": "8f82",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:29:38.744Z"
+    },
+    {
+      "id": "3d0f",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:35:32.056Z"
+    },
+    {
+      "id": "01d9",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/blocked_ips?_sort=createdAt&_order=desc",
+      "message": "Erreur API GET /blocked_ips?_sort=createdAt&_order=desc",
+      "createdAt": "2026-02-14T03:35:34.264Z"
+    },
+    {
+      "id": "684e",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API POST /import_runs",
+      "createdAt": "2026-02-14T03:38:32.698Z"
+    },
+    {
+      "id": "8bb6",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API POST /import_runs",
+      "createdAt": "2026-02-14T03:38:35.462Z"
+    },
+    {
+      "id": "0244",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/deposits",
+      "message": "Erreur API POST /deposits",
+      "createdAt": "2026-02-14T03:39:15.770Z"
+    },
+    {
+      "id": "c907",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/deposits",
+      "message": "Erreur API POST /deposits",
+      "createdAt": "2026-02-14T03:39:46.671Z"
+    },
+    {
+      "id": "8379",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/deposits",
+      "message": "Erreur API POST /deposits",
+      "createdAt": "2026-02-14T03:39:52.382Z"
+    },
+    {
+      "id": "4df1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/payments",
+      "message": "Erreur API POST /payments",
+      "createdAt": "2026-02-14T03:40:50.879Z"
+    },
+    {
+      "id": "9e6b",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/deposits",
+      "message": "Erreur API POST /deposits",
+      "createdAt": "2026-02-14T03:41:11.202Z"
+    },
+    {
+      "id": "866f",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:47.281Z"
+    },
+    {
+      "id": "8a58",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:57.283Z"
+    },
+    {
+      "id": "4171",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:47.281Z"
+    },
+    {
+      "id": "9d31",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:47.281Z"
+    },
+    {
+      "id": "ea32",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:47.281Z"
+    },
+    {
+      "id": "9862",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:47.281Z"
+    },
+    {
+      "id": "28be",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:47.281Z"
+    },
+    {
+      "id": "fbe9",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:07.277Z"
+    },
+    {
+      "id": "d528",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:57.283Z"
+    },
+    {
+      "id": "394d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:57.283Z"
+    },
+    {
+      "id": "495b",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:57.283Z"
+    },
+    {
+      "id": "d08c",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:57.283Z"
+    },
+    {
+      "id": "5101",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:17.280Z"
+    },
+    {
+      "id": "1465",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:56:57.283Z"
+    },
+    {
+      "id": "e990",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:07.277Z"
+    },
+    {
+      "id": "a654",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:07.277Z"
+    },
+    {
+      "id": "70e8",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:07.277Z"
+    },
+    {
+      "id": "dea4",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:27.280Z"
+    },
+    {
+      "id": "88ba",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:07.277Z"
+    },
+    {
+      "id": "fb37",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:07.277Z"
+    },
+    {
+      "id": "4df1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:17.280Z"
+    },
+    {
+      "id": "160c",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:17.280Z"
+    },
+    {
+      "id": "364d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:17.280Z"
+    },
+    {
+      "id": "5fee",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:37.277Z"
+    },
+    {
+      "id": "9bbe",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:17.280Z"
+    },
+    {
+      "id": "516e",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:17.280Z"
+    },
+    {
+      "id": "71c7",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:27.280Z"
+    },
+    {
+      "id": "e19d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:27.280Z"
+    },
+    {
+      "id": "8165",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:47.283Z"
+    },
+    {
+      "id": "722b",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:27.280Z"
+    },
+    {
+      "id": "c393",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:27.280Z"
+    },
+    {
+      "id": "8b9a",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:37.277Z"
+    },
+    {
+      "id": "a54f",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:37.277Z"
+    },
+    {
+      "id": "38e2",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:27.280Z"
+    },
+    {
+      "id": "9eb1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:37.277Z"
+    },
+    {
+      "id": "bedb",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:47.283Z"
+    },
+    {
+      "id": "8dbf",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:37.277Z"
+    },
+    {
+      "id": "07ea",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:47.283Z"
+    },
+    {
+      "id": "c187",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:37.277Z"
+    },
+    {
+      "id": "f2af",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:47.283Z"
+    },
+    {
+      "id": "b1e7",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:47.283Z"
+    },
+    {
+      "id": "1fa8",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API GET /import_runs",
+      "createdAt": "2026-02-14T03:57:47.283Z"
+    },
+    {
+      "id": "eb57",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API POST /import_runs",
+      "createdAt": "2026-02-14T03:59:17.631Z"
+    },
+    {
+      "id": "1e6b",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/clients",
+      "message": "Erreur API POST /clients",
+      "createdAt": "2026-02-14T03:59:22.418Z"
+    },
+    {
+      "id": "73f7",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/clients",
+      "message": "Erreur API POST /clients",
+      "createdAt": "2026-02-14T03:59:22.474Z"
+    },
+    {
+      "id": "db08",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API POST /import_runs",
+      "createdAt": "2026-02-14T03:59:22.526Z"
+    },
+    {
+      "id": "37f1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/clients",
+      "message": "Erreur API POST /clients",
+      "createdAt": "2026-02-14T03:59:27.765Z"
+    },
+    {
+      "id": "1e40",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/clients",
+      "message": "Erreur API POST /clients",
+      "createdAt": "2026-02-14T03:59:27.823Z"
+    },
+    {
+      "id": "3d7c",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/import_runs",
+      "message": "Erreur API POST /import_runs",
+      "createdAt": "2026-02-14T03:59:27.870Z"
     }
   ],
-  "entreprises": []
+  "entreprises": [],
+  "blocked_ips": []
 }

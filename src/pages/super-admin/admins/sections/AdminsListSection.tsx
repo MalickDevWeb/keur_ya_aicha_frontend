@@ -99,35 +99,51 @@ export function AdminsListSection({
   onSetStatus,
 }: AdminsListSectionProps) {
   return (
-    <Card className="border-[#121B53]/15 bg-white/85 shadow-[0_20px_50px_rgba(12,18,60,0.12)]">
+    <Card className="border-[#121B53]/15 bg-white/90 shadow-[0_24px_60px_rgba(12,18,60,0.14)]">
       <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4 rounded-2xl border border-[#121B53]/10 bg-gradient-to-r from-[#F7F9FF] via-white to-[#EEF2FF] p-4 sm:flex-row sm:items-center">
-          <SearchInput
-            value={search}
-            onChange={onSearchChange}
-            className="flex-1"
-            inputClassName="border-[#121B53]/20 bg-white focus-visible:ring-0"
-            placeholder="Nom, username, email ou entreprise"
-          />
-          <div className="flex gap-2 border-l border-[#121B53]/10 pl-4">
-            <Button
-              variant={viewMode === 'cards' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onViewModeChange('cards')}
-              title="Vue en cartes"
-              className={viewMode === 'cards' ? 'bg-[#121B53] hover:bg-[#0B153D]' : 'border-[#121B53]/20 text-[#121B53]'}
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onViewModeChange('list')}
-              title="Vue en liste"
-              className={viewMode === 'list' ? 'bg-[#121B53] hover:bg-[#0B153D]' : 'border-[#121B53]/20 text-[#121B53]'}
-            >
-              <List className="w-4 h-4" />
-            </Button>
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[#121B53]">Administrateurs</h2>
+            <p className="text-sm text-muted-foreground">Gérez l’accès, le statut et les actions rapides.</p>
+          </div>
+          <div className="flex flex-col gap-3 rounded-2xl border border-[#121B53]/10 bg-gradient-to-r from-[#F7F9FF] via-white to-[#EEF2FF] p-4 sm:flex-row sm:items-center">
+            <SearchInput
+              value={search}
+              onChange={onSearchChange}
+              className="flex-1"
+              inputClassName="border-[#121B53]/20 bg-white focus-visible:ring-0"
+              placeholder="Nom, username, email ou entreprise"
+            />
+            <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1">
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('cards')}
+                title="Vue en cartes"
+                className={cn(
+                  'h-9 w-9',
+                  viewMode === 'cards'
+                    ? 'bg-[#121B53] text-white hover:bg-[#0B153D]'
+                    : 'text-[#121B53] hover:bg-[#121B53]/10'
+                )}
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('list')}
+                title="Vue en liste"
+                className={cn(
+                  'h-9 w-9',
+                  viewMode === 'list'
+                    ? 'bg-[#121B53] text-white hover:bg-[#0B153D]'
+                    : 'text-[#121B53] hover:bg-[#121B53]/10'
+                )}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -140,24 +156,36 @@ export function AdminsListSection({
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
             {rows.map(({ admin, entreprises }) => {
               const actionsDisabled = busyId === admin.id
+              const initials = String(admin.name || admin.username || 'A')
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0]?.toUpperCase() || '')
+                .join('')
               return (
                 <Card
                   key={admin.id}
                   className={cn(
-                    'overflow-hidden border border-[#121B53]/10 shadow-[0_16px_35px_rgba(14,20,60,0.15)] hover:shadow-[0_22px_55px_rgba(14,20,60,0.2)] transition-all',
+                    'overflow-hidden border border-[#121B53]/10 shadow-[0_18px_40px_rgba(14,20,60,0.15)] hover:shadow-[0_28px_75px_rgba(14,20,60,0.22)] transition-all',
                     'bg-gradient-to-br from-white via-[#F7F9FF] to-[#EEF2FF]'
                   )}
                 >
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-[#121B53]/60">Admin</p>
-                        <h3 className="text-lg font-semibold text-[#121B53]">{admin.name}</h3>
-                        <p className="text-xs text-[#121B53]/60">@{admin.username}</p>
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#121B53] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                          <span className="text-sm font-semibold">{initials || 'AD'}</span>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-[#121B53]/55">Admin</p>
+                          <h3 className="text-lg font-semibold text-[#121B53]">{admin.name || '—'}</h3>
+                          <p className="text-xs text-[#121B53]/60">@{admin.username || '—'}</p>
+                        </div>
                       </div>
                       <Badge
                         variant="secondary"
                         className={cn(
+                          'rounded-full px-3 py-1 text-[11px]',
                           admin.status === 'ACTIF' && 'bg-emerald-100 text-emerald-800',
                           admin.status === 'SUSPENDU' && 'bg-amber-100 text-amber-800',
                           admin.status === 'BLACKLISTE' && 'bg-rose-100 text-rose-800',
@@ -167,13 +195,15 @@ export function AdminsListSection({
                         {admin.status}
                       </Badge>
                     </div>
-                    <div className="text-xs text-[#121B53]/60">
-                      Entreprises:{' '}
-                      {entreprises.length === 0
-                        ? '—'
-                        : entreprises.map((e) => e.name || '—').join(', ')}
+                    <div className="rounded-2xl border border-[#121B53]/10 bg-white/80 px-3 py-3 text-xs text-[#121B53]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+                      <span className="font-semibold text-[#121B53]/80">Entreprises</span>
+                      <span className="ml-2">
+                        {entreprises.length === 0
+                          ? '—'
+                          : entreprises.map((e) => e.name || '—').join(', ')}
+                      </span>
                     </div>
-                    <div className="flex flex-wrap gap-2 pt-3">
+                    <div className="flex flex-wrap gap-2 pt-1">
                       {renderActions(admin, actionsDisabled, onSetStatus)}
                     </div>
                   </CardContent>
