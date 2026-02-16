@@ -33,14 +33,18 @@ export function RentalsFiltersSection({
 }: RentalsFiltersSectionProps) {
   return (
     <div>
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <SearchInput
           value={filters.search}
           onChange={onSearchChange}
           placeholder="Rechercher par client, bien..."
           className="flex-1"
         />
-        <Button variant="outline" onClick={onToggleFilters} className={cn(showFilters && 'bg-muted')}>
+        <Button
+          variant="outline"
+          onClick={onToggleFilters}
+          className={cn('w-full sm:w-auto', showFilters && 'bg-muted')}
+        >
           <Filter className="w-4 h-4 mr-2" />
           Filtres
           {hasActiveFilters && (
@@ -49,12 +53,13 @@ export function RentalsFiltersSection({
             </Badge>
           )}
         </Button>
-        <div className="flex gap-2 border-l pl-4">
+        <div className="flex gap-2 border-t pt-3 sm:border-t-0 sm:border-l sm:pl-4 sm:pt-0">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onViewModeChange('cards')}
             title="Vue en cartes"
+            className="flex-1 sm:flex-none"
           >
             <Grid3x3 className="w-4 h-4" />
           </Button>
@@ -63,6 +68,7 @@ export function RentalsFiltersSection({
             size="sm"
             onClick={() => onViewModeChange('list')}
             title="Vue en liste"
+            className="flex-1 sm:flex-none"
           >
             <List className="w-4 h-4" />
           </Button>
@@ -100,7 +106,7 @@ export function RentalsFiltersSection({
           </Select>
 
           {hasActiveFilters && (
-            <Button variant="outline" onClick={onClearFilters} className="col-full sm:col-span-2">
+            <Button variant="outline" onClick={onClearFilters} className="col-span-full sm:col-span-2">
               <X className="w-4 h-4 mr-2" />
               Réinitialiser les filtres
             </Button>

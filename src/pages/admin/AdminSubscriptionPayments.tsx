@@ -89,6 +89,13 @@ export default function AdminSubscriptionPayments() {
   const [isRollingBack, setIsRollingBack] = useState(false)
   const userRole = String(user?.role || '').toUpperCase()
   const canValidateCash = userRole === 'SUPER_ADMIN'
+  const visiblePaymentMethods = useMemo(
+    () =>
+      canValidateCash
+        ? PAYMENT_METHOD_OPTIONS.filter((method) => method.id === 'cash')
+        : PAYMENT_METHOD_OPTIONS,
+    [canValidateCash]
+  )
 
   const currentMonth = useMemo(() => getMonthKey(new Date().toISOString()), [])
 
@@ -165,6 +172,10 @@ export default function AdminSubscriptionPayments() {
   const dueDateLabel = subscriptionStatus?.dueAt ? new Date(subscriptionStatus.dueAt).toLocaleDateString('fr-FR') : null
 
   useEffect(() => {
+    if (canValidateCash && paymentMethod !== 'cash') {
+      setPaymentMethod('cash')
+      return
+    }
     if (!canValidateCash && paymentMethod === 'cash') {
       setPaymentMethod('wave')
     }
@@ -200,12 +211,19 @@ export default function AdminSubscriptionPayments() {
     setPaying(true)
     try {
       const paidAt = new Date().toISOString()
+      const provider =
+        paymentMethod === 'wave'
+          ? 'wave'
+          : paymentMethod === 'orange_money'
+          ? 'orange'
+          : 'manual'
       const payment = await createAdminPayment({
         id: crypto.randomUUID(),
         adminId: user.id,
         entrepriseId: admin?.entrepriseId || '',
         amount: numericAmount,
         method: paymentMethod,
+        provider,
         payerPhone: payerPhone.trim(),
         transactionRef: '',
         note: note.trim(),
@@ -328,7 +346,7 @@ export default function AdminSubscriptionPayments() {
           </div>
 
           <div className="grid gap-2.5 sm:grid-cols-3">
-            {PAYMENT_METHOD_OPTIONS.map((method) => {
+            {visiblePaymentMethods.map((method) => {
               const Icon = method.icon
               const selected = paymentMethod === method.id
               const cashDisabled = method.id === 'cash' && !canValidateCash

@@ -56,7 +56,10 @@ const MOBILE_PAYMENT_METHODS = new Set(['wave', 'orange_money'])
 const PAYMENT_PROVIDER_NAME = String(process.env.PAYMENT_PROVIDER || 'stripe')
   .trim()
   .toLowerCase()
-const PAYMENT_ALLOW_SIMULATION = String(process.env.PAYMENT_ALLOW_SIMULATION || 'false')
+const PAYMENT_ALLOW_SIMULATION = String(
+  process.env.PAYMENT_ALLOW_SIMULATION ??
+    (String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production' ? 'false' : 'true')
+)
   .trim()
   .toLowerCase() === 'true'
 
@@ -241,6 +244,14 @@ function normalizeProviderName(provider = '') {
   if (value === 'wave') return 'wave'
   if (value === 'orange') return 'orange'
   return value
+}
+
+function getProviderForPaymentMethod(paymentMethod = '', fallbackProvider = PAYMENT_PROVIDER_NAME) {
+  const method = normalizePaymentMethod(paymentMethod)
+  if (method === 'wave') return 'wave'
+  if (method === 'orange_money') return 'orange'
+  if (method === 'cash') return 'manual'
+  return normalizeProviderName(fallbackProvider || 'stripe')
 }
 
 function normalizeAdminPaymentStatus(status = '') {
@@ -2024,6 +2035,11 @@ app.post('/:name', async (req, res, next) => {
       if (!paymentMethod) {
         return res.status(400).json({ error: 'Méthode de paiement invalide (wave, orange_money, cash).' })
       }
+      if (role === 'SUPER_ADMIN' && paymentMethod !== 'cash') {
+        return res.status(403).json({
+          error: 'Super Admin: seul le paiement espèces est autorisé.',
+        })
+      }
       if (paymentMethod === 'cash' && role !== 'SUPER_ADMIN') {
         return res.status(403).json({
           error: "Paiement espèces: validation réservée au Super Admin.",
@@ -2048,7 +2064,13 @@ app.post('/:name', async (req, res, next) => {
 
       const paymentId = req.body.id || `adminpay-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
       let paymentStatus = 'paid'
-      let provider = paymentMethod === 'cash' ? 'manual' : normalizeProviderName(PAYMENT_PROVIDER_NAME)
+      const requestedProvider = normalizeProviderName(req.body.provider || '')
+      let provider = requestedProvider || getProviderForPaymentMethod(paymentMethod, PAYMENT_PROVIDER_NAME)
+      if (paymentMethod === 'cash') {
+        provider = 'manual'
+      } else if (!provider || provider === 'manual') {
+        provider = getProviderForPaymentMethod(paymentMethod, PAYMENT_PROVIDER_NAME)
+      }
       let providerReference = req.body.transactionRef ? String(req.body.transactionRef).trim() : ''
       let checkoutUrl = ''
       let providerPayload = null

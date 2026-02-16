@@ -72,7 +72,7 @@ export default function PaymentsPage() {
             />
           </CardHeader>
 
-          <CardContent className={viewMode === 'cards' ? 'p-6' : 'p-0'}>
+          <CardContent className={viewMode === 'cards' ? 'p-4 sm:p-6' : 'p-4 md:p-0'}>
             {viewMode === 'cards' ? (
               <PaymentsCardsSection
                 rows={filteredRows}

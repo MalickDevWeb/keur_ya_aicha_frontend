@@ -16,7 +16,7 @@ import { PaymentModal } from '@/components/PaymentModal';
 import { QuickPaymentModal } from '@/components/QuickPaymentModal';
 import { DepositModal } from '@/components/DepositModal';
 import { ReceiptModal } from '@/components/ReceiptModal';
-import { formatCurrency } from '@/lib/types';
+import { formatCurrency, calculatePaymentStatus } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRentalDetail } from './hooks/useRentalDetail';

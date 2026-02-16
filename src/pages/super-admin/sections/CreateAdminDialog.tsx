@@ -67,39 +67,39 @@ export function CreateAdminDialog({
             Formulaire de création et résumé des identifiants admin.
           </DialogDescription>
         </DialogHeader>
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 p-6 text-white">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Super Admin</p>
+        <div className="bg-gradient-to-r from-[#121B53] via-[#1D2D7A] to-[#3A58B7] p-4 text-white sm:p-5">
+          <p className="text-xs uppercase tracking-[0.3em] text-[#BFD1FF]">Super Admin</p>
           <h2 className="mt-2 text-2xl font-semibold">
             {createdAdmin ? 'Compte créé' : 'Inscription directe'}
           </h2>
-          <p className="mt-1 text-sm text-slate-200">
+          <p className="mt-1 text-sm text-[#DCE7FF]">
             {createdAdmin
               ? 'Les identifiants sont prêts pour téléchargement ou envoi.'
               : 'Création instantanée d’un compte admin avec remise des identifiants.'}
           </p>
         </div>
-        <div className="space-y-6 p-6">
+        <div className="space-y-4 p-4 sm:space-y-5 sm:p-5">
           {createdAdmin ? (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-slate-50 p-4">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="rounded-2xl border border-[#D7E3FF] bg-[#F2F6FF] p-3 sm:p-4">
                 <p className="text-sm font-semibold">Compte créé avec succès</p>
                 <p className="text-xs text-muted-foreground">
                   Identifiants prêts pour téléchargement ou envoi WhatsApp.
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border bg-white p-3 text-sm">
+                  <div className="rounded-lg border border-[#DCE6FF] bg-white p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Nom</p>
                     <p className="font-semibold">{createdAdmin.name}</p>
                   </div>
-                  <div className="rounded-lg border border-border bg-white p-3 text-sm">
+                  <div className="rounded-lg border border-[#DCE6FF] bg-white p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Mot de passe</p>
                     <p className="font-semibold">{createdAdmin.password}</p>
                   </div>
-                  <div className="rounded-lg border border-border bg-white p-3 text-sm">
+                  <div className="rounded-lg border border-[#DCE6FF] bg-white p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Email</p>
                     <p className="font-semibold">{createdAdmin.email || '—'}</p>
                   </div>
-                  <div className="rounded-lg border border-border bg-white p-3 text-sm sm:col-span-2">
+                  <div className="rounded-lg border border-[#DCE6FF] bg-white p-3 text-sm sm:col-span-2">
                     <p className="text-xs text-muted-foreground">Lien d’accès</p>
                     <p className="font-semibold">{`${window.location.origin}/login`}</p>
                   </div>
@@ -144,8 +144,8 @@ export function CreateAdminDialog({
             </div>
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Nom complet</label>
                   <Input
                     value={newName}
@@ -153,7 +153,7 @@ export function CreateAdminDialog({
                     placeholder="Nom et prénom"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Email (optionnel)</label>
                   <Input
                     value={newEmail}
@@ -161,7 +161,7 @@ export function CreateAdminDialog({
                     placeholder="email@exemple.com"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Entreprise (optionnel)</label>
                   <Input
                     value={newEntreprise}
@@ -169,7 +169,7 @@ export function CreateAdminDialog({
                     placeholder="Nom de l’entreprise"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Téléphone WhatsApp</label>
                   <Input
                     value={newPhone}
@@ -177,7 +177,7 @@ export function CreateAdminDialog({
                     placeholder="+221 77 123 45 67"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Mot de passe</label>
                   <Input
                     type="password"

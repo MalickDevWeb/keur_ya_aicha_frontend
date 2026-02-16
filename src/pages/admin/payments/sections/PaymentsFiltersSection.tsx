@@ -83,7 +83,7 @@ export function PaymentsFiltersSection({
           </Select>
 
           {hasActiveFilters && (
-            <Button variant="outline" onClick={onClearFilters} className="col-full sm:col-span-2">
+            <Button variant="outline" onClick={onClearFilters} className="col-span-full sm:col-span-2">
               <X className="w-4 h-4 mr-2" />
               Réinitialiser les filtres
             </Button>
