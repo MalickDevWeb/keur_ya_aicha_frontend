@@ -25,3 +25,17 @@ dist-ssr
 
 releases/
 dist/
+
+# Frontend-only repo hygiene (avoid committing non-web artifacts again)
+backend/
+releases/
+docs/
+templates/
+.snapshots/
+.lovable/
+.qodo/
+*.AppImage
+*.dmg
+*.exe
+*-win-unpacked.zip
+*-macos-*-dir.zip

@@ -1,22 +1,24 @@
-# Backend and local databases
-backend/
+# Frontend-only deploy allowlist for Vercel.
+# Ignore everything by default, then include only files needed by web build.
+*
 
-# Desktop/Electron artifacts
-releases/
-dist/
-assets/
+# Web app source
+!src/
+!src/**
+!public/
+!public/**
+!index.html
 
-# Local/runtime folders
-.kya-appimage-root/
-*.log
-*.core
-core
-
-# Docs and misc local helpers
-docs/
-templates/
-
-# VCS / editor
-.git/
-.github/
-.vscode/
+# Build/runtime config required by Vite
+!package.json
+!package-lock.json
+!bun.lockb
+!vite.config.ts
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.node.json
+!postcss.config.js
+!tailwind.config.ts
+!components.json
+!vercel.json
+!eslint.config.js
