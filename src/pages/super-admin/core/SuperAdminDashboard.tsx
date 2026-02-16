@@ -6,6 +6,7 @@ import { PendingRequestsSection } from '../sections/PendingRequestsSection'
 import { GlobalStatsSection } from '../sections/GlobalStatsSection'
 import type { CreatedAdmin } from './types'
 import { CONTRACT_META, PIE_COLORS, SECTION_IDS } from './constants'
+import { extractSuperAdminSectionHash } from './hash-routing'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import {
@@ -65,9 +66,9 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
 
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash
-      if (!hash) return
-      const el = document.querySelector(hash)
+      const sectionId = extractSuperAdminSectionHash(window.location.hash)
+      if (!sectionId) return
+      const el = document.getElementById(sectionId)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }

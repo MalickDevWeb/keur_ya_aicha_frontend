@@ -1,3 +1,5 @@
+import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets'
+
 type PdfDocumentInput = {
   payerName?: string
   clientName?: string
@@ -62,7 +64,7 @@ export async function generatePdfForDocument(doc: PdfDocumentInput) {
       const img = new Image()
       img.onload = () => resolve(img)
       img.onerror = () => reject(new Error('logo not found'))
-      img.src = '/logo.png'
+      img.src = resolveAssetUrl(DEFAULT_LOGO_ASSET_PATH)
     })
 
   try {

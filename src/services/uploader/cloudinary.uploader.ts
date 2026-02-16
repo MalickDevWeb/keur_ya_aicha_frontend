@@ -1,10 +1,14 @@
 import type { FileUploader, UploadProgressCallback, UploadResult } from './file-uploader.interface'
+import {
+  ensureRuntimeConfigLoaded,
+  getApiBaseUrl,
+  getCloudinarySignUrl,
+} from '@/services/runtimeConfig'
+import { validateUploadAgainstPolicy } from '@/services/platformConfig'
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
 const CLOUDINARY_API_KEY = import.meta.env.VITE_CLOUDINARY_API_KEY
-const CLOUDINARY_SIGN_URL = import.meta.env.VITE_CLOUDINARY_SIGN_URL
-const API_BASE_URL = import.meta.env.VITE_API_URL
 
 type CloudinaryResourceType = 'image' | 'video' | 'raw' | 'auto'
 
@@ -42,11 +46,13 @@ type SignedUploadParams = {
 
 const getFallbackSignUrls = (): string[] => {
   const urls: string[] = []
-  if (CLOUDINARY_SIGN_URL) {
-    urls.push(String(CLOUDINARY_SIGN_URL).trim())
+  const runtimeSignUrl = getCloudinarySignUrl()
+  if (runtimeSignUrl) {
+    urls.push(runtimeSignUrl)
   }
-  if (API_BASE_URL) {
-    urls.push(`${String(API_BASE_URL).replace(/\/$/, '')}/sign`)
+  const apiBaseUrl = getApiBaseUrl()
+  if (apiBaseUrl) {
+    urls.push(`${String(apiBaseUrl).replace(/\/$/, '')}/sign`)
   }
   if (typeof window !== 'undefined' && window.location?.origin) {
     urls.push(`${String(window.location.origin).replace(/\/$/, '')}/sign`)
@@ -209,6 +215,12 @@ export class CloudinaryUploader implements FileUploader {
     file: File,
     options?: { folder?: string; onProgress?: UploadProgressCallback }
   ): Promise<UploadResult> {
+    await ensureRuntimeConfigLoaded()
+    const policyError = validateUploadAgainstPolicy(file)
+    if (policyError) {
+      throw new Error(policyError)
+    }
+
     if (!this.isConfigured()) {
       throw new Error(
         'Cloudinary is not configured. Configure either unsigned preset or signed upload (API key + sign URL).'

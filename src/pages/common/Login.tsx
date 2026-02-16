@@ -6,6 +6,18 @@ import { User, Lock, Volume2, VolumeX, Eye, EyeOff, ArrowRight, Loader } from "l
 
 import { useAuth } from "@/contexts/AuthContext";
 import { getAuthContext } from "@/services/api";
+import {
+  DEFAULT_PLATFORM_CONFIG,
+  applyBrandingToDocument,
+  clearFailedLoginAttempts,
+  getLoginLockStatus,
+  recordFailedLoginAttempt,
+  refreshPlatformConfigFromServer,
+  sendComplianceWebhookAlert,
+  subscribePlatformConfigUpdates,
+} from "@/services/platformConfig";
+import { DEFAULT_LOGO_ASSET_PATH, DEFAULT_VIDEO_ASSET_PATH, resolveAssetUrl } from "@/services/assets";
+import { ensureRuntimeConfigLoaded, getApiBaseUrl } from "@/services/runtimeConfig";
 import { useToast } from "@/contexts/ToastContext";
 import { connexionSchema, ConnexionFormData } from "@/validators/frontend";
 
@@ -129,6 +141,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const [isVideoExpanded, setIsVideoExpanded] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [brandName, setBrandName] = useState("Keur Ya Aicha");
+  const [brandLogoUrl, setBrandLogoUrl] = useState(DEFAULT_PLATFORM_CONFIG.branding.logoUrl || "/logo.png");
+  const fallbackLogoUrl = resolveAssetUrl(DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH);
+  const resolvedBrandLogoUrl = resolveAssetUrl(brandLogoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH);
+  const resolvedVideoUrl = resolveAssetUrl(DEFAULT_VIDEO_ASSET_PATH);
   const lastToastRef = useRef<{ message: string; type: string; at: number } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -149,6 +167,30 @@ export default function LoginPage() {
   const watchMotDePasse = watch("motDePasse");
 
   // Video auto-play logic
+  useEffect(() => {
+    let active = true;
+    const loadPlatformConfig = async () => {
+      const config = await refreshPlatformConfigFromServer();
+      if (!active) return;
+      setMaintenanceMessage(config.maintenance.enabled ? config.maintenance.message : "");
+      setBrandName(config.branding.appName || "Keur Ya Aicha");
+      setBrandLogoUrl(config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl || "/logo.png");
+      applyBrandingToDocument(config);
+    };
+    void loadPlatformConfig();
+    const unsubscribe = subscribePlatformConfigUpdates((config) => {
+      if (!active) return;
+      setMaintenanceMessage(config.maintenance.enabled ? config.maintenance.message : "");
+      setBrandName(config.branding.appName || "Keur Ya Aicha");
+      setBrandLogoUrl(config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl || "/logo.png");
+      applyBrandingToDocument(config);
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     const playVideo = async () => {
       const el = videoRef.current;
@@ -198,12 +240,20 @@ export default function LoginPage() {
   };
 
   const onSubmit = async (data: ConnexionFormData) => {
+    const lockStatus = getLoginLockStatus();
+    if (lockStatus.blocked) {
+      const remainingMinutes = Math.max(1, Math.ceil(lockStatus.remainingMs / 60000));
+      setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
+      return;
+    }
+
     setLoading(true);
     setLoginFieldError("");
     setPendingModalOpen(false);
     try {
       const success = await login(data.telephone, data.motDePasse);
       if (success) {
+        clearFailedLoginAttempts();
         try {
           const ctx = await getAuthContext();
           const role = String(ctx.user?.role || '').toUpperCase();
@@ -255,7 +305,9 @@ export default function LoginPage() {
         }
       } else {
         try {
-          const res = await fetch("http://localhost:4000/auth/pending-check", {
+          await ensureRuntimeConfigLoaded();
+          const apiBaseUrl = getApiBaseUrl();
+          const res = await fetch(`${apiBaseUrl}/auth/pending-check`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: data.telephone, password: data.motDePasse }),
@@ -269,6 +321,18 @@ export default function LoginPage() {
         } catch {
           // ignore
         }
+        const failedStatus = recordFailedLoginAttempt();
+        void sendComplianceWebhookAlert('security', {
+          event: 'login_failure',
+          username: data.telephone,
+          failures: failedStatus.failures,
+          blocked: failedStatus.blocked,
+        });
+        if (failedStatus.blocked) {
+          const remainingMinutes = Math.max(1, Math.ceil(failedStatus.remainingMs / 60000));
+          setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
+          return;
+        }
         setLoginFieldError("Identifiants incorrects.");
       }
     } catch (e: unknown) {
@@ -281,6 +345,18 @@ export default function LoginPage() {
       if (isApprovalBlock) {
         setLoginFieldError("");
         setPendingModalOpen(true);
+        return;
+      }
+      const failedStatus = recordFailedLoginAttempt();
+      void sendComplianceWebhookAlert('security', {
+        event: 'login_failure',
+        username: data.telephone,
+        failures: failedStatus.failures,
+        blocked: failedStatus.blocked,
+      });
+      if (failedStatus.blocked) {
+        const remainingMinutes = Math.max(1, Math.ceil(failedStatus.remainingMs / 60000));
+        setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
         return;
       }
       setLoginFieldError("Identifiants incorrects.");
@@ -481,7 +557,16 @@ export default function LoginPage() {
                 boxShadow: "0 8px 40px rgba(74,124,255,.15)",
               }}
             >
-              <img src="/logo.png" alt="KYA" style={{ width: 200, height: 200, objectFit: "contain", borderRadius: 16 }} />
+              <img
+                src={resolvedBrandLogoUrl}
+                alt={brandName || "KYA"}
+                onError={(event) => {
+                  if (event.currentTarget.src !== fallbackLogoUrl) {
+                    event.currentTarget.src = fallbackLogoUrl;
+                  }
+                }}
+                style={{ width: 200, height: 200, objectFit: "contain", borderRadius: 16 }}
+              />
             </div>
 
             <h1
@@ -494,7 +579,7 @@ export default function LoginPage() {
                 marginBottom: 6,
               }}
             >
-              Keur Ya Aicha
+              {brandName}
             </h1>
             <p
               style={{
@@ -613,7 +698,7 @@ export default function LoginPage() {
                     playsInline
                     style={{ width: "100%", height: isVideoExpanded ? "100%" : "auto", display: "block", borderRadius: 10, objectFit: "cover" }}
                   >
-                    <source src="/VIDEO.mp4" type="video/mp4" />
+                    <source src={resolvedVideoUrl} type="video/mp4" />
                   </video>
                 </div>
               </div>
@@ -701,10 +786,35 @@ export default function LoginPage() {
                 margin: "0 auto 12px",
               }}
             >
-              <img src="/logo.png" alt="KYA" style={{ width: 100, height: 100, objectFit: "contain" }} />
+              <img
+                src={resolvedBrandLogoUrl}
+                alt={brandName || "KYA"}
+                onError={(event) => {
+                  if (event.currentTarget.src !== fallbackLogoUrl) {
+                    event.currentTarget.src = fallbackLogoUrl;
+                  }
+                }}
+                style={{ width: 100, height: 100, objectFit: "contain" }}
+              />
             </div>
 
             <div style={{ textAlign: "center" }}>
+              {maintenanceMessage && (
+                <div
+                  style={{
+                    marginBottom: 14,
+                    border: "1px solid #f59e0b",
+                    background: "#fffbeb",
+                    color: "#92400e",
+                    borderRadius: 12,
+                    padding: "10px 12px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  Maintenance globale: {maintenanceMessage}
+                </div>
+              )}
               <h2
                 style={{
                   fontFamily: "'Playfair Display', serif",

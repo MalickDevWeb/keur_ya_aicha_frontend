@@ -7,6 +7,11 @@ import {
   logoutAuthContext,
   setImpersonation as setImpersonationApi,
 } from '@/services/api';
+import {
+  clearFailedLoginAttempts,
+  getPlatformConfigSnapshot,
+  refreshPlatformConfigFromServer,
+} from '@/services/platformConfig';
 
 export type User = {
   id: string;
@@ -42,16 +47,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [impersonation, setImpersonationState] = useState<ImpersonationState>(null);
+  const SESSION_LOGIN_AT_KEY = 'kya_session_login_at';
+  const SESSION_LAST_ACTIVITY_KEY = 'kya_session_last_activity';
 
   // Restore user session from backend (persistent)
   useEffect(() => {
     let mounted = true;
     const loadSession = async () => {
+      const isElectronDesktop =
+        typeof navigator !== 'undefined' && /electron/i.test(String(navigator.userAgent || ''));
+
+      // Desktop behavior: always require explicit login when the app starts.
+      if (isElectronDesktop) {
+        if (!mounted) return;
+        setUser(null);
+        setImpersonationState(null);
+        sessionStorage.removeItem('superadminSecondAuth');
+        sessionStorage.removeItem(SESSION_LOGIN_AT_KEY);
+        sessionStorage.removeItem(SESSION_LAST_ACTIVITY_KEY);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const ctx = await getAuthContext();
         if (!mounted) return;
         setUser(ctx.user as User | null);
         setImpersonationState(ctx.impersonation || null);
+        if (ctx.user?.id && !sessionStorage.getItem(SESSION_LOGIN_AT_KEY)) {
+          sessionStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()));
+        }
+        if (ctx.user?.id) {
+          sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
+        }
       } catch {
         if (!mounted) return;
         setUser(null);
@@ -73,6 +101,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(userData as User);
       setImpersonationState(null);
       setIsLoading(false);
+      clearFailedLoginAttempts();
+      sessionStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()));
+      sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
       return true;
     }
     return false;
@@ -82,6 +113,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
     setImpersonationState(null);
     sessionStorage.removeItem('superadminSecondAuth');
+    sessionStorage.removeItem(SESSION_LOGIN_AT_KEY);
+    sessionStorage.removeItem(SESSION_LAST_ACTIVITY_KEY);
     logoutAuthContext();
   }, []);
 
@@ -95,6 +128,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setImpersonationState(null);
     await clearImpersonationApi();
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let active = true;
+    void refreshPlatformConfigFromServer();
+
+    const markActivity = () => {
+      sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
+    };
+
+    const events: Array<keyof WindowEventMap> = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+    events.forEach((eventName) => window.addEventListener(eventName, markActivity, { passive: true }));
+    markActivity();
+
+    const interval = window.setInterval(() => {
+      if (!active) return;
+      const config = getPlatformConfigSnapshot().sessionSecurity;
+      const now = Date.now();
+      const loginAt = Number(sessionStorage.getItem(SESSION_LOGIN_AT_KEY) || now);
+      const lastActivity = Number(sessionStorage.getItem(SESSION_LAST_ACTIVITY_KEY) || now);
+
+      const maxSessionMs = Math.max(1, config.sessionDurationMinutes) * 60 * 1000;
+      const inactivityMs = Math.max(1, config.inactivityTimeoutMinutes) * 60 * 1000;
+
+      if (maxSessionMs > 0 && now - loginAt >= maxSessionMs) {
+        window.dispatchEvent(
+          new CustomEvent('session-security-logout', {
+            detail: { reason: 'duration' },
+          })
+        );
+        logout();
+        return;
+      }
+
+      if (inactivityMs > 0 && now - lastActivity >= inactivityMs) {
+        window.dispatchEvent(
+          new CustomEvent('session-security-logout', {
+            detail: { reason: 'inactivity' },
+          })
+        );
+        logout();
+      }
+    }, 15_000);
+
+    return () => {
+      active = false;
+      events.forEach((eventName) => window.removeEventListener(eventName, markActivity));
+      window.clearInterval(interval);
+    };
+  }, [logout, user?.id]);
 
   return (
     <AuthContext.Provider

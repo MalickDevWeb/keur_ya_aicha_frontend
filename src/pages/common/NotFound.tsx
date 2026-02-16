@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Home, RotateCcw, MapPin, Compass, AlertTriangle, Eye } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
+import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from "@/services/assets";
 
 const NotFound = () => {
   const goBack = useGoBack("/");
@@ -131,7 +132,7 @@ const NotFound = () => {
         >
           <div className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-20"></div>
           <img
-            src="/logo.png"
+            src={resolveAssetUrl(DEFAULT_LOGO_ASSET_PATH)}
             alt="Keur Ya Aicha - Clique et déplace moi!"
             className="relative h-32 w-32 object-contain drop-shadow-2xl animate-spin hover:scale-110 transition-transform"
             style={{ animationDuration: '12s' }}

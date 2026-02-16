@@ -5,6 +5,8 @@ import { SuperAdminDashboard } from './SuperAdminDashboard'
 import { SuperAdminLogin } from './SuperAdminLogin'
 import { ForbiddenMessage } from './ForbiddenMessage'
 import { Navigate } from 'react-router-dom'
+import { SECTION_IDS } from './constants'
+import { buildSuperAdminSectionHash, extractSuperAdminSectionHash } from './hash-routing'
 
 export default function SuperAdminPage() {
   const { user } = useAuth()
@@ -12,8 +14,11 @@ export default function SuperAdminPage() {
   const needsSecondAuth = role === 'SUPER_ADMIN' && sessionStorage.getItem('superadminSecondAuth') !== 'true'
 
   useEffect(() => {
-    if (role === 'SUPER_ADMIN' && !window.location.hash) {
-      window.location.hash = '#demandes-en-attente'
+    if (role !== 'SUPER_ADMIN') return
+    if (extractSuperAdminSectionHash(window.location.hash)) return
+    const nextHash = buildSuperAdminSectionHash(window.location.hash, SECTION_IDS.pendingRequests)
+    if (nextHash && nextHash !== window.location.hash) {
+      window.location.hash = nextHash
     }
   }, [role])
 

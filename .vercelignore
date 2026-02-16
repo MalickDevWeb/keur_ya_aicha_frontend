@@ -1,0 +1,22 @@
+# Backend and local databases
+backend/
+
+# Desktop/Electron artifacts
+releases/
+dist/
+assets/
+
+# Local/runtime folders
+.kya-appimage-root/
+*.log
+*.core
+core
+
+# Docs and misc local helpers
+docs/
+templates/
+
+# VCS / editor
+.git/
+.github/
+.vscode/

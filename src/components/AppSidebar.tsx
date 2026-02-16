@@ -35,6 +35,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { fetchImportRuns } from '@/services/api';
+import {
+  DEFAULT_PLATFORM_CONFIG,
+  getPlatformConfigSnapshot,
+  refreshPlatformConfigFromServer,
+  subscribePlatformConfigUpdates,
+} from '@/services/platformConfig';
+import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets';
 import { t, MENU } from '@/messages';
 
 type ImportRunSidebar = {
@@ -62,6 +69,39 @@ export function AppSidebar() {
   const [importSuccessCount, setImportSuccessCount] = useState(0);
   const [hasImportErrors, setHasImportErrors] = useState(false);
   const [hasImportSuccess, setHasImportSuccess] = useState(false);
+  const [brandName, setBrandName] = useState(() => {
+    const config = getPlatformConfigSnapshot()
+    return config.branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName
+  })
+  const [brandLogoUrl, setBrandLogoUrl] = useState(() => {
+    const config = getPlatformConfigSnapshot()
+    return config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl
+  })
+  const [brandLogoBroken, setBrandLogoBroken] = useState(false)
+  const fallbackLogoUrl = resolveAssetUrl(DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH)
+  const resolvedBrandLogoUrl = resolveAssetUrl(brandLogoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH)
+
+  useEffect(() => {
+    let active = true
+    const syncBranding = async () => {
+      const config = await refreshPlatformConfigFromServer()
+      if (!active) return
+      setBrandName(config.branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName)
+      setBrandLogoUrl(config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl)
+      setBrandLogoBroken(false)
+    }
+    void syncBranding()
+    const unsubscribe = subscribePlatformConfigUpdates((config) => {
+      if (!active) return
+      setBrandName(config.branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName)
+      setBrandLogoUrl(config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl)
+      setBrandLogoBroken(false)
+    })
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
 
   useEffect(() => {
     if (!showAdminMenus) return;
@@ -246,11 +286,26 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
+            {brandLogoBroken ? (
+              <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
+            ) : (
+              <img
+                src={resolvedBrandLogoUrl}
+                alt={brandName || 'KYA'}
+                className="h-8 w-8 rounded-md object-contain"
+                onError={(event) => {
+                  if (event.currentTarget.src !== fallbackLogoUrl) {
+                    event.currentTarget.src = fallbackLogoUrl
+                    return
+                  }
+                  setBrandLogoBroken(true)
+                }}
+              />
+            )}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="font-bold text-sidebar-foreground truncate">{t(MENU.APP_TITLE)}</h1>
+              <h1 className="font-bold text-sidebar-foreground truncate">{brandName || t(MENU.APP_TITLE)}</h1>
               <p className="text-xs text-sidebar-foreground/60 truncate">{t(MENU.APP_SUBTITLE)}</p>
             </div>
           )}

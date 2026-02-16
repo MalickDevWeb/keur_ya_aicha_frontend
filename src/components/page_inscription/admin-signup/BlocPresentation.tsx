@@ -1,3 +1,5 @@
+import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets'
+
 export default function BlocPresentation() {
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-white/15 bg-[#0F2854] p-8 text-white shadow-[0_35px_90px_rgba(7,10,34,0.7)]">
@@ -9,7 +11,7 @@ export default function BlocPresentation() {
         <div>
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E5ECFF] via-white to-[#C7D6FF] shadow-[0_12px_24px_rgba(14,20,60,0.35)] ring-1 ring-white/40">
-              <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
+              <img src={resolveAssetUrl(DEFAULT_LOGO_ASSET_PATH)} alt="Logo" className="h-10 w-10 object-contain" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-[#B9CCFF]">Gestion Locative</p>

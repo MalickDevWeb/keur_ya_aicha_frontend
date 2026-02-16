@@ -10,7 +10,10 @@
     "seed-db": "node scripts/seed-db.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "build:electron": "vite build && electron-builder",
+    "build:electron": "vite build --base ./ && node scripts/electron-builder-runner.mjs --publish never",
+    "build:electron:linux": "vite build --base ./ && node scripts/electron-builder-runner.mjs --linux AppImage --publish never",
+    "build:electron:win": "vite build --base ./ && node scripts/electron-builder-runner.mjs --win nsis --publish never",
+    "build:electron:mac": "vite build --base ./ && node scripts/electron-builder-runner.mjs --mac dmg --publish never",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -119,6 +122,23 @@
       "electron-preload.js",
       "node_modules/**/*"
     ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.business"
+    },
     "directories": {
       "buildResources": "assets"
     }

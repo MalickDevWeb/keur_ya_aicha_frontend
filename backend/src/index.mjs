@@ -50,6 +50,10 @@ const UNDO_WINDOW_MS = 60 * 24 * 60 * 60 * 1000
 const UNDO_HISTORY_LIMIT = 300
 const UNDO_EXCLUDED_RESOURCES = new Set(['audit_logs', 'undo_actions', 'deposits', 'payments'])
 const ADMIN_SUBSCRIPTION_GRACE_DAYS = 5
+const DEFAULT_DOCUMENT_RETENTION_DAYS = 365
+const DEFAULT_AUDIT_RETENTION_DAYS = 365
+const SYSTEM_POLICY_SETTING_KEY = 'platform_config_v1'
+const RETENTION_SWEEP_INTERVAL_MS = 60 * 1000
 const ADMIN_PAYMENT_METHODS = new Set(['wave', 'orange_money', 'cash'])
 const ADMIN_PAYMENT_ACTIVE_STATUSES = new Set(['pending', 'paid'])
 const MOBILE_PAYMENT_METHODS = new Set(['wave', 'orange_money'])
@@ -188,11 +192,136 @@ const sessions = []
 const service = new Service(db)
 const app = new App()
 const TRUSTED_IPS = new Set(['127.0.0.1', '::1'])
+let lastRetentionSweepAt = 0
 
 function normalizePhone(phone = '') {
   const digits = String(phone).replace(/[^\d]/g, '')
   const withoutCountry = digits.startsWith('221') ? digits.slice(3) : digits
   return withoutCountry.slice(-9)
+}
+
+function getSettingValue(key = '') {
+  const safeKey = String(key || '').trim()
+  if (!safeKey) return null
+  const settings = Array.isArray(db.data?.settings) ? db.data.settings : []
+  const found = settings.find((item) => String(item?.key || item?.id || '').trim() === safeKey)
+  if (!found) return null
+  return String(found?.value || '').trim() || null
+}
+
+function parseSystemPolicy() {
+  const fallback = {
+    maintenance: {
+      enabled: false,
+      message: 'Maintenance en cours. Les actions d’écriture sont temporairement désactivées.',
+    },
+    sessionSecurity: {
+      maxFailedLogins: FAILED_LOGIN_THRESHOLD,
+      lockoutMinutes: Math.max(1, Math.round(FAILED_LOGIN_WINDOW_MS / (60 * 1000))),
+    },
+    paymentRules: {
+      graceDays: ADMIN_SUBSCRIPTION_GRACE_DAYS,
+      blockOnOverdue: true,
+    },
+    documents: {
+      retentionDays: DEFAULT_DOCUMENT_RETENTION_DAYS,
+    },
+    auditCompliance: {
+      retentionDays: DEFAULT_AUDIT_RETENTION_DAYS,
+    },
+  }
+
+  const raw = getSettingValue(SYSTEM_POLICY_SETTING_KEY)
+  if (!raw) return fallback
+  try {
+    const parsed = JSON.parse(raw)
+    const maintenance = parsed?.maintenance || {}
+    const sessionSecurity = parsed?.sessionSecurity || {}
+    const paymentRules = parsed?.paymentRules || {}
+    const documents = parsed?.documents || {}
+    const auditCompliance = parsed?.auditCompliance || {}
+    return {
+      maintenance: {
+        enabled: Boolean(maintenance.enabled),
+        message: String(maintenance.message || fallback.maintenance.message).trim() || fallback.maintenance.message,
+      },
+      sessionSecurity: {
+        maxFailedLogins: Math.max(1, Number(sessionSecurity.maxFailedLogins) || fallback.sessionSecurity.maxFailedLogins),
+        lockoutMinutes: Math.max(1, Number(sessionSecurity.lockoutMinutes) || fallback.sessionSecurity.lockoutMinutes),
+      },
+      paymentRules: {
+        graceDays: Math.max(0, Number(paymentRules.graceDays) || fallback.paymentRules.graceDays),
+        blockOnOverdue:
+          typeof paymentRules.blockOnOverdue === 'boolean'
+            ? paymentRules.blockOnOverdue
+            : fallback.paymentRules.blockOnOverdue,
+      },
+      documents: {
+        retentionDays: Math.max(1, Number(documents.retentionDays) || fallback.documents.retentionDays),
+      },
+      auditCompliance: {
+        retentionDays: Math.max(1, Number(auditCompliance.retentionDays) || fallback.auditCompliance.retentionDays),
+      },
+    }
+  } catch {
+    return fallback
+  }
+}
+
+function extractRetentionTimestamp(entry) {
+  if (!entry || typeof entry !== 'object') return 0
+  const candidates = [
+    entry.uploadedAt,
+    entry.createdAt,
+    entry.created_at,
+    entry.updatedAt,
+    entry.date,
+  ]
+  for (const candidate of candidates) {
+    const ms = new Date(candidate || 0).getTime()
+    if (Number.isFinite(ms) && ms > 0) return ms
+  }
+  return 0
+}
+
+function applyCollectionRetention(items, cutoffMs) {
+  if (!Array.isArray(items)) return []
+  return items.filter((item) => {
+    const stamp = extractRetentionTimestamp(item)
+    if (!stamp) return true
+    return stamp >= cutoffMs
+  })
+}
+
+async function applyRetentionPolicies({ force = false } = {}) {
+  const now = Date.now()
+  if (!force && now - lastRetentionSweepAt < RETENTION_SWEEP_INTERVAL_MS) return
+  lastRetentionSweepAt = now
+
+  const policy = parseSystemPolicy()
+  const documentRetentionDays = Math.max(1, Number(policy.documents?.retentionDays || DEFAULT_DOCUMENT_RETENTION_DAYS))
+  const auditRetentionDays = Math.max(1, Number(policy.auditCompliance?.retentionDays || DEFAULT_AUDIT_RETENTION_DAYS))
+
+  const documents = Array.isArray(db.data?.documents) ? db.data.documents : []
+  const logs = Array.isArray(db.data?.audit_logs) ? db.data.audit_logs : []
+
+  const documentCutoffMs = now - documentRetentionDays * 24 * 60 * 60 * 1000
+  const logsCutoffMs = now - auditRetentionDays * 24 * 60 * 60 * 1000
+
+  const retainedDocuments = applyCollectionRetention(documents, documentCutoffMs)
+  const retainedLogs = applyCollectionRetention(logs, logsCutoffMs)
+
+  const hasDocumentChange = retainedDocuments.length !== documents.length
+  const hasLogsChange = retainedLogs.length !== logs.length
+  if (!hasDocumentChange && !hasLogsChange) return
+
+  if (hasDocumentChange) {
+    db.data.documents = retainedDocuments
+  }
+  if (hasLogsChange) {
+    db.data.audit_logs = retainedLogs
+  }
+  await db.write()
 }
 
 function normalizeEmail(email = '') {
@@ -226,7 +355,9 @@ function addMonths(date, count) {
 function getSubscriptionDueDateForMonth(monthKey) {
   const monthDate = parseMonthKey(monthKey)
   if (!monthDate) return null
-  return new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, ADMIN_SUBSCRIPTION_GRACE_DAYS, 23, 59, 59, 999)
+  const policy = parseSystemPolicy()
+  const graceDays = Math.max(0, Number(policy.paymentRules?.graceDays || ADMIN_SUBSCRIPTION_GRACE_DAYS))
+  return new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, graceDays, 23, 59, 59, 999)
 }
 
 function normalizePaymentMethod(method = '') {
@@ -603,18 +734,23 @@ function getAdminSubscriptionStatus(adminId, now = new Date()) {
       .filter((payment) => isPaymentSettled(payment))
       .map((payment) => getPaymentMonthKey(payment))
   )
+  const policy = parseSystemPolicy()
+  const blockOnOverdue =
+    typeof policy?.paymentRules?.blockOnOverdue === 'boolean' ? policy.paymentRules.blockOnOverdue : true
 
-  for (let cursor = new Date(startMonth); cursor <= currentMonth; cursor = addMonths(cursor, 1)) {
-    const monthKey = toMonthKey(cursor)
-    const dueAt = getSubscriptionDueDateForMonth(monthKey)
-    if (!dueAt) continue
-    if (now.getTime() <= dueAt.getTime()) continue
-    if (!paidMonths.has(monthKey)) {
-      return {
-        blocked: true,
-        overdueMonth: monthKey,
-        dueAt: dueAt.toISOString(),
-        requiredMonth: monthKey,
+  if (blockOnOverdue) {
+    for (let cursor = new Date(startMonth); cursor <= currentMonth; cursor = addMonths(cursor, 1)) {
+      const monthKey = toMonthKey(cursor)
+      const dueAt = getSubscriptionDueDateForMonth(monthKey)
+      if (!dueAt) continue
+      if (now.getTime() <= dueAt.getTime()) continue
+      if (!paidMonths.has(monthKey)) {
+        return {
+          blocked: true,
+          overdueMonth: monthKey,
+          dueAt: dueAt.toISOString(),
+          requiredMonth: monthKey,
+        }
       }
     }
   }
@@ -1005,8 +1141,13 @@ function isLocalIp(ip) {
 }
 
 function getFailedLoginCount(ip, sinceMs = FAILED_LOGIN_WINDOW_MS) {
+  const policy = parseSystemPolicy()
+  const computedSinceMs =
+    Number.isFinite(Number(sinceMs)) && Number(sinceMs) > 0
+      ? Number(sinceMs)
+      : Math.max(1, Number(policy.sessionSecurity?.lockoutMinutes || 60)) * 60 * 1000
   const logs = Array.isArray(db.data?.audit_logs) ? db.data.audit_logs : []
-  const since = Date.now() - sinceMs
+  const since = Date.now() - computedSinceMs
   return logs.filter((l) => l.action === 'FAILED_LOGIN' && l.ipAddress === ip && new Date(l.createdAt || 0).getTime() >= since).length
 }
 
@@ -1240,6 +1381,44 @@ app.use((req, res, next) => {
   return res.status(403).json({ error: 'Adresse IP bloquée pour raisons de sécurité.' })
 })
 
+function isWriteMethod(method = '') {
+  return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(String(method || '').toUpperCase())
+}
+
+function isMaintenanceAllowedPath(path = '') {
+  const normalized = String(path || '').split('?')[0]
+  if (normalized === '/auth' || normalized.startsWith('/auth/')) return true
+  if (normalized === '/authContext' || normalized.startsWith('/authContext/')) return true
+  if (normalized === '/settings' || normalized.startsWith('/settings/')) return true
+  if (normalized === '/audit_logs' || normalized.startsWith('/audit_logs/')) return true
+  if (normalized === '/undo-actions' || normalized.startsWith('/undo-actions/')) return true
+  if (normalized === '/sign') return true
+  if (normalized === '/cloudinary/open-url') return true
+  if (normalized.startsWith('/admin_payments/webhook/')) return true
+  return false
+}
+
+app.use((req, res, next) => {
+  if (!isWriteMethod(req.method || '')) return next?.()
+  const policy = parseSystemPolicy()
+  if (!policy.maintenance?.enabled) return next?.()
+  const path = String(req.path || req.url || '')
+  if (isMaintenanceAllowedPath(path)) return next?.()
+  return res.status(503).json({
+    error: policy.maintenance.message || 'Maintenance en cours. Actions d’écriture indisponibles.',
+    code: 'MAINTENANCE_MODE',
+  })
+})
+
+app.use(async (req, res, next) => {
+  try {
+    await applyRetentionPolicies()
+  } catch {
+    // ignore retention sweep failures
+  }
+  next?.()
+})
+
 // Minimal auth endpoint
 app.post('/auth/login', (req, res) => {
   const { username, password } = req.body || {}
@@ -1263,8 +1442,11 @@ app.post('/auth/login', (req, res) => {
       ipAddress: ip,
     })
     if (ip && !isLocalIp(ip)) {
-      const failures = getFailedLoginCount(ip)
-      if (failures >= FAILED_LOGIN_THRESHOLD && !isBlockedIp(ip)) {
+      const policy = parseSystemPolicy()
+      const threshold = Math.max(1, Number(policy.sessionSecurity?.maxFailedLogins || FAILED_LOGIN_THRESHOLD))
+      const windowMs = Math.max(1, Number(policy.sessionSecurity?.lockoutMinutes || 60)) * 60 * 1000
+      const failures = getFailedLoginCount(ip, windowMs)
+      if (failures >= threshold && !isBlockedIp(ip)) {
         blockIp(ip, `Trop de tentatives (${failures})`)
         appendAuditLog({
           actorId: 'system',
@@ -1365,8 +1547,11 @@ app.post('/authContext/login', async (req, res) => {
       ipAddress: ip,
     })
     if (ip && !isLocalIp(ip)) {
-      const failures = getFailedLoginCount(ip)
-      if (failures >= FAILED_LOGIN_THRESHOLD && !isBlockedIp(ip)) {
+      const policy = parseSystemPolicy()
+      const threshold = Math.max(1, Number(policy.sessionSecurity?.maxFailedLogins || FAILED_LOGIN_THRESHOLD))
+      const windowMs = Math.max(1, Number(policy.sessionSecurity?.lockoutMinutes || 60)) * 60 * 1000
+      const failures = getFailedLoginCount(ip, windowMs)
+      if (failures >= threshold && !isBlockedIp(ip)) {
         blockIp(ip, `Trop de tentatives (${failures})`)
         appendAuditLog({
           actorId: 'system',
@@ -1522,6 +1707,8 @@ app.get('/admin_payments/status', async (req, res) => {
   if (!targetAdminId) return res.status(400).json({ error: 'Admin manquant' })
 
   const status = getAdminSubscriptionStatus(targetAdminId)
+  const policy = parseSystemPolicy()
+  const graceDays = Math.max(0, Number(policy.paymentRules?.graceDays || ADMIN_SUBSCRIPTION_GRACE_DAYS))
   return res.json({
     adminId: targetAdminId,
     blocked: status.blocked,
@@ -1529,7 +1716,7 @@ app.get('/admin_payments/status', async (req, res) => {
     dueAt: status.dueAt,
     requiredMonth: status.requiredMonth,
     currentMonth: toMonthKey(new Date()),
-    graceDays: ADMIN_SUBSCRIPTION_GRACE_DAYS,
+    graceDays,
   })
 })
 
@@ -1615,6 +1802,10 @@ app.use((req, res, next) => {
 
   const { role, adminId } = getAuthContextUser()
   if (String(role || '').toUpperCase() !== 'ADMIN' || !adminId) return next?.()
+  const policy = parseSystemPolicy()
+  const blockOnOverdue =
+    typeof policy.paymentRules?.blockOnOverdue === 'boolean' ? policy.paymentRules.blockOnOverdue : true
+  if (!blockOnOverdue) return next?.()
 
   const subscriptionStatus = getAdminSubscriptionStatus(adminId)
   if (!subscriptionStatus.blocked) return next?.()

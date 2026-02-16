@@ -1919,10 +1919,8 @@
   ],
   "admins": [
     {
-      "status": "ACTIF",
-      "id": "0285492b-a2e2-4209-ac0e-d442e4a84a97",
-      "paid": true,
-      "paidAt": "2026-02-15T06:34:34.264Z"
+      "status": "SUSPENDU",
+      "id": "0285492b-a2e2-4209-ac0e-d442e4a84a97"
     },
     {
       "status": "SUSPENDU",
@@ -3128,6 +3126,540 @@
       "message": "Rollback effectué pour POST admin_payments",
       "ipAddress": "::1",
       "createdAt": "2026-02-16T07:45:38.661Z"
+    },
+    {
+      "id": "f350",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T13:17:24.317Z"
+    },
+    {
+      "id": "2147",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T13:17:24.353Z"
+    },
+    {
+      "id": "02c1",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/notifications?_sort=created_at&_order=desc",
+      "message": "Erreur API GET /notifications?_sort=created_at&_order=desc",
+      "createdAt": "2026-02-16T16:38:09.611Z"
+    },
+    {
+      "id": "2f35",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/notifications?_sort=created_at&_order=desc",
+      "message": "Erreur API GET /notifications?_sort=created_at&_order=desc",
+      "createdAt": "2026-02-16T16:38:10.483Z"
+    },
+    {
+      "id": "log-mlpffymp-ts9l",
+      "actor": "anonymous",
+      "action": "FAILED_LOGIN",
+      "targetType": "auth",
+      "targetId": "771718013",
+      "message": "Tentative de connexion échouée",
+      "ipAddress": "::1",
+      "createdAt": "2026-02-16T17:07:12.529Z"
+    },
+    {
+      "id": "0919",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext/login",
+      "message": "Erreur API POST /authContext/login",
+      "createdAt": "2026-02-16T17:07:12.582Z"
+    },
+    {
+      "id": "cc0c",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "b7ed",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "9c7a",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "02ad",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "7bdd",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "08e3",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "cd17",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "9196",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=language",
+      "message": "Erreur API GET /settings?key=language",
+      "createdAt": "2026-02-16T18:24:00.310Z"
+    },
+    {
+      "id": "d4a6",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "bec0",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "34cd",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "1f7d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "f604",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "9ccf",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "4a1f",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext",
+      "message": "Erreur API GET /authContext",
+      "createdAt": "2026-02-16T18:24:00.326Z"
+    },
+    {
+      "id": "3a85",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "bddb",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "2a9e",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "c2a6",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "02d8",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "3946",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T18:24:00.333Z"
+    },
+    {
+      "id": "26e5",
+      "actor": "client",
+      "action": "SLOW_REQUEST_CLIENT",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Requête lente GET /settings?key=platform_config_v1 (4036ms)",
+      "createdAt": "2026-02-16T18:29:44.691Z"
+    },
+    {
+      "id": "log-mlpievnt-fvz5",
+      "actor": "superadmin-001",
+      "action": "ADMIN_STATUS",
+      "targetType": "admin",
+      "targetId": "0285492b-a2e2-4209-ac0e-d442e4a84a97",
+      "message": "Admin 0285492b-a2e2-4209-ac0e-d442e4a84a97: ACTIF → SUSPENDU",
+      "createdAt": "2026-02-16T18:30:20.873Z"
+    },
+    {
+      "id": "log-mlpjwskk-bbdj",
+      "createdAt": "2026-02-16T19:12:16.292Z",
+      "actor": "superadmin-001",
+      "action": "settings.governance.audit.webhook.test.start",
+      "targetType": "ui",
+      "targetId": "settings",
+      "meta": {
+        "role": "SUPER_ADMIN",
+        "name": "Super Admin"
+      }
+    },
+    {
+      "id": "log-mlpjwskn-6tqj",
+      "createdAt": "2026-02-16T19:12:16.295Z",
+      "actor": "superadmin-001",
+      "action": "settings.governance.audit.webhook.test.success",
+      "targetType": "ui",
+      "targetId": "settings",
+      "meta": {
+        "role": "SUPER_ADMIN",
+        "name": "Super Admin"
+      }
+    },
+    {
+      "id": "log-mlpkizas-bhsx",
+      "createdAt": "2026-02-16T19:29:31.444Z",
+      "actor": "superadmin-001",
+      "action": "settings.runtimeConfig.save.start",
+      "targetType": "ui",
+      "targetId": "settings",
+      "meta": {
+        "role": "SUPER_ADMIN",
+        "name": "Super Admin"
+      }
+    },
+    {
+      "id": "log-mlpkjc72-22y0",
+      "createdAt": "2026-02-16T19:29:48.158Z",
+      "actor": "superadmin-001",
+      "action": "settings.runtimeConfig.save.success",
+      "targetType": "ui",
+      "targetId": "settings",
+      "meta": {
+        "role": "SUPER_ADMIN",
+        "name": "Super Admin",
+        "source": "local-storage",
+        "writtenPath": null
+      }
+    },
+    {
+      "id": "133e",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/notifications?_sort=created_at&_order=desc",
+      "message": "Erreur API GET /notifications?_sort=created_at&_order=desc",
+      "createdAt": "2026-02-16T19:29:34.313Z"
+    },
+    {
+      "id": "d82d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:37.196Z"
+    },
+    {
+      "id": "8e0f",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/admins",
+      "message": "Erreur API GET /admins",
+      "createdAt": "2026-02-16T19:29:37.197Z"
+    },
+    {
+      "id": "0f8d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/admin_requests",
+      "message": "Erreur API GET /admin_requests",
+      "createdAt": "2026-02-16T19:29:37.211Z"
+    },
+    {
+      "id": "6f6e",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/entreprises",
+      "message": "Erreur API GET /entreprises",
+      "createdAt": "2026-02-16T19:29:37.212Z"
+    },
+    {
+      "id": "9ab6",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/users",
+      "message": "Erreur API GET /users",
+      "createdAt": "2026-02-16T19:29:37.213Z"
+    },
+    {
+      "id": "38ac",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/clients",
+      "message": "Erreur API GET /clients",
+      "createdAt": "2026-02-16T19:29:37.214Z"
+    },
+    {
+      "id": "0e88",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/admin_payments",
+      "message": "Erreur API GET /admin_payments",
+      "createdAt": "2026-02-16T19:29:37.214Z"
+    },
+    {
+      "id": "9180",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:37.214Z"
+    },
+    {
+      "id": "bb68",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/notifications?_sort=created_at&_order=desc",
+      "message": "Erreur API GET /notifications?_sort=created_at&_order=desc",
+      "createdAt": "2026-02-16T19:29:37.230Z"
+    },
+    {
+      "id": "6977",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:38.471Z"
+    },
+    {
+      "id": "7483",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/notifications?_sort=created_at&_order=desc",
+      "message": "Erreur API GET /notifications?_sort=created_at&_order=desc",
+      "createdAt": "2026-02-16T19:29:38.471Z"
+    },
+    {
+      "id": "a083",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/admins",
+      "message": "Erreur API GET /admins",
+      "createdAt": "2026-02-16T19:29:38.474Z"
+    },
+    {
+      "id": "214d",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/entreprises",
+      "message": "Erreur API GET /entreprises",
+      "createdAt": "2026-02-16T19:29:38.474Z"
+    },
+    {
+      "id": "84a5",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:38.475Z"
+    },
+    {
+      "id": "2646",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:40.611Z"
+    },
+    {
+      "id": "ff0b",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/notifications?_sort=created_at&_order=desc",
+      "message": "Erreur API GET /notifications?_sort=created_at&_order=desc",
+      "createdAt": "2026-02-16T19:29:40.611Z"
+    },
+    {
+      "id": "ca77",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=import_clients_aliases:superadmin-001",
+      "message": "Erreur API GET /settings?key=import_clients_aliases:superadmin-001",
+      "createdAt": "2026-02-16T19:29:40.611Z"
+    },
+    {
+      "id": "57da",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=import_report_format:superadmin-001",
+      "message": "Erreur API GET /settings?key=import_report_format:superadmin-001",
+      "createdAt": "2026-02-16T19:29:40.612Z"
+    },
+    {
+      "id": "6fe8",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=import_clients_required_fields",
+      "message": "Erreur API GET /settings?key=import_clients_required_fields",
+      "createdAt": "2026-02-16T19:29:40.612Z"
+    },
+    {
+      "id": "7f73",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:40.612Z"
+    },
+    {
+      "id": "8516",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/settings?key=platform_config_v1",
+      "message": "Erreur API GET /settings?key=platform_config_v1",
+      "createdAt": "2026-02-16T19:29:40.612Z"
+    },
+    {
+      "id": "log-mlpkjd2x-cbph",
+      "createdAt": "2026-02-16T19:29:49.305Z",
+      "actor": "superadmin-001",
+      "action": "settings.runtimeConfig.reload.start",
+      "targetType": "ui",
+      "targetId": "settings",
+      "meta": {
+        "role": "SUPER_ADMIN",
+        "name": "Super Admin"
+      }
+    },
+    {
+      "id": "log-mlpkjd3h-93yg",
+      "createdAt": "2026-02-16T19:29:49.325Z",
+      "actor": "superadmin-001",
+      "action": "settings.runtimeConfig.reload.success",
+      "targetType": "ui",
+      "targetId": "settings",
+      "meta": {
+        "role": "SUPER_ADMIN",
+        "name": "Super Admin"
+      }
     }
   ],
   "entreprises": [],
@@ -3782,6 +4314,26 @@
     }
   ],
   "undo_actions": [
+    {
+      "id": "undo-mlpievnx-irxc3",
+      "resource": "admins",
+      "resourceId": "0285492b-a2e2-4209-ac0e-d442e4a84a97",
+      "method": "PUT",
+      "actorId": "superadmin-001",
+      "createdAt": "2026-02-16T18:30:20.877Z",
+      "expiresAt": "2026-04-17T18:30:20.877Z",
+      "path": "/admins/0285492b-a2e2-4209-ac0e-d442e4a84a97",
+      "rollback": {
+        "type": "upsert",
+        "item": {
+          "status": "ACTIF",
+          "id": "0285492b-a2e2-4209-ac0e-d442e4a84a97",
+          "paid": true,
+          "paidAt": "2026-02-15T06:34:34.264Z"
+        }
+      },
+      "sideEffects": null
+    },
     {
       "id": "undo-mlovobqe-xj68s",
       "resource": "clients",

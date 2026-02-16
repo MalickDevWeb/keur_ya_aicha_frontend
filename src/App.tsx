@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/stores/DataProvider";
@@ -51,6 +51,9 @@ import AdminSignup from "./pages/common/AdminSignup";
 import DangerClients from "./pages/admin/DangerClients";
 
 const queryClient = new QueryClient();
+const isElectronDesktop =
+  typeof navigator !== "undefined" && /electron/i.test(navigator.userAgent);
+const Router = isElectronDesktop ? HashRouter : BrowserRouter;
 
 const App = () => (
   <ErrorBoundary>
@@ -63,7 +66,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <ToastContainer />
-              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin/signup" element={<AdminSignup />} />
@@ -76,7 +79,7 @@ const App = () => (
                 <Route path="/pmt/admin/logs" element={<LogsPage />} />
                 <Route path="/pmt/admin/monitoring/requests" element={<RequestsPage />} />
                 <Route path="/pmt/admin/monitoring/performance" element={<PerformancePage />} />
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/import/clients" element={<ImportClients />} />
@@ -135,7 +138,7 @@ const App = () => (
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
+            </Router>
             </TooltipProvider>
           </ToastProvider>
         </DataProvider>

@@ -1,6 +1,7 @@
 import type { AdminStatus } from '@/dto/frontend/responses'
 import type { CreatedAdmin } from './types'
 import { CREDENTIALS_SEPARATOR, CONTRACT_META } from './constants'
+import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets'
 
 export const normalize = (value?: string) => String(value || '').trim().toLowerCase()
 
@@ -44,7 +45,7 @@ export const buildCredentialsMessage = (data: CreatedAdmin, appUrl: string) => {
 
 export const loadLogoDataUrl = async () => {
   try {
-    const response = await fetch('/logo.png')
+    const response = await fetch(resolveAssetUrl(DEFAULT_LOGO_ASSET_PATH))
     if (!response.ok) return null
     const blob = await response.blob()
     return await new Promise<string>((resolve, reject) => {

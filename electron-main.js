@@ -1,30 +1,149 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 let mainWindow
+const RUNTIME_CONFIG_FILENAME = 'kya.runtime.json'
+const DEFAULT_RUNTIME_CONFIG = Object.freeze({
+  apiBaseUrl: '',
+  cloudinarySignUrl: '',
+})
+
+if (process.platform === 'linux') {
+  app.disableHardwareAcceleration()
+  app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('disable-setuid-sandbox')
+  app.commandLine.appendSwitch('disable-gpu')
+  app.commandLine.appendSwitch('in-process-gpu')
+  app.commandLine.appendSwitch('disable-dev-shm-usage')
+}
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.keuryaicha.app')
+}
+
+function normalizeRuntimeConfig(value = {}) {
+  const apiBaseUrl = String(value?.apiBaseUrl || '')
+    .trim()
+    .replace(/\/+$/, '')
+  const cloudinarySignUrl = String(value?.cloudinarySignUrl || '').trim()
+
+  return {
+    apiBaseUrl,
+    cloudinarySignUrl,
+  }
+}
+
+function getUserRuntimeConfigPath() {
+  return path.join(app.getPath('userData'), RUNTIME_CONFIG_FILENAME)
+}
+
+function getPortableRuntimeConfigPath() {
+  const portableDir = String(process.env.PORTABLE_EXECUTABLE_DIR || '').trim()
+  if (portableDir) return path.join(portableDir, RUNTIME_CONFIG_FILENAME)
+  return path.join(path.dirname(process.execPath), RUNTIME_CONFIG_FILENAME)
+}
+
+function readRuntimeConfigFromPath(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return { exists: false, config: { ...DEFAULT_RUNTIME_CONFIG } }
+  }
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8')
+    const parsed = JSON.parse(raw || '{}')
+    return { exists: true, config: normalizeRuntimeConfig(parsed) }
+  } catch (error) {
+    console.error('Failed to parse runtime config:', filePath, error)
+    return { exists: true, config: { ...DEFAULT_RUNTIME_CONFIG } }
+  }
+}
+
+function resolveRuntimeConfig() {
+  const userPath = getUserRuntimeConfigPath()
+  const portablePath = getPortableRuntimeConfigPath()
+  const userConfig = readRuntimeConfigFromPath(userPath)
+  const portableConfig = readRuntimeConfigFromPath(portablePath)
+  const source = portableConfig.exists ? 'portable-file' : userConfig.exists ? 'user-file' : 'default'
+
+  return {
+    config: {
+      ...DEFAULT_RUNTIME_CONFIG,
+      ...userConfig.config,
+      ...portableConfig.config,
+    },
+    userPath,
+    portablePath,
+    source,
+  }
+}
+
+function writeRuntimeConfig(payload = {}) {
+  const resolved = resolveRuntimeConfig()
+  const current = resolved.config
+  const next = normalizeRuntimeConfig({ ...current, ...payload })
+  const portableEnvDefined = Boolean(String(process.env.PORTABLE_EXECUTABLE_DIR || '').trim())
+  const writeTargets = []
+
+  if (resolved.source === 'portable-file' || portableEnvDefined) {
+    writeTargets.push(resolved.portablePath)
+  }
+  writeTargets.push(resolved.userPath)
+
+  const uniqueTargets = [...new Set(writeTargets.filter(Boolean))]
+  let lastError = null
+
+  for (const filePath of uniqueTargets) {
+    try {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true })
+      fs.writeFileSync(filePath, JSON.stringify(next, null, 2), 'utf-8')
+      return {
+        config: next,
+        userPath: resolved.userPath,
+        portablePath: resolved.portablePath,
+        source: filePath === resolved.portablePath ? 'portable-file' : 'user-file',
+        writtenPath: filePath,
+      }
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError
+  }
+  throw new Error('No writable runtime config location found')
+}
+
+function resolveWindowIconPath() {
+  const iconPath = path.join(__dirname, 'dist', 'logo.png')
+  return fs.existsSync(iconPath) ? iconPath : undefined
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    icon: resolveWindowIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'electron-preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      sandbox: process.platform !== 'linux',
     },
   })
 
   const isDev = process.env.ELECTRON_DEV === 'true'
+  const startupHash = '/login'
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:8082')
+    mainWindow.loadURL(`http://localhost:8082/#${startupHash}`)
     mainWindow.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'))
+    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'), {
+      hash: startupHash,
+    })
   }
 
   mainWindow.on('closed', () => {
@@ -105,6 +224,73 @@ ipcMain.handle('open-folder', async (event, folderPath) => {
     return { success: true }
   } catch (error) {
     console.error('Error opening folder:', error)
+    return {
+      success: false,
+      error: error.message,
+    }
+  }
+})
+
+ipcMain.handle('runtime-config:get', async () => {
+  try {
+    return {
+      success: true,
+      ...resolveRuntimeConfig(),
+    }
+  } catch (error) {
+    console.error('Error reading runtime config:', error)
+    return {
+      success: false,
+      error: error.message,
+      config: { ...DEFAULT_RUNTIME_CONFIG },
+      userPath: getUserRuntimeConfigPath(),
+      portablePath: getPortableRuntimeConfigPath(),
+      source: 'default',
+    }
+  }
+})
+
+ipcMain.handle('runtime-config:set', async (event, payload) => {
+  try {
+    const { config, userPath, portablePath, source, writtenPath } = writeRuntimeConfig(payload || {})
+    return {
+      success: true,
+      config,
+      userPath,
+      portablePath,
+      source,
+      writtenPath,
+    }
+  } catch (error) {
+    console.error('Error writing runtime config:', error)
+    return {
+      success: false,
+      error: error.message,
+      config: { ...DEFAULT_RUNTIME_CONFIG },
+      userPath: getUserRuntimeConfigPath(),
+      portablePath: getPortableRuntimeConfigPath(),
+      source: 'default',
+    }
+  }
+})
+
+ipcMain.handle('runtime-config:open-folder', async () => {
+  try {
+    const resolved = resolveRuntimeConfig()
+    const portableEnvDefined = Boolean(String(process.env.PORTABLE_EXECUTABLE_DIR || '').trim())
+    const preferredFilePath =
+      resolved.source === 'portable-file' || portableEnvDefined ? resolved.portablePath : resolved.userPath
+    const folderPath = path.dirname(preferredFilePath)
+    fs.mkdirSync(folderPath, { recursive: true })
+    const { shell } = await import('electron')
+    await shell.openPath(folderPath)
+    return {
+      success: true,
+      folderPath,
+      source: preferredFilePath === resolved.portablePath ? 'portable-file' : 'user-file',
+    }
+  } catch (error) {
+    console.error('Error opening runtime config folder:', error)
     return {
       success: false,
       error: error.message,

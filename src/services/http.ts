@@ -1,8 +1,18 @@
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+import { ensureRuntimeConfigLoaded, getApiBaseUrl } from './runtimeConfig'
+import {
+  buildMaintenanceBlockedMessage,
+  sendComplianceWebhookAlert,
+  shouldBlockWriteByMaintenance,
+} from './platformConfig'
 
 const SLOW_REQUEST_MS = 1500
 const AUDIT_BUFFER_KEY = 'audit_buffer'
 const UNDO_EVENT_NAME = 'api-undo-available'
+
+const resolveApiBase = async (): Promise<string> => {
+  await ensureRuntimeConfigLoaded()
+  return getApiBaseUrl()
+}
 
 function queueAuditLog(entry: Record<string, unknown>) {
   try {
@@ -17,12 +27,13 @@ function queueAuditLog(entry: Record<string, unknown>) {
 
 async function flushAuditBuffer() {
   try {
+    const apiBase = await resolveApiBase()
     const raw = localStorage.getItem(AUDIT_BUFFER_KEY)
     if (!raw) return
     const list = JSON.parse(raw) as Record<string, unknown>[]
     if (!Array.isArray(list) || list.length === 0) return
     for (const entry of list) {
-      await fetch(`${API_BASE}/audit_logs`, {
+      await fetch(`${apiBase}/audit_logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
@@ -36,7 +47,8 @@ async function flushAuditBuffer() {
 
 async function sendAuditLog(entry: Record<string, unknown>) {
   try {
-    await fetch(`${API_BASE}/audit_logs`, {
+    const apiBase = await resolveApiBase()
+    await fetch(`${apiBase}/audit_logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
@@ -151,6 +163,17 @@ export async function handleResponse<T>(res: Response): Promise<T> {
         })
       )
     }
+    if (res.status === 503 && String(errorData.code || '') === 'MAINTENANCE_MODE') {
+      window.dispatchEvent(
+        new CustomEvent('platform-maintenance-blocked', {
+          detail: {
+            method: 'SERVER',
+            path: 'server',
+            message,
+          },
+        })
+      )
+    }
 
     throw new Error(message)
   }
@@ -175,6 +198,7 @@ export async function handleResponse<T>(res: Response): Promise<T> {
  * @returns La réponse parsée en JSON
  */
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  await ensureRuntimeConfigLoaded()
   const headers = new Headers(options.headers || {})
 
   if (options.body && !isFormDataBody(options.body) && !headers.has('Content-Type')) {
@@ -182,7 +206,21 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
 
   const method = options.method || 'GET'
-  const url = `${API_BASE}${path}`
+  if (shouldBlockWriteByMaintenance(path, method)) {
+    const message = buildMaintenanceBlockedMessage()
+    window.dispatchEvent(
+      new CustomEvent('platform-maintenance-blocked', {
+        detail: {
+          method: String(method || 'GET').toUpperCase(),
+          path,
+          message,
+        },
+      })
+    )
+    throw new Error(message)
+  }
+  const apiBase = getApiBaseUrl()
+  const url = `${apiBase}${path}`
 
   logger.debug(`${method} ${path}`)
 
@@ -206,6 +244,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     return data
   } catch (err) {
     logger.error(`Appel API échoué: ${method} ${path}`, err)
+    void sendComplianceWebhookAlert('api_error', {
+      method: String(method || 'GET').toUpperCase(),
+      path,
+      error: err instanceof Error ? err.message : String(err || 'Unknown error'),
+    })
     if (!path.startsWith('/audit_logs')) {
       sendAuditLog({
         actor: 'client',

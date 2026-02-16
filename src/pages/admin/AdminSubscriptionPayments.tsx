@@ -9,6 +9,14 @@ import { createAdminPayment, fetchAdminPayments, getAdmin, getAdminPaymentStatus
 import type { AdminDTO, AdminPaymentDTO, AdminPaymentStatusDTO } from '@/dto/frontend/responses'
 import { formatCurrency } from '@/lib/types'
 import { Banknote, Landmark, Loader2, RotateCcw, Smartphone } from 'lucide-react'
+import {
+  DEFAULT_PLATFORM_CONFIG,
+  getPlatformConfigSnapshot,
+  refreshPlatformConfigFromServer,
+  sendComplianceWebhookAlert,
+  subscribePlatformConfigUpdates,
+  type PaymentRulesConfig,
+} from '@/services/platformConfig'
 
 const getMonthKey = (value: Date | string) => String(value).slice(0, 7)
 const UNDO_RESOURCE = 'admin_payments'
@@ -87,6 +95,7 @@ export default function AdminSubscriptionPayments() {
   const [paying, setPaying] = useState(false)
   const [latestUndoId, setLatestUndoId] = useState<string | null>(null)
   const [isRollingBack, setIsRollingBack] = useState(false)
+  const [paymentRules, setPaymentRules] = useState<PaymentRulesConfig>(getPlatformConfigSnapshot().paymentRules)
   const userRole = String(user?.role || '').toUpperCase()
   const canValidateCash = userRole === 'SUPER_ADMIN'
   const visiblePaymentMethods = useMemo(
@@ -150,6 +159,24 @@ export default function AdminSubscriptionPayments() {
   }, [user?.id])
 
   useEffect(() => {
+    let active = true
+    const loadPlatformConfig = async () => {
+      const config = await refreshPlatformConfigFromServer()
+      if (!active) return
+      setPaymentRules(config.paymentRules)
+    }
+    void loadPlatformConfig()
+    const unsubscribe = subscribePlatformConfigUpdates((config) => {
+      if (!active) return
+      setPaymentRules(config.paymentRules)
+    })
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
     const onUndoAvailable = (event: Event) => {
       const detail = (event as CustomEvent<UndoEventDetail>).detail
       if (!detail?.id) return
@@ -170,6 +197,25 @@ export default function AdminSubscriptionPayments() {
   const blockedBySystem = Boolean(subscriptionStatus?.blocked)
   const lastPayment = payments[0]
   const dueDateLabel = subscriptionStatus?.dueAt ? new Date(subscriptionStatus.dueAt).toLocaleDateString('fr-FR') : null
+  const effectiveGraceDays =
+    Number.isFinite(Number(paymentRules.graceDays)) && Number(paymentRules.graceDays) >= 0
+      ? Number(paymentRules.graceDays)
+      : DEFAULT_PLATFORM_CONFIG.paymentRules.graceDays
+  const latePenaltyPercent =
+    Number.isFinite(Number(paymentRules.latePenaltyPercent)) && Number(paymentRules.latePenaltyPercent) >= 0
+      ? Number(paymentRules.latePenaltyPercent)
+      : DEFAULT_PLATFORM_CONFIG.paymentRules.latePenaltyPercent
+  const overdueByRules = Boolean(subscriptionStatus?.dueAt) && Date.now() > new Date(subscriptionStatus.dueAt || '').getTime()
+
+  useEffect(() => {
+    if (!blockedBySystem) return
+    void sendComplianceWebhookAlert('security', {
+      event: 'payment_overdue',
+      adminId: user?.id || '',
+      month: subscriptionStatus?.overdueMonth || requiredMonth,
+      dueAt: subscriptionStatus?.dueAt || '',
+    })
+  }, [blockedBySystem, requiredMonth, subscriptionStatus?.dueAt, subscriptionStatus?.overdueMonth, user?.id])
 
   useEffect(() => {
     if (canValidateCash && paymentMethod !== 'cash') {
@@ -211,6 +257,8 @@ export default function AdminSubscriptionPayments() {
     setPaying(true)
     try {
       const paidAt = new Date().toISOString()
+      const penaltyMultiplier = overdueByRules ? 1 + latePenaltyPercent / 100 : 1
+      const effectiveAmount = Number((numericAmount * penaltyMultiplier).toFixed(0))
       const provider =
         paymentMethod === 'wave'
           ? 'wave'
@@ -221,7 +269,7 @@ export default function AdminSubscriptionPayments() {
         id: crypto.randomUUID(),
         adminId: user.id,
         entrepriseId: admin?.entrepriseId || '',
-        amount: numericAmount,
+        amount: effectiveAmount,
         method: paymentMethod,
         provider,
         payerPhone: payerPhone.trim(),
@@ -249,6 +297,13 @@ export default function AdminSubscriptionPayments() {
             ? 'Paiement espèces enregistré. Accès mis à jour.'
             : `Paiement ${paymentMethod === 'wave' ? 'Wave' : 'Orange Money'} confirmé.`,
       })
+      if (effectiveAmount > numericAmount) {
+        addToast({
+          type: 'info',
+          title: 'Pénalité appliquée',
+          message: `Montant ajusté avec pénalité (${latePenaltyPercent}%): ${formatCurrency(effectiveAmount)} FCFA.`,
+        })
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible d'enregistrer le paiement."
       addToast({
@@ -307,7 +362,7 @@ export default function AdminSubscriptionPayments() {
           <p className="text-xs uppercase tracking-[0.3em] text-[#121B53]/60">Abonnement Admin</p>
           <CardTitle className="text-2xl text-[#121B53]">Paiement mensuel</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Paiement avant la fin du mois + {subscriptionStatus?.graceDays || 5} jours. Passé ce délai, l’accès est limité à cet écran.
+            Paiement avant la fin du mois + {effectiveGraceDays} jours. Passé ce délai, l’accès est limité à cet écran.
           </p>
         </CardHeader>
         <CardContent className="h-full space-y-3 overflow-hidden pb-3">
@@ -321,6 +376,17 @@ export default function AdminSubscriptionPayments() {
               </p>
             </div>
           ) : null}
+
+          <div className="rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-3 text-xs text-[#121B53]/80">
+            <p>
+              Règles actives: blocage {paymentRules.blockOnOverdue ? 'activé' : 'désactivé'} • pénalité retard {latePenaltyPercent}%.
+            </p>
+            {overdueByRules && latePenaltyPercent > 0 ? (
+              <p className="mt-1 text-amber-700">
+                Retard détecté: la pénalité est appliquée automatiquement au montant saisi.
+              </p>
+            ) : null}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-3">
