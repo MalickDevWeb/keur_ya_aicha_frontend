@@ -13,6 +13,8 @@ export * from './api/auditLogs.api'
 export * from './api/workItems.api'
 export * from './api/payments.api'
 export * from './api/deposits.api'
+export * from './api/adminPayments.api'
+export * from './api/undo.api'
 export * from './api/endpoint.factory'
 export * from './services/payments.service'
 export * from './services/deposits.service'
@@ -33,6 +35,7 @@ export { createDocument as postDocument } from './api/documents.api'
 
 // Payments
 export { listPayments as fetchPayments } from './api/payments.api'
+export { listAdminPayments as fetchAdminPayments } from './api/adminPayments.api'
 
 // Deposits
 export { listDeposits as fetchDeposits } from './api/deposits.api'

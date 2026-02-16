@@ -44,7 +44,7 @@ cleanup() {
   echo -e "\n${YELLOW}📤 Arrêt de tous les serveurs...${NC}"
 
   echo -e "${YELLOW}Arrêt de json-server...${NC}"
-  pkill -f "json-server-auth.mjs" 2>/dev/null || true
+  pkill -f "backend/src/index.mjs" 2>/dev/null || true
 
   echo -e "${YELLOW}Arrêt du serveur Cloudinary...${NC}"
   pkill -f "node.*server/index.js" 2>/dev/null || true
@@ -71,9 +71,9 @@ echo -e "\n${BLUE}════════════════════�
 echo -e "${BLUE}Démarrage des serveurs...${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}\n"
 
-# JSON Server
+# JSON Server (set PORT explicitly to avoid loading wrong .env)
 echo -e "${BLUE}1️⃣  Démarrage de json-server (auth) sur le port $JSON_PORT...${NC}"
-node scripts/json-server-auth.mjs 2>&1 &
+PORT=$JSON_PORT node backend/src/index.mjs 2>&1 &
 JSON_PID=$!
 sleep 2
 if ps -p $JSON_PID > /dev/null; then
@@ -85,7 +85,7 @@ fi
 
 # Cloudinary Sign Server
 echo -e "${BLUE}2️⃣  Démarrage du serveur Cloudinary sur le port $SIGN_PORT...${NC}"
-(cd server && node index.js) 2>&1 &
+(cd backend/server && node index.js) 2>&1 &
 SIGN_PID=$!
 sleep 2
 if ps -p $SIGN_PID > /dev/null; then

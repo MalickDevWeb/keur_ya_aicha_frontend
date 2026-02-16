@@ -47,7 +47,7 @@ export function PaymentsFiltersSection({
             </Badge>
           )}
         </Button>
-        <div className="flex gap-2 border-l pl-4">
+        <div className="flex gap-2 border-t pt-3 sm:border-t-0 sm:border-l sm:pl-4 sm:pt-0">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
             size="sm"

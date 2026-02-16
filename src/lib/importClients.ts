@@ -63,6 +63,43 @@ export const DEFAULT_IMPORT_ALIASES: Partial<Record<keyof ClientImportMapping, s
   status: ['status', 'statut'],
 }
 
+export const CLIENT_IMPORT_FIELDS: Array<keyof ClientImportMapping> = [
+  'firstName',
+  'lastName',
+  'phone',
+  'email',
+  'cni',
+  'propertyType',
+  'propertyName',
+  'startDate',
+  'monthlyRent',
+  'depositTotal',
+  'depositPaid',
+  'status',
+]
+
+export const FIELD_LABELS: Record<keyof ClientImportMapping, string> = {
+  firstName: 'Prénom',
+  lastName: 'Nom',
+  phone: 'Téléphone',
+  email: 'Email',
+  cni: 'CNI',
+  propertyType: 'Type de bien',
+  propertyName: 'Bien',
+  startDate: 'Date de début',
+  monthlyRent: 'Loyer mensuel',
+  depositTotal: 'Caution totale',
+  depositPaid: 'Caution payée',
+  status: 'Statut',
+}
+
+export const DEFAULT_REQUIRED_FIELDS: Array<keyof ClientImportMapping> = [
+  'firstName',
+  'lastName',
+  'phone',
+  'cni',
+]
+
 export async function parseSpreadsheet(file: File): Promise<ClientImportResult> {
   const extension = file.name.toLowerCase()
   if (extension.endsWith('.csv')) {
@@ -241,22 +278,43 @@ export function buildRow(
   return { ...parsed, ...(overrides || {}) }
 }
 
-export function validateRow(row: ClientImportRow): string[] {
+export function validateRow(
+  row: ClientImportRow,
+  requiredFields: Array<keyof ClientImportMapping> = DEFAULT_REQUIRED_FIELDS
+): string[] {
   const errors: string[] = []
-  if (!row.firstName) errors.push('Prénom manquant (obligatoire)')
-  else if (!validateName(row.firstName)) errors.push('Prénom invalide (au moins 2 lettres)')
+  const isRequired = (field: keyof ClientImportMapping) => requiredFields.includes(field)
 
-  if (!row.lastName) errors.push('Nom manquant (obligatoire)')
-  else if (!validateName(row.lastName)) errors.push('Nom invalide (au moins 2 lettres)')
+  if (isRequired('firstName') && !row.firstName) errors.push('Prénom manquant (obligatoire)')
+  if (row.firstName && !validateName(row.firstName)) errors.push('Prénom invalide (au moins 2 lettres)')
 
-  if (!row.phone) errors.push('Téléphone manquant (obligatoire)')
-  else if (!validateSenegalNumber(row.phone)) {
+  if (isRequired('lastName') && !row.lastName) errors.push('Nom manquant (obligatoire)')
+  if (row.lastName && !validateName(row.lastName)) errors.push('Nom invalide (au moins 2 lettres)')
+
+  if (isRequired('phone') && !row.phone) errors.push('Téléphone manquant (obligatoire)')
+  if (row.phone && !validateSenegalNumber(row.phone)) {
     errors.push('Téléphone invalide (format attendu: +221771234567 ou 771234567)')
   }
 
+  if (isRequired('cni') && !row.cni) errors.push('CNI manquant (obligatoire)')
   if (row.cni && !validateCNI(row.cni)) {
     errors.push('CNI invalide (13 chiffres attendus)')
   }
+
+  if (isRequired('email') && !row.email) errors.push('Email manquant (obligatoire)')
+  if (isRequired('propertyType') && !row.propertyType) errors.push('Type de bien manquant (obligatoire)')
+  if (isRequired('propertyName') && !row.propertyName) errors.push('Bien manquant (obligatoire)')
+  if (isRequired('startDate') && !row.startDate) errors.push('Date de début manquante (obligatoire)')
+  if (isRequired('monthlyRent') && (row.monthlyRent === undefined || row.monthlyRent === null)) {
+    errors.push('Loyer mensuel manquant (obligatoire)')
+  }
+  if (isRequired('depositTotal') && (row.depositTotal === undefined || row.depositTotal === null)) {
+    errors.push('Caution totale manquante (obligatoire)')
+  }
+  if (isRequired('depositPaid') && (row.depositPaid === undefined || row.depositPaid === null)) {
+    errors.push('Caution payée manquante (obligatoire)')
+  }
+  if (isRequired('status') && !row.status) errors.push('Statut manquant (obligatoire)')
 
   return errors
 }

@@ -27,7 +27,7 @@ export function SuperAdminHeader({ className, actions, onAddAdmin }: SuperAdminH
   return (
     <div
       className={cn(
-        'rounded-[28px] border border-[#121B53]/20 bg-gradient-to-br from-[#121B53] via-[#121B53] to-[#0B153D] px-6 py-5 text-white shadow-[0_18px_45px_rgba(9,15,40,0.32)]',
+        'rounded-[28px] border border-[#121B53]/20 bg-gradient-to-br from-[#121B53] via-[#121B53] to-[#0B153D] px-4 py-4 text-white shadow-[0_18px_45px_rgba(9,15,40,0.32)] sm:px-6 sm:py-5',
         'relative overflow-hidden',
         className
       )}
@@ -35,18 +35,23 @@ export function SuperAdminHeader({ className, actions, onAddAdmin }: SuperAdminH
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_45%)]" />
       <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(74,124,255,0.25),transparent_65%)]" />
       <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-xs uppercase tracking-[0.35em] text-white/70">Super Admin</p>
-          <h1 className="text-2xl font-semibold text-white">Pilotage global des comptes et des validations</h1>
+          <h1 className="text-xl font-semibold leading-tight text-white sm:text-2xl break-words">
+            Pilotage global des comptes et des validations
+          </h1>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button className="bg-white/15 text-white hover:bg-white/25" onClick={handleAddAdmin}>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Button
+            className="w-full bg-white/15 text-white hover:bg-white/25 sm:w-auto"
+            onClick={handleAddAdmin}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Ajouter un admin
           </Button>
           <NotificationBell />
           {actions}
-          <LanguageSelector />
+          <LanguageSelector className="ml-auto sm:ml-0" />
         </div>
       </div>
     </div>

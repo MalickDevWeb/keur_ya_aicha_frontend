@@ -47,7 +47,11 @@ export function ClientsFiltersSection({
     <div>
       <div className="flex flex-col sm:flex-row gap-4">
         <SearchInput value={search} onChange={onSearchChange} className="flex-1" />
-        <Button variant="outline" onClick={onToggleFilters} className={cn(showFilters && 'bg-muted')}>
+        <Button
+          variant="outline"
+          onClick={onToggleFilters}
+          className={cn('w-full sm:w-auto', showFilters && 'bg-muted')}
+        >
           <Filter className="w-4 h-4 mr-2" />
           {t('filter.status')}
           {hasActiveFilters && (
@@ -56,12 +60,13 @@ export function ClientsFiltersSection({
             </Badge>
           )}
         </Button>
-        <div className="flex gap-2 border-l pl-4">
+        <div className="flex gap-2 border-t pt-3 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onViewModeChange('cards')}
             title="Vue en cartes"
+            className="flex-1 sm:flex-none"
           >
             <Grid3x3 className="w-4 h-4" />
           </Button>
@@ -70,6 +75,7 @@ export function ClientsFiltersSection({
             size="sm"
             onClick={() => onViewModeChange('list')}
             title="Vue en liste"
+            className="flex-1 sm:flex-none"
           >
             <List className="w-4 h-4" />
           </Button>
@@ -79,7 +85,7 @@ export function ClientsFiltersSection({
       {showFilters && (
         <div className="flex flex-wrap items-center gap-4 pt-4 border-t mt-4">
           <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder={t('filter.status')} />
             </SelectTrigger>
             <SelectContent>
@@ -91,7 +97,7 @@ export function ClientsFiltersSection({
           </Select>
 
           <Select value={typeFilter} onValueChange={onTypeFilterChange}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder={t('filter.type')} />
             </SelectTrigger>
             <SelectContent>

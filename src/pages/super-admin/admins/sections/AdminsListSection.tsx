@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SearchInput } from '@/components/SearchInput'
 import { cn } from '@/lib/utils'
 import { Grid3x3, List } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { useEffect } from 'react'
 import type { AdminDTO } from '@/dto/frontend/responses'
 import type { AdminRow, ViewMode } from '../types'
 
@@ -98,6 +100,13 @@ export function AdminsListSection({
   busyId,
   onSetStatus,
 }: AdminsListSectionProps) {
+  const isMobile = useIsMobile()
+  useEffect(() => {
+    if (isMobile && viewMode !== 'cards') {
+      onViewModeChange('cards')
+    }
+  }, [isMobile, viewMode, onViewModeChange])
+
   return (
     <Card className="border-[#121B53]/15 bg-white/90 shadow-[0_24px_60px_rgba(12,18,60,0.14)]">
       <CardHeader className="pb-4">
@@ -112,9 +121,9 @@ export function AdminsListSection({
               onChange={onSearchChange}
               className="flex-1"
               inputClassName="border-[#121B53]/20 bg-white focus-visible:ring-0"
-              placeholder="Nom, username, email ou entreprise"
+              placeholder="Nom, email ou entreprise"
             />
-            <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1">
+            <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1 w-full sm:w-auto justify-between sm:justify-start">
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'ghost'}
                 size="sm"
@@ -135,7 +144,7 @@ export function AdminsListSection({
                 onClick={() => onViewModeChange('list')}
                 title="Vue en liste"
                 className={cn(
-                  'h-9 w-9',
+                  'h-9 w-9 hidden sm:inline-flex',
                   viewMode === 'list'
                     ? 'bg-[#121B53] text-white hover:bg-[#0B153D]'
                     : 'text-[#121B53] hover:bg-[#121B53]/10'
@@ -179,7 +188,6 @@ export function AdminsListSection({
                         <div>
                           <p className="text-[11px] uppercase tracking-[0.2em] text-[#121B53]/55">Admin</p>
                           <h3 className="text-lg font-semibold text-[#121B53]">{admin.name || '—'}</h3>
-                          <p className="text-xs text-[#121B53]/60">@{admin.username || '—'}</p>
                         </div>
                       </div>
                       <Badge
@@ -212,52 +220,92 @@ export function AdminsListSection({
             })}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-[#121B53]/5">
-                <TableHead className="text-[#121B53]">Admin</TableHead>
-                <TableHead className="text-[#121B53]">Statut</TableHead>
-                <TableHead className="text-[#121B53]">Entreprise(s)</TableHead>
-                <TableHead className="text-[#121B53]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="md:hidden p-4 space-y-3">
               {rows.map(({ admin, entreprises }) => {
                 const actionsDisabled = busyId === admin.id
                 return (
-                  <TableRow key={admin.id} className="hover:bg-[#121B53]/5">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-[#121B53]">{admin.name}</span>
-                        <span className="text-xs text-[#121B53]/60">@{admin.username}</span>
+                  <Card key={admin.id} className="border border-[#121B53]/10 shadow-sm">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-[#121B53]/55">Admin</p>
+                          <p className="text-base font-semibold text-[#121B53]">{admin.name || '—'}</p>
+                          <p className="text-xs text-[#121B53]/60">
+                            {entreprises.length === 0 ? '—' : entreprises.map((ent) => ent.name || '—').join(', ')}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'rounded-full px-3 py-1 text-[11px]',
+                            admin.status === 'ACTIF' && 'bg-emerald-100 text-emerald-800',
+                            admin.status === 'SUSPENDU' && 'bg-amber-100 text-amber-800',
+                            admin.status === 'BLACKLISTE' && 'bg-rose-100 text-rose-800',
+                            admin.status === 'ARCHIVE' && 'bg-slate-100 text-slate-800'
+                          )}
+                        >
+                          {admin.status}
+                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          admin.status === 'ACTIF' && 'bg-emerald-100 text-emerald-800',
-                          admin.status === 'SUSPENDU' && 'bg-amber-100 text-amber-800',
-                          admin.status === 'BLACKLISTE' && 'bg-rose-100 text-rose-800',
-                          admin.status === 'ARCHIVE' && 'bg-slate-100 text-slate-800'
-                        )}
-                      >
-                        {admin.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-[#121B53]/60">
-                      {entreprises.length === 0 ? '—' : entreprises.map((ent) => ent.name || '—').join(', ')}
-                    </TableCell>
-                    <TableCell>
                       <div className="flex flex-wrap gap-2">
                         {renderActions(admin, actionsDisabled, onSetStatus)}
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </CardContent>
+                  </Card>
                 )
               })}
-            </TableBody>
-          </Table>
+            </div>
+            <div className="hidden md:block overflow-x-auto">
+              <div className="min-w-[720px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-[#121B53]/5">
+                      <TableHead className="text-[#121B53]">Admin</TableHead>
+                      <TableHead className="text-[#121B53]">Statut</TableHead>
+                      <TableHead className="text-[#121B53]">Entreprise(s)</TableHead>
+                      <TableHead className="text-[#121B53]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map(({ admin, entreprises }) => {
+                      const actionsDisabled = busyId === admin.id
+                      return (
+                        <TableRow key={admin.id} className="hover:bg-[#121B53]/5">
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-[#121B53]">{admin.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                admin.status === 'ACTIF' && 'bg-emerald-100 text-emerald-800',
+                                admin.status === 'SUSPENDU' && 'bg-amber-100 text-amber-800',
+                                admin.status === 'BLACKLISTE' && 'bg-rose-100 text-rose-800',
+                                admin.status === 'ARCHIVE' && 'bg-slate-100 text-slate-800'
+                              )}
+                            >
+                              {admin.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-[#121B53]/60">
+                            {entreprises.length === 0 ? '—' : entreprises.map((ent) => ent.name || '—').join(', ')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-2">
+                              {renderActions(admin, actionsDisabled, onSetStatus)}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

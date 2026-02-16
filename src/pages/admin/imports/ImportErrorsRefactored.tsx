@@ -8,6 +8,7 @@ import { ErrorsTable } from './components/ErrorsTable'
 import { ErrorsActions } from './components/ErrorsActions'
 import { PageHeader } from '@/pages/common/PageHeader'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
+import { useGoBack } from '@/hooks/useGoBack'
 import { type StoredErrors } from './utils'
 
 /**
@@ -17,6 +18,7 @@ import { type StoredErrors } from './utils'
  */
 export default function ImportErrors() {
   const navigate = useNavigate()
+  const goBack = useGoBack('/import/clients')
   // State
   const [stored, setStored] = useState<StoredErrors | null>(null)
   const [allRuns, setAllRuns] = useState<StoredErrors[]>([])
@@ -89,12 +91,19 @@ export default function ImportErrors() {
   if (!stored) {
     return (
       <div className="space-y-6">
-        <PageHeader>
-          <Button onClick={() => navigate('/import/clients')} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à l'import
-          </Button>
-        </PageHeader>
+        <PageHeader
+          title="Erreurs d'import"
+          actions={
+            <Button
+              onClick={() => goBack('/import/clients')}
+              variant="outline"
+              className="w-full md:w-auto whitespace-normal text-center"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour à l'import
+            </Button>
+          }
+        />
         <SectionWrapper>
           <div className="text-center py-12 text-gray-500">
             <p className="text-lg">Aucun import avec erreurs</p>
@@ -109,18 +118,24 @@ export default function ImportErrors() {
 
   return (
     <div className="space-y-6">
-      <PageHeader>
-        <h1>Erreurs d'import</h1>
-        <Button onClick={() => navigate('/import/clients')} variant="outline">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour
-        </Button>
-      </PageHeader>
+      <PageHeader
+        title="Erreurs d'import"
+        actions={
+          <Button
+            onClick={() => goBack('/import/clients')}
+            variant="outline"
+            className="w-full md:w-auto whitespace-normal text-center"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+        }
+      />
 
       <SectionWrapper>
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle>Détails de l'import</CardTitle>
                 <p className="text-sm text-gray-500">
@@ -136,7 +151,7 @@ export default function ImportErrors() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-gray-600">Total</p>
                 <p className="text-2xl font-bold">{(stored.inserted?.length || 0) + stored.errors.length}</p>
@@ -156,11 +171,11 @@ export default function ImportErrors() {
               <ErrorsTable storedErrors={stored.errors} inserted={stored.inserted} />
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={handleIgnore} variant="outline">
+            <div className="flex flex-col gap-2 md:flex-row">
+              <Button onClick={handleIgnore} variant="outline" className="w-full md:w-auto whitespace-normal text-center">
                 Marquer comme traité
               </Button>
-              <Button onClick={() => navigate('/import/clients')} variant="default">
+              <Button onClick={() => navigate('/import/clients')} variant="default" className="w-full md:w-auto whitespace-normal text-center">
                 Nouvel import
               </Button>
             </div>

@@ -1,4 +1,5 @@
 export * from './AdminDTO'
+export * from './AdminPaymentDTO'
 export * from './EntrepriseDTO'
 export * from './AuditLogDTO'
 export * from './BlockedIpDTO'

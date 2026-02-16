@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"node scripts/json-server-auth.mjs\" \"ELECTRON_DEV=true electron .\" \"vite\"",
+    "dev": "concurrently \"node backend/src/index.mjs\" \"ELECTRON_DEV=true electron .\" \"vite\"",
     "dev:web": "vite",
     "dev:all": "bash start-dev.sh",
     "seed-db": "node scripts/seed-db.mjs",
@@ -15,8 +15,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start:api": "node scripts/json-server-auth.mjs",
-    "json:server": "node scripts/json-server-auth.mjs"
+    "start:api": "node backend/src/index.mjs",
+    "json:server": "node backend/src/index.mjs"
   },
   "dependencies": {
     "@cloudinary/react": "^1.14.3",

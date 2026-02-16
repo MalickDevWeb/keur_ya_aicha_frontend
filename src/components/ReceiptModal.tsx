@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReceiptModalProps {
   open: boolean;
@@ -41,6 +42,7 @@ export function ReceiptModal({
   monthlyRent,
 }: ReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const handlePrint = () => {
     if (receiptRef.current) {
@@ -85,22 +87,6 @@ export function ReceiptModal({
         const shared = await shareBlobViaWebShare(blob, `${docForPdf.name || 'recu'}.pdf`, `Reçu: ${docForPdf.name}`);
         if (!shared) {
           try {
-            const allowUpload = window.confirm('Partager un lien nécessite un envoi du PDF vers un service externe. Continuer ?');
-            if (!allowUpload) {
-              const win = window.open(
-                `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`,
-                '_blank',
-                'noopener,noreferrer'
-              );
-              if (win) {
-                try {
-                  win.opener = null;
-                } catch (err) {
-                  void err;
-                }
-              }
-              return;
-            }
             const { uploadBlobToFileIo } = await import('@/lib/pdfUtils');
             const link = await uploadBlobToFileIo(blob, `${docForPdf.name || 'recu'}.pdf`);
             const win = window.open(
@@ -133,7 +119,7 @@ export function ReceiptModal({
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Impossible de générer le PDF.';
-        alert(message);
+        toast({ title: 'Erreur', description: message, variant: 'destructive' });
       }
     })();
   };

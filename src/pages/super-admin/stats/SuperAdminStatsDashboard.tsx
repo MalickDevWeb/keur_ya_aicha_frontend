@@ -26,8 +26,13 @@ export function SuperAdminStatsDashboard() {
         fetchClients(),
       ])
       if (!active) return
-      setAdminsCount(admins.length)
-      setEntreprisesCount(entreprises.length)
+      const activeAdmins = admins.filter((admin) => admin.status === 'ACTIF')
+      const activeAdminIds = new Set(activeAdmins.map((admin) => admin.id))
+      const activeEntreprises = entreprises.filter((entreprise) =>
+        entreprise.adminId ? activeAdminIds.has(entreprise.adminId) : false
+      )
+      setAdminsCount(activeAdmins.length)
+      setEntreprisesCount(activeEntreprises.length)
       setPendingCount((requests as AdminRequestDTO[]).filter((r) => r.status === 'EN_ATTENTE').length)
       setPaymentStats(buildPaymentStats(clients as ClientDTO[]))
     }

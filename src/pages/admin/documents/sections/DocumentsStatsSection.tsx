@@ -28,44 +28,26 @@ export function DocumentsStatsSection({
       <p className="text-xs text-muted-foreground">/ {overall}</p>
     ) : null
 
+  const stats = [
+    { label: 'Total', value: total, overall: totalAll },
+    { label: 'Contrats', value: contracts, overall: contractsAll },
+    { label: 'Reçus', value: receipts, overall: receiptsAll },
+    { label: 'Autres', value: others, overall: othersAll },
+  ]
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Total</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{total}</p>
-          {renderTotal(total, totalAll)}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Contrats</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{contracts}</p>
-          {renderTotal(contracts, contractsAll)}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Reçus</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{receipts}</p>
-          {renderTotal(receipts, receiptsAll)}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Autres</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{others}</p>
-          {renderTotal(others, othersAll)}
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <Card key={stat.label} className="border-[#121B53]/10">
+          <CardHeader className="space-y-0 px-3 pb-1 pt-3 sm:px-4 sm:pb-2 sm:pt-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">{stat.label}</CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+            <p className="text-xl font-bold text-[#121B53] sm:text-2xl">{stat.value}</p>
+            {renderTotal(stat.value, stat.overall)}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

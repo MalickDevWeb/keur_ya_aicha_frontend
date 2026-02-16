@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
+import { useGoBack } from '@/hooks/useGoBack'
+import { useAuth } from '@/contexts/AuthContext'
 import { useStore } from '@/stores/dataStore'
 import type { ClientImportMapping } from '@/lib/importClients'
 import { parseSpreadsheet, guessMapping, DEFAULT_IMPORT_ALIASES } from '@/lib/importClients'
@@ -20,7 +22,9 @@ import { useImportClients } from '@/hooks/useImportClients'
  */
 export default function ImportClientsPage() {
   const navigate = useNavigate()
+  const goBack = useGoBack('/clients')
   const { toast } = useToast()
+  const { user } = useAuth()
   const clients = useStore((state) => state.clients)
   const addClient = useStore((state) => state.addClient)
 
@@ -41,7 +45,8 @@ export default function ImportClientsPage() {
     let mounted = true
     async function loadAliases() {
       try {
-        const raw = await getSetting('import_clients_aliases')
+        const key = user?.id ? `import_clients_aliases:${user.id}` : 'import_clients_aliases'
+        const raw = await getSetting(key)
         if (!mounted) return
         const parsed = raw ? JSON.parse(raw) : null
         setImportAliases(parsed && typeof parsed === 'object' ? parsed : DEFAULT_IMPORT_ALIASES)
@@ -53,7 +58,7 @@ export default function ImportClientsPage() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [user?.id])
 
   // Handle file upload
   const handleFile = useCallback(
@@ -140,6 +145,7 @@ export default function ImportClientsPage() {
       // Save import run
       await createImportRun({
         createdAt: new Date().toISOString(),
+        adminId: user?.id,
         fileName,
         totalRows: rows.length,
         inserted,
@@ -149,6 +155,8 @@ export default function ImportClientsPage() {
           parsed: err.parsed,
         })),
         ignored: false,
+        readSuccess: inserted.length === 0,
+        readErrors: nextErrors.length === 0,
       })
 
       toast({
@@ -165,14 +173,14 @@ export default function ImportClientsPage() {
     } finally {
       setIsImporting(false)
     }
-  }, [rows, mapping, clients, fileName, headers, validateAndCollect, addClient, navigate, toast])
+  }, [rows, mapping, clients, fileName, headers, validateAndCollect, addClient, navigate, toast, user?.id])
 
   const hasData = headers.length > 0 && rows.length > 0
 
   return (
     <div className="space-y-6 animate-fade-in">
       <SectionWrapper>
-        <ImportHeaderSection onBack={() => navigate('/clients')} />
+        <ImportHeaderSection onBack={() => goBack('/clients')} />
       </SectionWrapper>
 
       <SectionWrapper>

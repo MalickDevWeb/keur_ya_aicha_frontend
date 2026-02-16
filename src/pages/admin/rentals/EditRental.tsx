@@ -7,11 +7,16 @@ import { Label } from '@/components/ui/label';
 import { useStore } from '@/stores/dataStore';
 import type { Client, PropertyType, Rental } from '@/lib/types';
 import { useState } from 'react';
+import { useGoBack } from '@/hooks/useGoBack';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EditRental() {
   const { id: rentalId } = useParams();
   const navigate = useNavigate();
+  const goBack = useGoBack('/rentals');
+  const { toast } = useToast();
   const clients = useStore((state) => state.clients)
+  const updateClient = useStore((state) => state.updateClient)
 
   // Find the rental
   type RentalWithAddress = Rental & { address?: string };
@@ -38,12 +43,13 @@ export default function EditRental() {
     monthlyRent: rental?.monthlyRent || 0,
     address: rental?.address || '',
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!rental || !client) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <p className="text-muted-foreground">Location non trouvée</p>
-        <Button variant="outline" onClick={() => navigate('/rentals')}>
+        <Button variant="outline" onClick={() => goBack('/rentals')}>
           Retour à la liste
         </Button>
       </div>
@@ -58,17 +64,46 @@ export default function EditRental() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement rental update
-    navigate(`/rentals/${rentalId}`);
+    if (!rentalId || !client) return;
+    setIsSaving(true);
+    try {
+      const updatedRentals = client.rentals.map((item) =>
+        item.id !== rentalId
+          ? item
+          : {
+              ...item,
+              propertyName: formData.propertyName.trim(),
+              propertyType: formData.propertyType,
+              monthlyRent: Number(formData.monthlyRent) || 0,
+              address: formData.address.trim(),
+            }
+      );
+
+      await updateClient(client.id, { rentals: updatedRentals });
+      toast({
+        title: 'Location mise à jour',
+        description: 'Les modifications ont été enregistrées.',
+      });
+      navigate(`/rentals/${rentalId}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Impossible de mettre à jour la location.';
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/rentals/${rentalId}`)}>
+        <Button variant="ghost" size="icon" onClick={() => goBack('/rentals')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
@@ -147,14 +182,16 @@ export default function EditRental() {
               <Button
                 type="submit"
                 className="bg-secondary hover:bg-secondary/90"
+                disabled={isSaving}
               >
                 <Save className="w-4 h-4 mr-2" />
-                Enregistrer
+                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate(`/rentals/${rentalId}`)}
+                disabled={isSaving}
               >
                 Annuler
               </Button>

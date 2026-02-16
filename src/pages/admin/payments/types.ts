@@ -5,6 +5,7 @@ export type ViewMode = 'cards' | 'list'
 export type PaymentRow = MonthlyPaymentDTO & {
   clientName: string
   clientId: string
+  clientPhone?: string
   rentalId: string
   propertyName: string
   propertyType: string
@@ -29,6 +30,7 @@ export type PaymentStats = {
 export type ReceiptDocument = {
   payerName: string
   payerPhone?: string
+  clientPhone?: string
   amount: number
   uploadedAt: string | Date
   name: string

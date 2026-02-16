@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, Upload, Download, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,6 +9,9 @@ import SendDownloadModal from '@/components/SendDownloadModal';
 import { Document } from "@/lib/types";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useGoBack } from '@/hooks/useGoBack';
+import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 type DocumentRow = Document & {
   clientId: string;
@@ -19,9 +21,11 @@ type DocumentRow = Document & {
 };
 
 export default function ClientDossier() {
-  const navigate = useNavigate();
+  const goBack = useGoBack('/documents');
+  const { toast } = useToast();
   const clients = useStore((state) => state.clients)
   const deleteDocument = useStore((state) => state.deleteDocument)
+  const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null);
 
   // Get all documents from all clients
   const allDocuments = useMemo(() => {
@@ -70,12 +74,31 @@ export default function ClientDossier() {
 
   const [modalDoc, setModalDoc] = useState<DocumentRow | null>(null);
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDocument(deleteTarget.clientId, deleteTarget.rentalId, deleteTarget.id);
+      toast({
+        title: 'Document supprimé',
+        description: `"${deleteTarget.name}" a été supprimé.`,
+      });
+      setDeleteTarget(null);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Impossible de supprimer le document.';
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => goBack('/documents')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -177,10 +200,12 @@ export default function ClientDossier() {
                         <Button variant="ghost" size="sm" onClick={() => setModalDoc(doc)}>
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => {
-                          if (!confirm(`Supprimer le document "${doc.name}" ?`)) return;
-                          deleteDocument(doc.clientId, doc.rentalId, doc.id);
-                        }}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => setDeleteTarget(doc)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -199,6 +224,17 @@ export default function ClientDossier() {
         </CardContent>
       </Card>
       <SendDownloadModal document={modalDoc} onClose={() => setModalDoc(null)} />
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Supprimer le document ?"
+        description={deleteTarget ? `Le document "${deleteTarget.name}" sera supprimé.` : ''}
+        confirmText="Supprimer"
+        isDestructive
+        onConfirm={() => {
+          void confirmDelete();
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

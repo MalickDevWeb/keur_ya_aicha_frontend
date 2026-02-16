@@ -5,6 +5,10 @@ export interface AuthUser {
   email: string
   role: string
   status?: string
+  subscriptionBlocked?: boolean
+  subscriptionOverdueMonth?: string | null
+  subscriptionDueAt?: string | null
+  subscriptionRequiredMonth?: string | null
 }
 
 export interface UserDTO extends AuthUser {

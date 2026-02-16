@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseAsyncState<T> {
   data: T | null
@@ -37,13 +37,16 @@ export function useAsync<T>(asyncFunction: () => Promise<T>, immediate = true) {
     }
   }, [asyncFunction])
 
+  // Track if initial execution has happened
+  const initialExecuted = useRef(immediate)
+
   // Exécuter immédiatement si demandé
   useEffect(() => {
-    if (immediate) {
+    if (immediate && !initialExecuted.current) {
+      initialExecuted.current = true
       execute()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [immediate, execute])
 
   return {
     ...state,

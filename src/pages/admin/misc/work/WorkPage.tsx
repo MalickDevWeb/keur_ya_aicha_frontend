@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getWorkItems, postWorkItem, updateWorkItem, deleteWorkItem } from '@/services/api'
 import { useStore } from '@/stores/dataStore'
+import { useGoBack } from '@/hooks/useGoBack'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { WorkHeaderSection } from './sections/WorkHeaderSection'
 import { WorkStatsSection } from './sections/WorkStatsSection'
@@ -13,6 +14,7 @@ import { buildNewWorkItem, detectWorkItems, mergeWorkItems, toggleWorkStatus } f
 
 export default function WorkPage() {
   const navigate = useNavigate()
+  const goBack = useGoBack('/dashboard')
   const clients = useStore((state) => state.clients)
   const [workItems, setWorkItems] = useState<WorkItem[]>([])
   const [newTitle, setNewTitle] = useState('')
@@ -85,7 +87,7 @@ export default function WorkPage() {
   return (
     <div className="space-y-6">
       <SectionWrapper>
-        <WorkHeaderSection onBack={() => navigate(-1)} showGuide={showGuide} onToggleGuide={() => setShowGuide((prev) => !prev)} />
+        <WorkHeaderSection onBack={() => goBack('/dashboard')} showGuide={showGuide} onToggleGuide={() => setShowGuide((prev) => !prev)} />
       </SectionWrapper>
 
       <SectionWrapper>

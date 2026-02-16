@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { QuickPaymentModal } from '@/components/QuickPaymentModal'
 import { useI18n } from '@/lib/i18n'
 import { useStore } from '@/stores/dataStore'
+import { useToast } from '@/hooks/use-toast'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { DashboardHeaderSection } from './sections/DashboardHeaderSection'
 import { DashboardStatsSection } from './sections/DashboardStatsSection'
@@ -15,6 +16,7 @@ import type { MonthlyPayment } from '@/lib/types'
 
 export default function DashboardPage() {
   const { t } = useI18n()
+  const { toast } = useToast()
   const stats = useStore((state) => state.stats)
   const clients = useStore((state) => state.clients)
   const addMonthlyPayment = useStore((state) => state.addMonthlyPayment)
@@ -59,8 +61,19 @@ export default function DashboardPage() {
       setIsLoading(true)
       const { payment, item } = selectedPayment
       await addMonthlyPayment(item.rental.id, payment.id, selectedPayment.maxAmount)
+      toast({
+        title: t('common.success'),
+        description: `Paiement de ${formatAmount(selectedPayment.maxAmount)} FCFA enregistré`,
+      })
       setPaymentModalOpen(false)
       setSelectedPayment(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erreur lors de l'enregistrement du paiement"
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -72,15 +85,26 @@ export default function DashboardPage() {
       setIsLoading(true)
       const { payment, item } = selectedPayment
       await addMonthlyPayment(item.rental.id, payment.id, amount)
+      toast({
+        title: t('common.success'),
+        description: `Paiement de ${formatAmount(amount)} FCFA enregistré`,
+      })
       setPaymentModalOpen(false)
       setSelectedPayment(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erreur lors de l'enregistrement du paiement"
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="w-full max-w-full space-y-8 overflow-x-hidden animate-fade-in">
       <SectionWrapper>
         <DashboardHeaderSection
           title={t('dashboard.title')}

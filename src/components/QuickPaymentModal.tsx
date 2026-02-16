@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,18 +35,28 @@ export function QuickPaymentModal({
 }: QuickPaymentModalProps) {
   const [showPartialInput, setShowPartialInput] = useState(false);
   const [partialAmount, setPartialAmount] = useState(amountDue.toString());
+  const [validationError, setValidationError] = useState('');
 
   // Keep partial amount in sync when amountDue changes
   useEffect(() => {
     setPartialAmount(amountDue.toString());
+    setValidationError('');
   }, [amountDue]);
+
+  useEffect(() => {
+    if (!open) {
+      setShowPartialInput(false);
+      setValidationError('');
+    }
+  }, [open]);
 
   const handlePayPartial = async () => {
     const amount = parseFloat(partialAmount);
     if (isNaN(amount) || amount <= 0 || amount > amountDue) {
-      alert('Montant invalide');
+      setValidationError(`Montant invalide: saisissez une valeur entre 1 et ${formatCurrency(amountDue)} FCFA.`);
       return;
     }
+    setValidationError('');
     await onPayPartial(amount);
   };
 
@@ -55,17 +66,15 @@ export function QuickPaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm">
         <DialogHeader>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold">{clientName}</h3>
-            </div>
-            <DialogDescription className="mt-1 text-sm text-muted-foreground">
-              {propertyName} — Enregistrer un paiement
-            </DialogDescription>
-          </div>
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+            <DollarSign className="h-5 w-5 text-green-600" />
+            {clientName}
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-sm text-muted-foreground">
+            {propertyName} — Enregistrer un paiement
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -87,6 +96,7 @@ export function QuickPaymentModal({
           {/* Quick Actions */}
           <div className="space-y-3 pt-2">
             <Button
+              type="button"
               onClick={handlePayTotal}
               disabled={isLoading}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -97,6 +107,7 @@ export function QuickPaymentModal({
 
             {!showPartialInput ? (
               <Button
+                type="button"
                 onClick={() => setShowPartialInput(true)}
                 disabled={isLoading}
                 variant="outline"
@@ -117,7 +128,10 @@ export function QuickPaymentModal({
                     min="1"
                     max={amountDue}
                     value={partialAmount}
-                    onChange={(e) => setPartialAmount(e.target.value)}
+                    onChange={(e) => {
+                      setPartialAmount(e.target.value)
+                      if (validationError) setValidationError('')
+                    }}
                     disabled={isLoading}
                     placeholder={formatCurrency(amountDue)}
                     className="text-lg font-semibold"
@@ -125,9 +139,13 @@ export function QuickPaymentModal({
                   <p className="text-xs text-muted-foreground">
                     Max: {formatCurrency(amountDue)} FCFA
                   </p>
+                  {validationError ? (
+                    <p className="text-xs text-destructive">{validationError}</p>
+                  ) : null}
                 </div>
 
                 <Button
+                  type="button"
                   onClick={handlePayPartial}
                   disabled={isLoading}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -137,6 +155,7 @@ export function QuickPaymentModal({
                 </Button>
 
                 <Button
+                  type="button"
                   onClick={() => setShowPartialInput(false)}
                   disabled={isLoading}
                   variant="ghost"

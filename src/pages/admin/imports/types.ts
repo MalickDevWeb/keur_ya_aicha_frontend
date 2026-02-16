@@ -1,6 +1,6 @@
 import type { ClientImportError, ClientImportMapping } from '@/lib/importClients'
 
-export type RowOverrides = Record<number, { firstName?: string; lastName?: string; phone?: string }>
+export type RowOverrides = Record<number, { firstName?: string; lastName?: string; phone?: string; cni?: string }>
 
 export type ImportState = {
   fileName: string

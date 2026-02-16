@@ -27,16 +27,26 @@ export function AdminsListSection({
   filteredAdmins,
   getAdminActions,
 }: AdminsListSectionProps) {
+  const activeAdminIds = new Set(admins.filter((admin) => admin.status === 'ACTIF').map((admin) => admin.id))
+  const activeEntreprisesCount = entreprises.filter((entreprise) =>
+    entreprise.adminId ? activeAdminIds.has(entreprise.adminId) : false
+  ).length
+  const showEntreprises = activeEntreprisesCount > 0
+  const statsGridClassName = showEntreprises
+    ? 'grid gap-4 grid-cols-1 sm:grid-cols-2'
+    : 'grid gap-4 grid-cols-1'
+
   return (
     <section id="liste-admins" className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-lg font-semibold">Liste admins + actions</h2>
         <p className="text-sm text-muted-foreground">Gérer les statuts et accès des comptes admin</p>
       </div>
-      <StatsCards gridClassName="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <CardStat title="Admins" value={admins.length} icon={Users} variant="default" />
-        <CardStat title="Entreprises" value={entreprises.length} icon={Building2} variant="success" />
-        <CardStat title="Actifs" value={actifAdminsCount} icon={Shield} variant="success" />
+      <StatsCards gridClassName={statsGridClassName}>
+        <CardStat title="Admins actifs" value={actifAdminsCount} icon={Users} variant="default" />
+        {showEntreprises ? (
+          <CardStat title="Entreprises actives" value={activeEntreprisesCount} icon={Building2} variant="success" />
+        ) : null}
       </StatsCards>
       <Card className="rounded-3xl border border-border bg-white/80">
         <CardHeader>
@@ -44,7 +54,7 @@ export function AdminsListSection({
           <Input
             value={adminSearch}
             onChange={(e) => onAdminSearchChange(e.target.value)}
-            placeholder="Rechercher par nom, username, email ou entreprise"
+            placeholder="Rechercher par nom, email ou entreprise"
           />
         </CardHeader>
         <CardContent>
@@ -69,7 +79,6 @@ export function AdminsListSection({
                       <TableCell>
                         <div>
                           <p className="font-medium">{admin.name}</p>
-                          <p className="text-xs text-muted-foreground">@{admin.username}</p>
                         </div>
                       </TableCell>
                       <TableCell>

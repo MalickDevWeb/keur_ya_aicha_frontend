@@ -53,14 +53,26 @@ const monitorAnomalies = () => {
 
 app.post('/sign', (req, res) => {
   if (!cfg) return res.status(500).json({ error: 'Cloudinary not configured' })
-  // Minimal signature: timestamp only. Add params here if needed (folder, public_id...)
   const timestamp = Math.floor(Date.now() / 1000)
-  const toSign = `timestamp=${timestamp}`
+  const folder = typeof req.body?.folder === 'string' ? req.body.folder.trim() : ''
+  const publicId = typeof req.body?.public_id === 'string' ? req.body.public_id.trim() : ''
+
+  const paramsToSign = {
+    ...(folder ? { folder } : {}),
+    ...(publicId ? { public_id: publicId } : {}),
+    timestamp,
+  }
+
+  const toSign = Object.keys(paramsToSign)
+    .sort()
+    .map((key) => `${key}=${paramsToSign[key]}`)
+    .join('&')
+
   const signature = crypto
     .createHash('sha1')
     .update(toSign + cfg.apiSecret)
     .digest('hex')
-  res.json({ api_key: cfg.apiKey, timestamp, signature })
+  res.json({ api_key: cfg.apiKey, timestamp, signature, ...(folder ? { folder } : {}) })
 })
 
 const PORT = process.env.PORT || 3001

@@ -9,10 +9,17 @@ type StatsSummarySectionProps = {
 }
 
 export function StatsSummarySection({ adminsCount, entreprisesCount, pendingCount }: StatsSummarySectionProps) {
+  const showEntreprises = entreprisesCount > 0
+  const statsGridClassName = showEntreprises
+    ? 'grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    : 'grid gap-4 grid-cols-1 sm:grid-cols-2'
+
   return (
-    <StatsCards gridClassName="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-      <CardStat title="Admins" value={adminsCount} icon={Users} variant="default" />
-      <CardStat title="Entreprises" value={entreprisesCount} icon={Building2} variant="success" />
+    <StatsCards gridClassName={statsGridClassName}>
+      <CardStat title="Admins actifs" value={adminsCount} icon={Users} variant="default" />
+      {showEntreprises ? (
+        <CardStat title="Entreprises actives" value={entreprisesCount} icon={Building2} variant="success" />
+      ) : null}
       <CardStat
         title="Demandes en attente"
         value={pendingCount}

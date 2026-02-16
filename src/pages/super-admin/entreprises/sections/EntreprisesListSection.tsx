@@ -5,7 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SearchInput } from '@/components/SearchInput'
 import { cn } from '@/lib/utils'
 import { Building2, Grid3x3, List } from 'lucide-react'
-import type { AdminDTO, AdminRequestDTO } from '@/dto/frontend/responses'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { useEffect } from 'react'
+import type { AdminDTO } from '@/dto/frontend/responses'
 import type { EntrepriseRow, ViewMode } from '../types'
 
 type EntreprisesListSectionProps = {
@@ -17,7 +19,8 @@ type EntreprisesListSectionProps = {
   onViewModeChange: (mode: ViewMode) => void
   enteringId: string | null
   onEnterAdmin: (admin?: AdminDTO) => void
-  onMarkPaid: (request?: AdminRequestDTO) => void
+  isAdminPaidThisMonth: (adminId?: string) => boolean
+  getLastPaidAt: (adminId?: string) => string | null
   selectedEntrepriseId: string | null
   onSelectEntreprise: (entrepriseId: string) => void
   noResultsLabel: string
@@ -32,18 +35,20 @@ export function EntreprisesListSection({
   onViewModeChange,
   enteringId,
   onEnterAdmin,
-  onMarkPaid,
+  isAdminPaidThisMonth,
+  getLastPaidAt,
   selectedEntrepriseId,
   onSelectEntreprise,
   noResultsLabel,
 }: EntreprisesListSectionProps) {
-  const isPaidThisMonth = (paidAt?: string) => {
-    if (!paidAt) return false
-    const date = new Date(paidAt)
-    if (Number.isNaN(date.getTime())) return false
-    const now = new Date()
-    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
-  }
+  const isMobile = useIsMobile()
+
+  useEffect(() => {
+    if (isMobile && viewMode !== 'cards') {
+      onViewModeChange('cards')
+    }
+  }, [isMobile, viewMode, onViewModeChange])
+
   return (
     <Card className="border-[#121B53]/15 bg-white/85 shadow-[0_20px_50px_rgba(12,18,60,0.12)]">
       <CardHeader className="pb-4">
@@ -55,22 +60,32 @@ export function EntreprisesListSection({
             inputClassName="border-[#121B53]/20 bg-white focus-visible:ring-0"
             placeholder="Nom, prénom, téléphone ou CNI"
           />
-          <div className="flex gap-2 border-l border-[#121B53]/10 pl-4">
+          <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1 w-full sm:w-auto justify-between sm:justify-start">
             <Button
-              variant={viewMode === 'cards' ? 'default' : 'outline'}
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('cards')}
               title="Vue en cartes"
-              className={viewMode === 'cards' ? 'bg-[#121B53] hover:bg-[#0B153D]' : 'border-[#121B53]/20 text-[#121B53]'}
+              className={cn(
+                'h-9 w-9',
+                viewMode === 'cards'
+                  ? 'bg-[#121B53] text-white hover:bg-[#0B153D]'
+                  : 'text-[#121B53] hover:bg-[#121B53]/10'
+              )}
             >
               <Grid3x3 className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
               title="Vue en liste"
-              className={viewMode === 'list' ? 'bg-[#121B53] hover:bg-[#0B153D]' : 'border-[#121B53]/20 text-[#121B53]'}
+              className={cn(
+                'h-9 w-9 hidden sm:inline-flex',
+                viewMode === 'list'
+                  ? 'bg-[#121B53] text-white hover:bg-[#0B153D]'
+                  : 'text-[#121B53] hover:bg-[#121B53]/10'
+              )}
             >
               <List className="w-4 h-4" />
             </Button>
@@ -84,8 +99,9 @@ export function EntreprisesListSection({
           <div className="text-center py-12 text-muted-foreground">{noResultsLabel}</div>
         ) : viewMode === 'cards' ? (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
-            {rows.map(({ entreprise, admin, request }) => {
-              const paid = Boolean(request?.paid) || isPaidThisMonth(request?.paidAt)
+            {rows.map(({ entreprise, admin }) => {
+              const paid = isAdminPaidThisMonth(admin?.id)
+              const lastPaidAt = getLastPaidAt(admin?.id)
               const isSelected = selectedEntrepriseId === entreprise.id
               return (
               <Card
@@ -111,11 +127,22 @@ export function EntreprisesListSection({
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-[#121B53]/60">Admin</span>
                         {admin ? (
-                          <Badge variant="secondary">{admin.name} (@{admin.username})</Badge>
+                          <Badge variant="secondary">{admin.name}</Badge>
                         ) : (
                           <Badge variant="outline">—</Badge>
                         )}
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#121B53]/60">Paiement</span>
+                        <Badge className={paid ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'}>
+                          {paid ? 'Payé ce mois' : 'Non payé'}
+                        </Badge>
+                      </div>
+                      {lastPaidAt ? (
+                        <div className="text-xs text-[#121B53]/60">
+                          Dernier paiement: {new Date(lastPaidAt).toLocaleDateString('fr-FR')}
+                        </div>
+                      ) : null}
                       <div className="text-xs text-[#121B53]/60">
                         ID: <span className="font-mono">{entreprise.id}</span>
                       </div>
@@ -127,14 +154,6 @@ export function EntreprisesListSection({
                           onClick={() => onEnterAdmin(admin)}
                         >
                           {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          className={paid ? 'w-full bg-emerald-600 text-white hover:bg-emerald-500' : 'w-full bg-[#C1121F] text-white hover:bg-[#A40E1A]'}
-                          onClick={() => onMarkPaid(request)}
-                          disabled={paid || !request}
-                        >
-                          {paid ? 'Payé' : 'Payer'}
                         </Button>
                       </div>
                     </>
@@ -157,56 +176,109 @@ export function EntreprisesListSection({
             })}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map(({ entreprise, admin, request }) => {
-                const paid = Boolean(request?.paid) || isPaidThisMonth(request?.paidAt)
+          <>
+            <div className="md:hidden p-4 space-y-3">
+              {rows.map(({ entreprise, admin }) => {
+                const paid = isAdminPaidThisMonth(admin?.id)
+                const lastPaidAt = getLastPaidAt(admin?.id)
                 const isSelected = selectedEntrepriseId === entreprise.id
                 return (
-                <TableRow key={entreprise.id}>
-                  <TableCell className="font-medium">{entreprise.name || '—'}</TableCell>
-                  <TableCell>
-                    {isSelected && admin ? <Badge variant="secondary">{admin.name} (@{admin.username})</Badge> : '—'}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{isSelected ? entreprise.id : '—'}</TableCell>
-                  <TableCell>
-                    {isSelected ? (
-                      <div className="flex flex-wrap gap-2">
+                  <Card key={entreprise.id} className="border border-[#121B53]/10 shadow-sm">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#121B53]/55">Entreprise</p>
+                        <p className="text-base font-semibold text-[#121B53] break-words">{entreprise.name || '—'}</p>
+                        <p className="text-xs text-[#121B53]/60 break-all">ID: {entreprise.id}</p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {admin ? <Badge variant="secondary">{admin.name}</Badge> : <Badge variant="outline">—</Badge>}
+                        <Badge className={paid ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'}>
+                          {paid ? 'Payé ce mois' : 'Non payé'}
+                        </Badge>
+                        {lastPaidAt ? (
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(lastPaidAt).toLocaleDateString('fr-FR')}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {isSelected ? (
                         <Button
                           size="sm"
+                          className="w-full bg-[#121B53] text-white hover:bg-[#0B153D]"
                           disabled={!admin || enteringId === admin?.id}
                           onClick={() => onEnterAdmin(admin)}
                         >
                           {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
                         </Button>
-                        <Button
-                          size="sm"
-                          className={paid ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-red-600 text-white hover:bg-red-500'}
-                          onClick={() => onMarkPaid(request)}
-                          disabled={paid || !request}
-                        >
-                          {paid ? 'Payé' : 'Payer'}
+                      ) : (
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => onSelectEntreprise(entreprise.id)}>
+                          Voir les détails
                         </Button>
-                      </div>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={() => onSelectEntreprise(entreprise.id)}>
-                        Voir les détails
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
+                      )}
+                    </CardContent>
+                  </Card>
                 )
               })}
-            </TableBody>
-          </Table>
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <div className="min-w-[760px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Admin</TableHead>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map(({ entreprise, admin }) => {
+                      const paid = isAdminPaidThisMonth(admin?.id)
+                      const lastPaidAt = getLastPaidAt(admin?.id)
+                      const isSelected = selectedEntrepriseId === entreprise.id
+                      return (
+                        <TableRow key={entreprise.id}>
+                          <TableCell className="font-medium">{entreprise.name || '—'}</TableCell>
+                          <TableCell>
+                            {isSelected && admin ? <Badge variant="secondary">{admin.name}</Badge> : '—'}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{isSelected ? entreprise.id : '—'}</TableCell>
+                          <TableCell>
+                            {isSelected ? (
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  size="sm"
+                                  disabled={!admin || enteringId === admin?.id}
+                                  onClick={() => onEnterAdmin(admin)}
+                                >
+                                  {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
+                                </Button>
+                                <Badge className={paid ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'}>
+                                  {paid ? 'Payé ce mois' : 'Non payé'}
+                                </Badge>
+                                {lastPaidAt ? (
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(lastPaidAt).toLocaleDateString('fr-FR')}
+                                  </span>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => onSelectEntreprise(entreprise.id)}>
+                                Voir les détails
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

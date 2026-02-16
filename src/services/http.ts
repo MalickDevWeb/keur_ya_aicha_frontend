@@ -2,6 +2,7 @@ export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const SLOW_REQUEST_MS = 1500
 const AUDIT_BUFFER_KEY = 'audit_buffer'
+const UNDO_EVENT_NAME = 'api-undo-available'
 
 function queueAuditLog(entry: Record<string, unknown>) {
   try {
@@ -47,10 +48,15 @@ async function sendAuditLog(entry: Record<string, unknown>) {
 
 /** Logger centralisé pour les appels API */
 class ApiLogger {
-  private isDev = import.meta.env.DEV
+  private isDebugEnabled = import.meta.env.DEV && import.meta.env.VITE_API_DEBUG === 'true'
 
   debug(message: string, data?: unknown): void {
-    if (this.isDev) {
+    if (this.isDebugEnabled) {
+      if (typeof data === 'undefined') {
+        // eslint-disable-next-line no-console
+        console.debug(`[API] ${message}`)
+        return
+      }
       // eslint-disable-next-line no-console
       console.debug(`[API] ${message}`, data)
     }
@@ -73,6 +79,31 @@ function isFormDataBody(body: RequestInit['body']): body is FormData {
   return typeof FormData !== 'undefined' && body instanceof FormData
 }
 
+function dispatchUndoEvent(res: Response, method: string, path: string) {
+  const actionMethod = String(method || '').toUpperCase()
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(actionMethod)) return
+
+  const undoId = res.headers.get('x-undo-id')
+  if (!undoId) return
+
+  const expiresAt = res.headers.get('x-undo-expires-at')
+  const resource = res.headers.get('x-undo-resource')
+  const resourceId = res.headers.get('x-undo-resource-id')
+
+  window.dispatchEvent(
+    new CustomEvent(UNDO_EVENT_NAME, {
+      detail: {
+        id: undoId,
+        expiresAt,
+        resource,
+        resourceId,
+        method: actionMethod,
+        path,
+      },
+    })
+  )
+}
+
 /**
  * Mappe les statuts HTTP aux messages d'erreur appropriés
  */
@@ -80,9 +111,11 @@ function getErrorMessage(status: number, errorData: Record<string, unknown>): st
   const messages: Record<number, string> = {
     400: 'Requête invalide',
     401: 'Session expirée. Veuillez vous reconnecter',
+    402: "Abonnement admin impayé: accès limité à la page d'abonnement",
     403: 'Accès refusé',
     404: 'Ressource non trouvée',
     409: 'Conflit: Les données ont peut-être été modifiées',
+    410: 'Rollback expiré (plus de 2 mois)',
     422: 'Données invalides',
     500: 'Erreur serveur',
     502: 'Mauvaise passerelle',
@@ -110,6 +143,13 @@ export async function handleResponse<T>(res: Response): Promise<T> {
 
     if (res.status === 401) {
       window.dispatchEvent(new CustomEvent('auth-session-expired'))
+    }
+    if (res.status === 402) {
+      window.dispatchEvent(
+        new CustomEvent('admin-subscription-blocked', {
+          detail: errorData,
+        })
+      )
     }
 
     throw new Error(message)
@@ -161,6 +201,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       })
     }
     const data = await handleResponse<T>(res)
+    dispatchUndoEvent(res, method, path)
     void flushAuditBuffer()
     return data
   } catch (err) {

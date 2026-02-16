@@ -51,11 +51,11 @@ export function DocumentsUploadSection({
 
   return (
     <Card className="border-[#121B53]/15 bg-white/90 shadow-[0_22px_60px_rgba(12,18,60,0.14)]">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-3">
         <CardTitle className="text-lg text-[#121B53]">Ajouter un document PDF</CardTitle>
         <p className="text-sm text-muted-foreground">Stockage sécurisé via Cloudinary, liens instantanés.</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4 pt-0 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-[1.2fr_1.2fr_1fr]">
           <div className="rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#121B53]/60">Client & Location</p>
@@ -119,9 +119,9 @@ export function DocumentsUploadSection({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#121B53]/60">Fichier</p>
             <div className="mt-3 space-y-3">
               <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-[#121B53]/25 bg-white px-3 py-3 text-sm text-[#121B53]/70">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <FileText className="h-4 w-4 text-[#121B53]" />
-                  <span>{file ? file.name : 'Choisir un PDF'}</span>
+                  <span className="truncate">{file ? file.name : 'Choisir un PDF'}</span>
                 </div>
                 <span className="text-xs text-[#121B53]/50">.pdf</span>
                 <input
@@ -142,7 +142,7 @@ export function DocumentsUploadSection({
             </div>
           </div>
         </div>
-        {file ? <p className="mt-3 text-xs text-muted-foreground">Fichier sélectionné: {file.name}</p> : null}
+        {file ? <p className="mt-3 break-all text-xs text-muted-foreground">Fichier sélectionné: {file.name}</p> : null}
       </CardContent>
     </Card>
   )

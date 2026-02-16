@@ -301,10 +301,42 @@ const db = {
   documents: [],
   payments: [],
   deposits: [],
+  users: [
+    {
+      id: 'superadmin-001',
+      username: '771718013',
+      password: 'pmtadmin2024',
+      name: 'Super Admin',
+      email: 'superadmin@kya.sn',
+      phone: '+221771718013',
+      role: 'SUPER_ADMIN',
+      status: 'ACTIF',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+  admins: [],
+  superadmins: [
+    {
+      id: 'superadmin-001',
+      userId: 'superadmin-001',
+      name: 'Super Admin',
+      email: 'superadmin@kya.sn',
+      status: 'ACTIF',
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  admin_clients: [],
+  rentals: [],
+  notifications: [],
+  otp: [],
+  audit_logs: [],
+  entreprises: [],
+  blocked_ips: [],
 }
 
 // Write to db.json
-const dbPath = path.join(__dirname, 'db.json')
+const dbPath = path.join(__dirname, '../backend/db/db.json')
 fs.writeFileSync(dbPath, JSON.stringify(db, null, 2))
 
 console.log(`✅ db.json générée avec ${mockClients.length} clients`)

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useDataStore } from '@/stores/dataStore'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface DataProviderProps {
   children: React.ReactNode
@@ -11,11 +12,20 @@ interface DataProviderProps {
  * Backward compatible with Context API usage
  */
 export function DataProvider({ children }: DataProviderProps) {
+  const { isAuthenticated, isLoading, user, impersonation } = useAuth()
   const fetchClients = useDataStore((state) => state.fetchClients)
   const fetchStats = useDataStore((state) => state.fetchStats)
+  const resetData = useDataStore((state) => state.resetData)
 
-  // Initialize store on mount
+  // Reload store when auth context changes (login/logout/impersonation)
   useEffect(() => {
+    if (isLoading) return
+
+    if (!isAuthenticated || !user?.id) {
+      resetData()
+      return
+    }
+
     const initializeStore = async () => {
       try {
         await Promise.all([fetchClients(), fetchStats()])
@@ -25,8 +35,8 @@ export function DataProvider({ children }: DataProviderProps) {
       }
     }
 
-    initializeStore()
-  }, [fetchClients, fetchStats])
+    void initializeStore()
+  }, [fetchClients, fetchStats, resetData, isAuthenticated, isLoading, user?.id, impersonation?.adminId])
 
   return <>{children}</>
 }

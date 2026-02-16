@@ -29,7 +29,6 @@ export const buildCredentialsMessage = (data: CreatedAdmin, appUrl: string) => {
     'FICHE CONTACT — ADMIN',
     CREDENTIALS_SEPARATOR,
     `Nom complet : ${data.name}`,
-    `Username : ${data.username}`,
     `Mot de passe : ${data.password}`,
     `Email : ${data.email || '—'}`,
     `Entreprise : ${data.entreprise || '—'}`,

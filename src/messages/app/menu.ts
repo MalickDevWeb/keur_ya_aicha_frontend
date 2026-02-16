@@ -21,6 +21,7 @@ export const MENU = {
   PAYMENTS_DEPOSIT: 'app.menu.payments.deposit',
   PAYMENTS_HISTORY: 'app.menu.payments.history',
   PAYMENTS_RECEIPTS: 'app.menu.payments.receipts',
+  ADMIN_SUBSCRIPTION_LABEL: 'app.menu.adminSubscription.label',
 
   DOCUMENTS_LABEL: 'app.menu.documents.label',
   DOCUMENTS_ALL: 'app.menu.documents.all',
@@ -71,6 +72,7 @@ export const MENU_FR: Record<string, string> = {
   [MENU.PAYMENTS_DEPOSIT]: 'Paiements de caution',
   [MENU.PAYMENTS_HISTORY]: 'Historique',
   [MENU.PAYMENTS_RECEIPTS]: 'Reçus',
+  [MENU.ADMIN_SUBSCRIPTION_LABEL]: 'Abonnement admin',
 
   [MENU.DOCUMENTS_LABEL]: '📑 Gest Docs',
   [MENU.DOCUMENTS_ALL]: '📋 Tous les documents',
@@ -121,6 +123,7 @@ export const MENU_EN: Record<string, string> = {
   [MENU.PAYMENTS_DEPOSIT]: 'Deposit Payments',
   [MENU.PAYMENTS_HISTORY]: 'History',
   [MENU.PAYMENTS_RECEIPTS]: 'Receipts',
+  [MENU.ADMIN_SUBSCRIPTION_LABEL]: 'Admin Subscription',
 
   [MENU.DOCUMENTS_LABEL]: '📑 Doc Mgmt',
   [MENU.DOCUMENTS_ALL]: '📋 All Documents',

@@ -119,12 +119,11 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
 // ─── 2. Main Page ─────────────────────────────────────────────────────
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading, logout, user } = useAuth();
+  const { login, isAuthenticated, isLoading, user } = useAuth();
   const { addToast } = useToast();
 
   const [isMuted, setIsMuted] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [loginError, setLoginError] = useState("");
   const [loginFieldError, setLoginFieldError] = useState("");
   const [pendingModalOpen, setPendingModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -154,47 +153,40 @@ export default function LoginPage() {
     const playVideo = async () => {
       const el = videoRef.current;
       if (!el) return;
+      el.muted = true;
+      setIsMuted(true);
       try {
         await el.play();
-        el.muted = false;
-        setIsMuted(false);
       } catch {
-        el.muted = true;
-        setIsMuted(true);
-        try {
-          await el.play();
-        } catch {
-          // ignore
-        }
+        // ignore autoplay errors
       }
     };
     playVideo();
   }, []);
 
-  // Unmute on first user interaction (browser autoplay policy)
+  // Unmute on first *trusted* pointer interaction (browser autoplay policy)
   useEffect(() => {
-    const handleFirstInteraction = async () => {
-      if (!videoRef.current) return;
-      if (videoRef.current.muted) {
-        videoRef.current.muted = false;
+    const handleFirstInteraction = async (event: Event) => {
+      if ("isTrusted" in event && !(event as { isTrusted?: boolean }).isTrusted) return;
+      const el = videoRef.current;
+      if (!el) return;
+      const activation = (navigator as Navigator & {
+        userActivation?: { isActive?: boolean; hasBeenActive?: boolean };
+      }).userActivation;
+      if (activation && !activation.isActive && !activation.hasBeenActive) return;
+      if (el.muted) {
+        el.muted = false;
         setIsMuted(false);
       }
       try {
-        await videoRef.current.play();
+        await el.play();
       } catch {
         // ignore
       }
-      window.removeEventListener("click", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
-      window.removeEventListener("touchstart", handleFirstInteraction);
     };
-    window.addEventListener("click", handleFirstInteraction);
-    window.addEventListener("keydown", handleFirstInteraction);
-    window.addEventListener("touchstart", handleFirstInteraction);
+    window.addEventListener("pointerdown", handleFirstInteraction, { once: true });
     return () => {
-      window.removeEventListener("click", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
-      window.removeEventListener("touchstart", handleFirstInteraction);
+      window.removeEventListener("pointerdown", handleFirstInteraction);
     };
   }, []);
 
@@ -207,7 +199,6 @@ export default function LoginPage() {
 
   const onSubmit = async (data: ConnexionFormData) => {
     setLoading(true);
-    setLoginError("");
     setLoginFieldError("");
     setPendingModalOpen(false);
     try {
@@ -217,6 +208,7 @@ export default function LoginPage() {
           const ctx = await getAuthContext();
           const role = String(ctx.user?.role || '').toUpperCase();
           const isSuperAdmin = role === 'SUPER_ADMIN';
+          const isSubscriptionBlocked = Boolean(ctx.user?.subscriptionBlocked);
           if (isSuperAdmin) {
           const now = Date.now();
           const toastKey = { message: 'Connexion réussie', type: 'success' };
@@ -232,6 +224,20 @@ export default function LoginPage() {
             navigate("/pmt/admin", { replace: true });
             return;
           }
+          if (role === 'ADMIN' && isSubscriptionBlocked) {
+            const dueAt = ctx.user?.subscriptionDueAt
+            const dueDateLabel = dueAt ? new Date(dueAt).toLocaleDateString('fr-FR') : null
+            addToast({
+              type: 'warning',
+              title: 'Abonnement en retard',
+              message: dueDateLabel
+                ? `Votre accès est limité jusqu’au paiement. Date limite dépassée: ${dueDateLabel}.`
+                : "Votre accès est limité jusqu'au paiement de l'abonnement.",
+              duration: 4000,
+            });
+            navigate("/subscription", { replace: true });
+            return;
+          }
           const now = Date.now();
           const toastKey = { message: 'Connexion réussie', type: 'success' };
           if (!lastToastRef.current || now - lastToastRef.current.at > 1500 || lastToastRef.current.message !== toastKey.message) {
@@ -248,7 +254,6 @@ export default function LoginPage() {
           navigate("/dashboard", { replace: true });
         }
       } else {
-        const msg = "Identifiants invalides";
         try {
           const res = await fetch("http://localhost:4000/auth/pending-check", {
             method: "POST",
@@ -257,16 +262,13 @@ export default function LoginPage() {
           });
           const pendingData = await res.json();
           if (pendingData?.pending) {
-            const pendingMsg = "Vous n’êtes pas encore approuvé. Veuillez patienter quelques heures.";
             setPendingModalOpen(true);
-            setLoginError("");
             setLoginFieldError("");
             return;
           }
         } catch {
           // ignore
         }
-        setLoginError(msg);
         setLoginFieldError("Identifiants incorrects.");
       }
     } catch (e: unknown) {
@@ -276,16 +278,11 @@ export default function LoginPage() {
         normalized.includes('accès interdit') ||
         normalized.includes("demande en attente") ||
         normalized.includes('en attente');
-      const msg = isApprovalBlock
-        ? "Vous n’êtes pas encore approuvé. Veuillez patienter quelques heures."
-        : raw;
       if (isApprovalBlock) {
-        setLoginError("");
         setLoginFieldError("");
         setPendingModalOpen(true);
         return;
       }
-      setLoginError(msg);
       setLoginFieldError("Identifiants incorrects.");
     } finally {
       setLoading(false);
@@ -298,11 +295,13 @@ export default function LoginPage() {
       const role = String(user?.role || '').toUpperCase();
       if (role === 'SUPER_ADMIN') {
         navigate("/pmt/admin", { replace: true });
+      } else if (role === 'ADMIN' && user?.subscriptionBlocked) {
+        navigate("/subscription", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
     }
-  }, [isAuthenticated, isLoading, navigate, user?.role]);
+  }, [isAuthenticated, isLoading, navigate, user?.role, user?.subscriptionBlocked]);
 
   // ─── styles constants
   const NAVY = "#0F2854";
@@ -350,22 +349,76 @@ export default function LoginPage() {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
+          .login-shell {
+            height: 100vh;
+            min-height: -webkit-fill-available;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            font-family: 'DM Sans', sans-serif;
+            background: ${NAVY};
+          }
+          .login-left-content {
+            margin-top: -30px;
+          }
+          @media (max-width: 1024px) {
+            .login-shell {
+              grid-template-columns: 1fr !important;
+              height: auto !important;
+              min-height: 100vh !important;
+            }
+            .login-left {
+              clip-path: none !important;
+              padding: 48px 24px !important;
+            }
+            .login-right {
+              padding: 24px 24px 36px !important;
+            }
+          }
+          @media (max-width: 768px) {
+            .login-left {
+              display: none !important;
+            }
+            .login-right {
+              padding: 20px 16px 32px !important;
+              width: 100% !important;
+              min-height: 100vh !important;
+            }
+            .login-left-content {
+              margin-top: 0 !important;
+            }
+            .login-shell {
+              background: #fff !important;
+            }
+            .login-video {
+              display: none !important;
+            }
+            .login-zigzag {
+              display: none !important;
+            }
+            .login-logo {
+              width: 160px !important;
+              height: 160px !important;
+            }
+            .login-logo img {
+              width: 140px !important;
+              height: 140px !important;
+            }
+            .login-title {
+              font-size: 26px !important;
+            }
+          }
         `}
       </style>
 
       <div
+        className="login-shell"
         style={{
-          height: "100vh",
-          minHeight: "-webkit-fill-available",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          fontFamily: "'DM Sans', sans-serif",
-          background: NAVY,
           overflow: isVideoExpanded ? "visible" : "hidden",
         }}
       >
         {/* ════════════════ LEFT — Video panel ════════════════ */}
         <div
+          className="login-left"
           style={{
             position: "relative",
             display: "flex",
@@ -378,18 +431,7 @@ export default function LoginPage() {
             zIndex: isVideoExpanded ? 9998 : "auto",
           }}
         >
-          {/* Exceptional diagonal separator */}
-          <div
-            style={{
-              position: "absolute",
-              right: 0,
-              top: 0,
-              width: "20px",
-              height: "100%",
-              background: "linear-gradient(135deg, transparent 50%, #fff 50%)",
-              zIndex: 1,
-            }}
-          />
+          {/* Zig-zag separator moved to the right panel */}
           {/* Ambient blobs */}
           <div
             style={{
@@ -426,9 +468,10 @@ export default function LoginPage() {
           />
 
           {/* Content */}
-          <div style={{ position: "relative", zIndex: 2, textAlign: "center", width: "100%" }}>
+          <div className="login-left-content" style={{ position: "relative", zIndex: 2, textAlign: "center", width: "100%" }}>
             {/* Logo */}
             <div
+              className="login-logo"
               style={{
                 width: 220, height: 220, borderRadius: 100, margin: "0 auto 24px",
                 background: "linear-gradient(135deg, rgb(255, 255, 255), rgb(255, 255, 255))",
@@ -442,6 +485,7 @@ export default function LoginPage() {
             </div>
 
             <h1
+              className="login-title"
               style={{
                 fontFamily: "'Playfair Display', serif",
                 color: "#fff",
@@ -467,6 +511,7 @@ export default function LoginPage() {
 
             {/* Video */}
           <div
+            className="login-video"
             style={{
               position: isVideoExpanded ? "fixed" : "relative",
               inset: isVideoExpanded ? 0 : "auto",
@@ -613,6 +658,7 @@ export default function LoginPage() {
 
         {/* ════════════════ RIGHT — Form panel ════════════════ */}
         <div
+          className="login-right"
           style={{
             background: "#fff",
             display: "flex",
@@ -623,8 +669,28 @@ export default function LoginPage() {
             position: "relative",
             overflow: "hidden",
             zIndex: isVideoExpanded ? 0 : 1,
+            boxShadow: "0 35px 100px rgba(8,12,40,0.28)",
           }}
         >
+          {/* Zig-zag separator (blue teeth into white panel) */}
+          <div
+            className="login-zigzag"
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: "24px",
+              height: "100%",
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='80' viewBox='0 0 56 80'%3E%3Cpolygon points='0,0%2056,40%200,80' fill='%230F2854' fill-opacity='0.98'/%3E%3C/svg%3E\")",
+              backgroundRepeat: "repeat-y",
+              backgroundSize: "24px 36px",
+              backgroundPosition: "0 0",
+              filter: "drop-shadow(0 6px 12px rgba(8,12,40,0.25))",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          />
 
           <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 480 }}>
             {/* Logo centered at top */}

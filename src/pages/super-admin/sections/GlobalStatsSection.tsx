@@ -2,14 +2,16 @@ import { CardStat } from '@/components/CardStat'
 import { StatsCards } from '@/pages/common/StatsCards'
 import { Building2, Shield, Users } from 'lucide-react'
 import { ResponsiveContainer, Pie, PieChart, Cell, Tooltip, Legend } from 'recharts'
-import { AdminDTO, EntrepriseDTO, AdminRequestDTO } from '@/dto/frontend/responses'
+import { AdminDTO, EntrepriseDTO, AdminRequestDTO, AdminPaymentDTO } from '@/dto/frontend/responses'
 import type { PaymentDistributionEntry } from '../types'
+import { CreditCard } from 'lucide-react'
 
 type GlobalStatsSectionProps = {
   sectionId: string
   admins: AdminDTO[]
   entreprises: EntrepriseDTO[]
   pendingRequests: AdminRequestDTO[]
+  adminPayments: AdminPaymentDTO[]
   paymentDistribution: PaymentDistributionEntry[]
   totalPayments: number
   pieColors: string[]
@@ -20,10 +22,24 @@ export function GlobalStatsSection({
   admins,
   entreprises,
   pendingRequests,
+  adminPayments,
   paymentDistribution,
   totalPayments,
   pieColors,
 }: GlobalStatsSectionProps) {
+  const activeAdmins = admins.filter((admin) => admin.status === 'ACTIF')
+  const activeAdminIds = new Set(activeAdmins.map((admin) => admin.id))
+  const activeEntreprisesCount = entreprises.filter((entreprise) =>
+    entreprise.adminId ? activeAdminIds.has(entreprise.adminId) : false
+  ).length
+  const showEntreprises = activeEntreprisesCount > 0
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const monthlyPayments = adminPayments.filter((payment) => payment.month === currentMonth)
+  const subscriptionTotal = monthlyPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)
+  const statsGridClassName = showEntreprises
+    ? 'grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+    : 'grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+
   return (
     <section id={sectionId} aria-labelledby={`${sectionId}-title`} className="space-y-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -33,9 +49,12 @@ export function GlobalStatsSection({
         </div>
         <p className="text-xs uppercase tracking-[0.25em] text-[#121B53]/60">Performance</p>
       </div>
-      <StatsCards gridClassName="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <CardStat title="Admins" value={admins.length} icon={Users} variant="default" />
-        <CardStat title="Entreprises" value={entreprises.length} icon={Building2} variant="success" />
+      <StatsCards gridClassName={statsGridClassName}>
+        <CardStat title="Admins actifs" value={activeAdmins.length} icon={Users} variant="default" />
+        {showEntreprises ? (
+          <CardStat title="Entreprises actives" value={activeEntreprisesCount} icon={Building2} variant="success" />
+        ) : null}
+        <CardStat title="Abonnements (mois)" value={subscriptionTotal} icon={CreditCard} variant="warning" isCurrency />
         <CardStat title="Demandes en attente" value={pendingRequests.length} icon={Shield} variant={pendingRequests.length > 0 ? 'warning' : 'default'} />
       </StatsCards>
       <div className="grid gap-4 rounded-3xl border border-[#121B53]/10 bg-white/90 p-4 shadow-xl sm:grid-cols-[1.1fr_0.9fr]">

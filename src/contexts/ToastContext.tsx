@@ -1,13 +1,12 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
-export interface Toast {
+export type Toast = {
   id: string;
   type: 'success' | 'error' | 'info' | 'warning';
   title: string;
   message?: string;
   duration?: number;
-}
+};
 
 interface ToastContextType {
   toasts: Toast[];

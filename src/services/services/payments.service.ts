@@ -3,7 +3,18 @@ import { fetchClients, updateClient } from '../api/clients.api'
 import { createPaymentRecord } from '../api/payments.api'
 import { generateId } from '../utils/ids'
 
-export async function postPaymentRecord(rentalId: string, paymentId: string, amount: number) {
+export interface PaymentRecordOptions {
+  date?: string
+  receiptNumber?: string
+  notes?: string
+}
+
+export async function postPaymentRecord(
+  rentalId: string,
+  paymentId: string,
+  amount: number,
+  options: PaymentRecordOptions = {}
+) {
   const clients = await fetchClients()
 
   const client = clients.find(
@@ -17,11 +28,14 @@ export async function postPaymentRecord(rentalId: string, paymentId: string, amo
   const payment = rental.payments.find((p) => p.id === paymentId)
   if (!payment) throw new Error('Monthly payment entry not found')
 
+  const paymentDate = options.date ? new Date(options.date).toISOString() : new Date().toISOString()
+  const receiptNumber = String(options.receiptNumber || '').trim() || `REC-${Date.now()}`
+
   const receipt = {
     id: generateId(),
     amount,
-    date: new Date().toISOString(),
-    receiptNumber: `REC-${Date.now()}`,
+    date: paymentDate,
+    receiptNumber,
   }
 
   payment.paidAmount = (payment.paidAmount || 0) + amount
@@ -44,6 +58,8 @@ export async function postPaymentRecord(rentalId: string, paymentId: string, amo
       amount,
       receiptId: receipt.id,
       date: receipt.date,
+      receiptNumber: receipt.receiptNumber,
+      description: options.notes || '',
     })
   } catch {
     // ignore flat record errors

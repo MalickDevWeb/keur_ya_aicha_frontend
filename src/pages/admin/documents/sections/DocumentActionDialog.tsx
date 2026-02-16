@@ -26,7 +26,7 @@ export function DocumentActionDialog({
         if (!open) onClose()
       }}
     >
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-2xl">
         <DialogHeader>
           <DialogTitle>{document?.name || 'Document'}</DialogTitle>
         </DialogHeader>
@@ -45,7 +45,7 @@ export function DocumentActionDialog({
         </div>
 
         <DialogFooter>
-          <div className="flex gap-2 justify-end w-full">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose}>
               Fermer
             </Button>

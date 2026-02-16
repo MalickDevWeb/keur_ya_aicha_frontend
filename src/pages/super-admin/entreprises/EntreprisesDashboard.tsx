@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/contexts/AuthContext'
-import { fetchAdmins, fetchAdminRequests, fetchEntreprises, updateAdminRequest } from '@/services/api'
-import type { AdminDTO, AdminRequestDTO, EntrepriseDTO } from '@/dto/frontend/responses'
+import { fetchAdminPayments, fetchAdmins, fetchAdminRequests, fetchEntreprises } from '@/services/api'
+import type { AdminDTO, AdminPaymentDTO, AdminRequestDTO, EntrepriseDTO } from '@/dto/frontend/responses'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
 import { EntreprisesListSection } from './sections/EntreprisesListSection'
@@ -17,6 +17,7 @@ export function EntreprisesDashboard() {
   const [entreprises, setEntreprises] = useState<EntrepriseDTO[]>([])
   const [admins, setAdmins] = useState<AdminDTO[]>([])
   const [requests, setRequests] = useState<AdminRequestDTO[]>([])
+  const [adminPayments, setAdminPayments] = useState<AdminPaymentDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
@@ -28,15 +29,17 @@ export function EntreprisesDashboard() {
     const load = async () => {
       setLoading(true)
       try {
-        const [entreprisesData, adminsData, requestsData] = await Promise.all([
+        const [entreprisesData, adminsData, requestsData, adminPaymentsData] = await Promise.all([
           fetchEntreprises(),
           fetchAdmins(),
           fetchAdminRequests(),
+          fetchAdminPayments(),
         ])
         if (!active) return
         setEntreprises(entreprisesData)
         setAdmins(adminsData)
         setRequests(requestsData)
+        setAdminPayments(adminPaymentsData)
       } finally {
         if (active) setLoading(false)
       }
@@ -70,6 +73,34 @@ export function EntreprisesDashboard() {
     return map
   }, [requests])
 
+  const currentMonth = useMemo(() => new Date().toISOString().slice(0, 7), [])
+
+  const paymentsByAdmin = useMemo(() => {
+    const map = new Map<string, AdminPaymentDTO[]>()
+    adminPayments.forEach((payment) => {
+      const list = map.get(payment.adminId) || []
+      list.push(payment)
+      map.set(payment.adminId, list)
+    })
+    map.forEach((list, key) => {
+      map.set(
+        key,
+        [...list].sort((a, b) => String(b.paidAt || '').localeCompare(String(a.paidAt || '')))
+      )
+    })
+    return map
+  }, [adminPayments])
+
+  const isAdminPaidThisMonth = (adminId?: string) => {
+    if (!adminId) return false
+    return (paymentsByAdmin.get(adminId) || []).some((payment) => payment.month === currentMonth)
+  }
+
+  const getLastPaidAt = (adminId?: string) => {
+    if (!adminId) return null
+    return paymentsByAdmin.get(adminId)?.[0]?.paidAt || null
+  }
+
   const rows = useMemo<EntrepriseRow[]>(() => {
     return entreprises.map((entreprise) => ({
       entreprise,
@@ -80,13 +111,6 @@ export function EntreprisesDashboard() {
     }))
   }, [entreprises, adminsById, requestsById, requestsByEntreprise])
 
-  const handleMarkPaid = async (request?: AdminRequestDTO) => {
-    if (!request) return
-    const paidAt = new Date().toISOString()
-    const updated = await updateAdminRequest(request.id, { paid: true, paidAt })
-    setRequests((prev) => prev.map((r) => (r.id === request.id ? updated : r)))
-  }
-
   const filteredRows = useMemo(() => {
     const needle = search.trim().toLowerCase()
     if (!needle) return rows
@@ -94,8 +118,7 @@ export function EntreprisesDashboard() {
       const name = String(entreprise.name || '').toLowerCase()
       const id = String(entreprise.id || '').toLowerCase()
       const adminName = String(admin?.name || '').toLowerCase()
-      const adminUser = String(admin?.username || '').toLowerCase()
-      return name.includes(needle) || id.includes(needle) || adminName.includes(needle) || adminUser.includes(needle)
+      return name.includes(needle) || id.includes(needle) || adminName.includes(needle)
     })
   }, [rows, search])
 
@@ -132,7 +155,8 @@ export function EntreprisesDashboard() {
           onViewModeChange={setViewMode}
           enteringId={enteringId}
           onEnterAdmin={handleEnterAdmin}
-          onMarkPaid={handleMarkPaid}
+          isAdminPaidThisMonth={isAdminPaidThisMonth}
+          getLastPaidAt={getLastPaidAt}
           selectedEntrepriseId={selectedEntrepriseId}
           onSelectEntreprise={setSelectedEntrepriseId}
           noResultsLabel={t('clients.noResults')}

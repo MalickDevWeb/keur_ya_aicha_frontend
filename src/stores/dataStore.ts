@@ -47,7 +47,12 @@ export interface DataState {
   getClient: (id: string) => Client | undefined
   addRental: (clientId: string, rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>) => Promise<void>
   deleteClient: (clientId: string) => Promise<void>
-  addMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => Promise<void>
+  addMonthlyPayment: (
+    rentalId: string,
+    paymentId: string,
+    amount: number,
+    options?: { date?: string; receiptNumber?: string; notes?: string }
+  ) => Promise<void>
   editMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => Promise<void>
   addDepositPayment: (rentalId: string, amount: number) => Promise<void>
   addDocument: (
@@ -58,6 +63,7 @@ export interface DataState {
   deleteDocument: (clientId: string, rentalId: string, docId: string) => Promise<void>
   refreshStats: () => Promise<void>
   setError: (error: string | null) => void
+  resetData: () => void
 }
 
 /**
@@ -79,7 +85,9 @@ export const useDataStore = create<DataState>((set, get) => ({
     try {
       set({ isLoading: true, error: null })
       const [dtos, ctx] = await Promise.all([fetchClientsAPI(), getAuthContext()])
-      const activeAdminId = ctx?.impersonation?.adminId || null
+      const activeAdminId =
+        ctx?.impersonation?.adminId ||
+        (String(ctx?.user?.role || '').toUpperCase() === 'ADMIN' ? ctx?.user?.id || null : null)
       const clients = dtos
         .map((d) => transformClientDTO(d))
         .filter((c) => c.firstName && c.lastName)
@@ -97,7 +105,9 @@ export const useDataStore = create<DataState>((set, get) => ({
   fetchStats: async () => {
     try {
       const [dtos, ctx] = await Promise.all([fetchClientsAPI(), getAuthContext()])
-      const activeAdminId = ctx?.impersonation?.adminId || null
+      const activeAdminId =
+        ctx?.impersonation?.adminId ||
+        (String(ctx?.user?.role || '').toUpperCase() === 'ADMIN' ? ctx?.user?.id || null : null)
       const clients = dtos
         .map((d) => transformClientDTO(d))
         .filter((c) => c.firstName && c.lastName)
@@ -116,7 +126,9 @@ export const useDataStore = create<DataState>((set, get) => ({
     try {
       set({ error: null })
       const ctx = await getAuthContext()
-      const activeAdminId = ctx?.impersonation?.adminId || undefined
+      const activeAdminId =
+        ctx?.impersonation?.adminId ||
+        (String(ctx?.user?.role || '').toUpperCase() === 'ADMIN' ? ctx?.user?.id || undefined : undefined)
       const firstName = (clientData.firstName || '').trim()
       const lastName = (clientData.lastName || '').trim()
       const phone = (clientData.phone || '').trim()
@@ -258,10 +270,10 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   // Add monthly payment
-  addMonthlyPayment: async (rentalId, paymentId, amount) => {
+  addMonthlyPayment: async (rentalId, paymentId, amount, options) => {
     try {
       set({ error: null })
-      await postPaymentRecord(rentalId, paymentId, amount)
+      await postPaymentRecord(rentalId, paymentId, amount, options)
       await get().fetchClients()
       await get().refreshStats()
     } catch (error) {
@@ -371,5 +383,15 @@ export const useDataStore = create<DataState>((set, get) => ({
   // Set error
   setError: (error) => {
     set({ error })
+  },
+
+  // Reset store data (used on logout/account switch to avoid cross-account leakage)
+  resetData: () => {
+    set({
+      clients: [],
+      stats: { total: 0, active: 0, archived: 0, blacklisted: 0, totalDeposits: 0, totalRents: 0 },
+      isLoading: false,
+      error: null,
+    })
   },
 }))

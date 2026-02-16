@@ -2,19 +2,49 @@
  * DTO pour créer une exécution d'importation
  */
 export interface ImportRunCreateDTO {
-  filename: string
-  totalRecords: number
-  successCount?: number
-  failureCount?: number
-  status?: 'pending' | 'processing' | 'completed' | 'failed'
+  id?: string
+  adminId?: string
+  fileName: string
+  totalRows: number
+  inserted?: Array<{
+    id: string
+    firstName: string
+    lastName: string
+    phone: string
+    email?: string
+  }>
+  errors?: Array<{
+    rowNumber: number
+    errors: string[]
+    parsed: Record<string, unknown>
+  }>
+  ignored?: boolean
+  readSuccess?: boolean
+  readErrors?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 /**
  * DTO pour mettre à jour une exécution d'importation
  */
 export interface ImportRunUpdateDTO {
-  status?: 'pending' | 'processing' | 'completed' | 'failed'
-  successCount?: number
-  failureCount?: number
-  completedAt?: string
+  fileName?: string
+  totalRows?: number
+  inserted?: Array<{
+    id: string
+    firstName: string
+    lastName: string
+    phone: string
+    email?: string
+  }>
+  errors?: Array<{
+    rowNumber: number
+    errors: string[]
+    parsed: Record<string, unknown>
+  }>
+  ignored?: boolean
+  readSuccess?: boolean
+  readErrors?: boolean
+  updatedAt?: string
 }

@@ -88,20 +88,20 @@ export function ErrorsActions({
   }
 
   return (
-    <div className="flex gap-2 flex-wrap">
-      <Button onClick={handleDownloadCsv} variant="outline" disabled={isLoading}>
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+      <Button onClick={handleDownloadCsv} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
         <Download className="w-4 h-4 mr-2" />
         CSV
       </Button>
-      <Button onClick={handleDownloadExcel} variant="outline" disabled={isLoading}>
+      <Button onClick={handleDownloadExcel} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
         <Download className="w-4 h-4 mr-2" />
         Excel
       </Button>
-      <Button onClick={onRefresh} variant="outline" disabled={isLoading}>
+      <Button onClick={onRefresh} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
         <RotateCw className="w-4 h-4 mr-2" />
         Rafraîchir
       </Button>
-      <Button onClick={onDelete} variant="destructive" disabled={isLoading}>
+      <Button onClick={onDelete} variant="destructive" disabled={isLoading} className="w-full sm:w-auto">
         <Trash2 className="w-4 h-4 mr-2" />
         Supprimer
       </Button>

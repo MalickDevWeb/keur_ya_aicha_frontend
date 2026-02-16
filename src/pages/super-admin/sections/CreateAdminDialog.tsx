@@ -9,8 +9,6 @@ type CreateAdminDialogProps = {
   creating: boolean
   createError: string
   setCreateError: (value: string) => void
-  newUsername: string
-  setNewUsername: (value: string) => void
   newName: string
   setNewName: (value: string) => void
   newEmail: string
@@ -35,8 +33,6 @@ export function CreateAdminDialog({
   creating,
   createError,
   setCreateError,
-  newUsername,
-  setNewUsername,
   newName,
   setNewName,
   newEmail,
@@ -96,10 +92,6 @@ export function CreateAdminDialog({
                     <p className="font-semibold">{createdAdmin.name}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-white p-3 text-sm">
-                    <p className="text-xs text-muted-foreground">Username</p>
-                    <p className="font-semibold">{createdAdmin.username}</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-white p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Mot de passe</p>
                     <p className="font-semibold">{createdAdmin.password}</p>
                   </div>
@@ -153,14 +145,6 @@ export function CreateAdminDialog({
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Nom d'utilisateur</label>
-                  <Input
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    placeholder="ex. admin_keur"
-                  />
-                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Nom complet</label>
                   <Input

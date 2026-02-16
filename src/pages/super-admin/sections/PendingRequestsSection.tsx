@@ -62,7 +62,7 @@ export function PendingRequestsSection({
             <Input
               value={pendingSearch}
               onChange={(e) => onPendingSearchChange(e.target.value)}
-              placeholder="Rechercher par nom, téléphone, entreprise ou username"
+              placeholder="Rechercher par nom, téléphone ou entreprise"
               className="border-blue-200 bg-blue-50/80"
             />
             <div className="flex flex-nowrap items-center gap-2 sm:ml-auto">
@@ -85,28 +85,30 @@ export function PendingRequestsSection({
           {pendingRequests.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aucune demande en attente.</p>
           ) : viewMode === 'list' ? (
-            <div className="rounded-2xl border border-blue-200 bg-white">
-              <div className="grid grid-cols-5 gap-2 border-b border-blue-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>Nom</span>
-                <span>Email</span>
-                <span>Téléphone</span>
-                <span>Entreprise</span>
-                <span>Actions</span>
-              </div>
-              <div className="divide-y divide-blue-100">
-                {visiblePending.map((req) => (
-                  <div key={req.id} className="grid grid-cols-5 gap-2 px-4 py-3 text-sm">
-                    <span className="font-medium text-slate-900">{req.name}</span>
-                    <span className="text-slate-700">{req.email || '—'}</span>
-                    <span className="text-slate-700">{req.phone || '—'}</span>
-                    <span className="text-slate-700">{req.entrepriseName || '—'}</span>
-                    <div className="flex gap-2">
-                      <Button size="sm" className="bg-blue-900 text-white hover:bg-blue-800" onClick={() => onApprove(req)}>
-                        Valider
-                      </Button>
+            <div className="rounded-2xl border border-blue-200 bg-white overflow-x-auto">
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-5 gap-2 border-b border-blue-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span>Nom</span>
+                  <span>Email</span>
+                  <span>Téléphone</span>
+                  <span>Entreprise</span>
+                  <span>Actions</span>
+                </div>
+                <div className="divide-y divide-blue-100">
+                  {visiblePending.map((req) => (
+                    <div key={req.id} className="grid grid-cols-5 gap-2 px-4 py-3 text-sm">
+                      <span className="font-medium text-slate-900">{req.name}</span>
+                      <span className="text-slate-700">{req.email || '—'}</span>
+                      <span className="text-slate-700">{req.phone || '—'}</span>
+                      <span className="text-slate-700">{req.entrepriseName || '—'}</span>
+                      <div className="flex gap-2">
+                        <Button size="sm" className="bg-blue-900 text-white hover:bg-blue-800" onClick={() => onApprove(req)}>
+                          Valider
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -165,10 +167,6 @@ export function PendingRequestsSection({
                         <div className="rounded-xl border border-blue-300 bg-white px-3 py-2">
                           <p className="text-[11px] uppercase tracking-wide text-blue-700">Entreprise</p>
                           <p className="text-xs font-medium text-slate-900">{req.entrepriseName || 'Non spécifié'}</p>
-                        </div>
-                        <div className="rounded-xl border border-blue-300 bg-white px-3 py-2">
-                          <p className="text-[11px] uppercase tracking-wide text-blue-700">Nom d'utilisateur</p>
-                          <p className="text-xs font-medium text-slate-900">{req.username || 'Non spécifié'}</p>
                         </div>
                       </div>
 

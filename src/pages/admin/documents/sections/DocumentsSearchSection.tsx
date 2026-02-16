@@ -11,8 +11,8 @@ type DocumentsSearchSectionProps = {
 export function DocumentsSearchSection({ value, total, onChange }: DocumentsSearchSectionProps) {
   return (
     <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <Search className="w-5 h-5 text-blue-600" />
           Rechercher des documents
         </CardTitle>
@@ -21,14 +21,14 @@ export function DocumentsSearchSection({ value, total, onChange }: DocumentsSear
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Tapez le nom, prénom ou téléphone du client... (ex: Amadou Diallo, +221 77 123 45 67)"
+            placeholder="Nom, prénom ou téléphone du client..."
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className="pl-10"
+            className="h-11 pl-10 text-sm sm:text-base"
           />
         </div>
         {value && (
-          <div className="mt-3 text-sm text-muted-foreground">
+          <div className="mt-3 text-xs text-muted-foreground sm:text-sm">
             <strong>{total}</strong> document(s) trouvé(s) pour "{value}"
           </div>
         )}

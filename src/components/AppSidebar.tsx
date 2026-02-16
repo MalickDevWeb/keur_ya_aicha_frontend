@@ -13,6 +13,8 @@ import {
   Gauge,
   Bell,
   Settings,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -22,6 +24,7 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -34,51 +37,112 @@ import { useEffect, useState } from 'react';
 import { fetchImportRuns } from '@/services/api';
 import { t, MENU } from '@/messages';
 
+type ImportRunSidebar = {
+  id: string
+  adminId?: string
+  inserted?: unknown[]
+  errors?: unknown[]
+  ignored?: boolean
+  readSuccess?: boolean
+  readErrors?: boolean
+}
+
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user, impersonation } = useAuth();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const isSuperAdmin = String(user?.role || '').toUpperCase() === 'SUPER_ADMIN';
   const impersonationActive = !!impersonation;
   const showAdminMenus = !isSuperAdmin || impersonationActive;
-  const displayName = user?.name || (isSuperAdmin ? 'Super Admin' : user?.username || '');
-  const displayHandle = user?.username || (isSuperAdmin ? 'superadmin' : '');
-  const [expandedItems, setExpandedItems] = useState<string[]>(
-    isSuperAdmin ? ['superAdmin'] : ['clients']
-  );
+  const activeAdminId = impersonation?.adminId || (isSuperAdmin ? null : user?.id || null);
+  const displayName = user?.name || (isSuperAdmin ? 'Super Admin' : 'Utilisateur');
   const [importErrorCount, setImportErrorCount] = useState(0);
+  const [importSuccessCount, setImportSuccessCount] = useState(0);
+  const [hasImportErrors, setHasImportErrors] = useState(false);
+  const [hasImportSuccess, setHasImportSuccess] = useState(false);
 
   useEffect(() => {
+    if (!showAdminMenus) return;
+
     let mounted = true;
     const refreshImportErrors = async () => {
+      if (document.visibilityState === 'hidden') return;
       try {
-        const runs = (await fetchImportRuns()) as Array<{ ignored?: boolean; errors?: unknown[] }>;
+        const runs = (await fetchImportRuns()) as ImportRunSidebar[];
         if (!mounted) return;
-        const latestRun = runs.find((run) => !run.ignored);
-        const count = Array.isArray(latestRun?.errors) ? latestRun.errors.length : 0;
-        setImportErrorCount(count);
+
+        const scopedRuns = activeAdminId
+          ? runs.filter((run) => String(run.adminId || '') === String(activeAdminId))
+          : runs;
+
+        const unreadErrorCount = scopedRuns.reduce((total, run) => {
+          const errorLength = Array.isArray(run.errors) ? run.errors.length : 0;
+          const isUnread = !run.ignored && errorLength > 0 && !run.readErrors;
+          return isUnread ? total + errorLength : total;
+        }, 0);
+
+        const unreadSuccessCount = scopedRuns.reduce((total, run) => {
+          const successLength = Array.isArray(run.inserted) ? run.inserted.length : 0;
+          const isUnread = successLength > 0 && !run.readSuccess;
+          return isUnread ? total + successLength : total;
+        }, 0);
+
+        const errorCount = unreadErrorCount;
+        const successCount = unreadSuccessCount;
+        setImportErrorCount(errorCount);
+        setImportSuccessCount(successCount);
+        setHasImportErrors(errorCount > 0);
+        setHasImportSuccess(successCount > 0);
       } catch {
         if (!mounted) return;
         setImportErrorCount(0);
+        setImportSuccessCount(0);
+        setHasImportErrors(false);
+        setHasImportSuccess(false);
       }
     };
-    refreshImportErrors();
-    const interval = setInterval(refreshImportErrors, 10000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshImportErrors();
+      }
+    };
+
+    const onImportRunsUpdated = () => {
+      void refreshImportErrors();
+    };
+
+    void refreshImportErrors();
+    const interval = window.setInterval(() => {
+      void refreshImportErrors();
+    }, 60000);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('import-runs-updated', onImportRunsUpdated);
+
     return () => {
       mounted = false;
-      clearInterval(interval);
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('import-runs-updated', onImportRunsUpdated);
     };
-  }, [location.pathname]);
+  }, [activeAdminId, location.pathname, showAdminMenus]);
 
   const handleLogout = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
     logout();
     navigate('/login');
   };
 
-  const toggleExpand = (key: string) => {
-    setExpandedItems((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const handleMenuNavigate = (path?: string) => {
+    if (!path) return;
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+    navigate(path);
   };
 
   const isActive = (path?: string) => {
@@ -127,6 +191,7 @@ export function AppSidebar() {
         { key: 'clients', label: t(MENU.CLIENTS_LABEL), icon: Users, path: '/clients' },
         { key: 'rentals', label: t(MENU.RENTALS_LABEL), icon: Home, path: '/rentals' },
         { key: 'payments', label: t(MENU.PAYMENTS_LABEL), icon: CreditCard, path: '/payments' },
+        { key: 'subscription', label: t(MENU.ADMIN_SUBSCRIPTION_LABEL), icon: CreditCard, path: '/subscription' },
       ],
     },
     {
@@ -134,15 +199,40 @@ export function AppSidebar() {
       items: [
         { key: 'documents', label: t(MENU.DOCUMENTS_LABEL), icon: FileText, path: '/documents' },
         { key: 'archiveAdmin', label: t(MENU.ARCHIVE_ADMIN_LABEL), icon: Archive, path: '/archive/clients' },
+        ...(hasImportErrors
+          ? [
+              {
+                key: 'importErrors',
+                label: 'Imports en erreur',
+                icon: AlertTriangle,
+                path: '/import/errors',
+                badge: importErrorCount,
+                badgeTone: 'error' as const,
+              },
+            ]
+          : []),
+        ...(hasImportSuccess
+          ? [
+              {
+                key: 'importSuccess',
+                label: 'Imports réussis',
+                icon: CheckCircle2,
+                path: '/import/success',
+                badge: importSuccessCount,
+                badgeTone: 'success' as const,
+              },
+            ]
+          : []),
       ],
     },
   ];
 
+  const settingsPath = isSuperAdmin && !impersonationActive ? '/pmt/admin/settings' : '/settings';
   const additionalMenu = [
     {
       label: 'Paramètres',
       items: [
-        { key: 'settings', label: t(MENU.SETTINGS_LABEL), icon: Settings, path: '/pmt/admin/settings' },
+        { key: 'settings', label: t(MENU.SETTINGS_LABEL), icon: Settings, path: settingsPath },
       ],
     },
   ];
@@ -177,11 +267,24 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.key}>
                     {(() => {
                       const label = item.key === 'settings' ? 'Paramètres' : item.label
+                      const badge = (item as { badge?: number }).badge
+                      const badgeTone = (item as { badgeTone?: 'success' | 'error' }).badgeTone
+                      const badgeClassName =
+                        badgeTone === 'success'
+                          ? 'bg-emerald-500 text-white border border-emerald-300/50 shadow-[0_0_0_1px_rgba(16,185,129,0.25)_inset] peer-hover/menu-button:!text-white peer-data-[active=true]/menu-button:!text-white'
+                          : badgeTone === 'error'
+                            ? 'bg-rose-500 text-white border border-rose-300/50 shadow-[0_0_0_1px_rgba(244,63,94,0.25)_inset] peer-hover/menu-button:!text-white peer-data-[active=true]/menu-button:!text-white'
+                            : undefined
                       return (
-                    <SidebarMenuButton isActive={isActive(item.path)} onClick={() => navigate(item.path)}>
-                      <item.icon />
-                      {!collapsed && <span>{label}</span>}
-                    </SidebarMenuButton>
+                        <>
+                          <SidebarMenuButton isActive={isActive(item.path)} onClick={() => handleMenuNavigate(item.path)}>
+                            <item.icon />
+                            {!collapsed && <span>{label}</span>}
+                          </SidebarMenuButton>
+                          {!collapsed && typeof badge === 'number' && badge > 0 && (
+                            <SidebarMenuBadge className={badgeClassName}>{badge}</SidebarMenuBadge>
+                          )}
+                        </>
                       )
                     })()}
                   </SidebarMenuItem>
@@ -196,7 +299,6 @@ export function AppSidebar() {
         {!collapsed && user && (
           <div className="mb-3 px-2">
             <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>
-            <p className="text-xs text-sidebar-foreground/60">@{displayHandle}</p>
           </div>
         )}
         <Button

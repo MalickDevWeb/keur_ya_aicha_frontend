@@ -29,6 +29,7 @@ import AddPayment from "./pages/admin/AddPayment";
 import Deposits from "./pages/admin/Deposits";
 import PaymentHistory from "./pages/admin/PaymentHistory";
 import PaymentReceipts from "./pages/admin/PaymentReceipts";
+import AdminSubscriptionPayments from "./pages/admin/AdminSubscriptionPayments";
 import ClientDossier from "./pages/admin/ClientDossier";
 import SignedContracts from "./pages/admin/SignedContracts";
 import Documents from "./pages/admin/Documents";
@@ -109,6 +110,7 @@ const App = () => (
                   <Route path="/payments/deposit/:rentalId" element={<Deposits />} />
                   <Route path="/payments/history" element={<PaymentHistory />} />
                   <Route path="/payments/receipts" element={<PaymentReceipts />} />
+                  <Route path="/subscription" element={<AdminSubscriptionPayments />} />
 
                   {/* Documents & Archive Routes */}
                   <Route path="/documents/dossiers" element={<ClientDossier />} />

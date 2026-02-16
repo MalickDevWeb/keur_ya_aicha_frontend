@@ -16,9 +16,9 @@ export function SettingsReportSection({ value, onChange, onSave, isSaving }: Set
         Choisissez le format de téléchargement pour la page d'erreurs d'import.
       </p>
 
-      <div className="mt-4 flex items-center gap-3 flex-wrap">
+      <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         <Select value={value} onValueChange={(next) => onChange(next as 'csv' | 'xlsx' | 'json')}>
-          <SelectTrigger className="w-[240px]">
+          <SelectTrigger className="w-full sm:w-[240px]">
             <SelectValue placeholder="Choisir un format" />
           </SelectTrigger>
           <SelectContent>
@@ -28,7 +28,7 @@ export function SettingsReportSection({ value, onChange, onSave, isSaving }: Set
           </SelectContent>
         </Select>
 
-        <Button onClick={onSave} disabled={isSaving}>
+        <Button onClick={onSave} disabled={isSaving} className="w-full sm:w-auto">
           Enregistrer
         </Button>
       </div>

@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getSetting } from '@/services/api'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import type { ClientImportMapping, ClientImportError } from '@/lib/importClients'
-import { DEFAULT_IMPORT_ALIASES, buildRow, validateRow } from '@/lib/importClients'
+import {
+  CLIENT_IMPORT_FIELDS,
+  DEFAULT_IMPORT_ALIASES,
+  DEFAULT_REQUIRED_FIELDS,
+  FIELD_LABELS,
+  buildRow,
+  validateRow,
+} from '@/lib/importClients'
 import { buildDuplicateLookup, buildDuplicateMessage } from '@/pages/admin/imports/utils'
 import { normalizeEmailForCompare, normalizePhoneForCompare } from '@/validators/frontend'
 import type { Client } from '@/lib/types'
 
-const REQUIRED_FIELDS = ['firstName', 'lastName', 'phone'] as const
+const REQUIRED_FIELDS_KEY = 'import_clients_required_fields'
 
 interface UseImportClientsOptions {
   clients: Client[]
@@ -26,6 +34,7 @@ interface UseImportClientsState {
 
 export function useImportClients({ clients }: UseImportClientsOptions) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [state, setState] = useState<UseImportClientsState>({
     fileName: '',
     headers: [],
@@ -36,15 +45,19 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
     importAliases: null,
     isLoading: true,
   })
+  const [requiredFields, setRequiredFields] =
+    useState<Array<keyof ClientImportMapping>>(DEFAULT_REQUIRED_FIELDS)
 
-  const { ownerByEmail, ownerByPhone } = buildDuplicateLookup(clients)
+  // Memoize duplicate lookup to prevent stale closures
+  const { ownerByEmail, ownerByPhone } = useMemo(() => buildDuplicateLookup(clients), [clients])
 
   // Load import aliases on mount
   useEffect(() => {
     let mounted = true
     async function loadAliases() {
       try {
-        const raw = await getSetting('import_clients_aliases')
+        const key = user?.id ? `import_clients_aliases:${user.id}` : 'import_clients_aliases'
+        const raw = await getSetting(key)
         if (!mounted) return
         const parsed = raw ? JSON.parse(raw) : DEFAULT_IMPORT_ALIASES
         setState((s) => ({
@@ -57,6 +70,35 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
       }
     }
     loadAliases()
+    return () => {
+      mounted = false
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    let mounted = true
+    async function loadRequiredFields() {
+      try {
+        const raw = await getSetting(REQUIRED_FIELDS_KEY)
+        if (!mounted) return
+        if (!raw) {
+          setRequiredFields(DEFAULT_REQUIRED_FIELDS)
+          return
+        }
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter((field) => CLIENT_IMPORT_FIELDS.includes(field)) as Array<
+            keyof ClientImportMapping
+          >
+          setRequiredFields(valid.length > 0 ? valid : DEFAULT_REQUIRED_FIELDS)
+        } else {
+          setRequiredFields(DEFAULT_REQUIRED_FIELDS)
+        }
+      } catch {
+        setRequiredFields(DEFAULT_REQUIRED_FIELDS)
+      }
+    }
+    loadRequiredFields()
     return () => {
       mounted = false
     }
@@ -87,20 +129,24 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
   }, [])
 
   const validateMapping = useCallback((): boolean => {
-    const missingMapping = REQUIRED_FIELDS.filter((field) => state.mapping[field] === undefined)
+    const missingMapping = requiredFields.filter((field) => state.mapping[field] === undefined)
     if (missingMapping.length > 0) {
+      const missingLabels = missingMapping.map((field) => FIELD_LABELS[field] || field)
       toast({
         title: 'Mapping incomplet',
-        description: `Veuillez mapper: ${missingMapping.join(', ')}`,
+        description: `Veuillez mapper: ${missingLabels.join(', ')}`,
         variant: 'destructive',
       })
       return false
     }
     return true
-  }, [state.mapping, toast])
+  }, [requiredFields, state.mapping, toast])
 
   const validateRows = useCallback(
-    (rows: Array<(string | number | Date | null)[]>, mapping: ClientImportMapping): ClientImportError[] => {
+    (
+      rows: Array<(string | number | Date | null)[]>,
+      mapping: ClientImportMapping
+    ): ClientImportError[] => {
       const newErrors: ClientImportError[] = []
       const existingPhones = new Set(ownerByPhone.keys())
       const existingEmails = new Set(ownerByEmail.keys())
@@ -110,13 +156,14 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
 
       rows.forEach((row, rowIdx) => {
         const parsed = buildRow(row, mapping)
-        const rowErrors = validateRow(parsed, rowIdx + 2)
+        const rowErrors = validateRow(parsed, requiredFields)
 
         if (rowErrors.length > 0) {
           newErrors.push({
             rowIndex: rowIdx,
             rowNumber: rowIdx + 2,
             errors: rowErrors,
+            raw: row,
             parsed,
           })
           return
@@ -149,6 +196,7 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
             rowIndex: rowIdx,
             rowNumber: rowIdx + 2,
             errors: rowErrors,
+            raw: row,
             parsed,
           })
         }
@@ -156,12 +204,16 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
 
       return newErrors
     },
-    [ownerByPhone, ownerByEmail]
+    [ownerByPhone, ownerByEmail, requiredFields]
   )
 
   const validateAndCollect = useCallback(
-    (rows: Array<(string | number | Date | null)[]>, mapping: ClientImportMapping, list: Client[]) => {
-      const missingMapping = REQUIRED_FIELDS.filter((field) => mapping[field] === undefined)
+    (
+      rows: Array<(string | number | Date | null)[]>,
+      mapping: ClientImportMapping,
+      list: Client[]
+    ) => {
+      const missingMapping = requiredFields.filter((field) => mapping[field] === undefined)
       if (missingMapping.length > 0) return null
 
       const { ownerByEmail: byEmail, ownerByPhone: byPhone } = buildDuplicateLookup(list)
@@ -174,7 +226,7 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
 
       rows.forEach((row, rowIdx) => {
         const parsed = buildRow(row, mapping)
-        const rowErrors = validateRow(parsed, rowIdx + 2)
+        const rowErrors = validateRow(parsed, requiredFields)
 
         const normalizedPhone = normalizePhoneForCompare(parsed.phone || '')
         if (normalizedPhone) {
@@ -203,6 +255,7 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
             rowIndex: rowIdx,
             rowNumber: rowIdx + 2,
             errors: rowErrors,
+            raw: row,
             parsed,
           })
         }
@@ -210,13 +263,14 @@ export function useImportClients({ clients }: UseImportClientsOptions) {
 
       return nextErrors
     },
-    []
+    [requiredFields]
   )
 
   const hasData = state.headers.length > 0 && state.rows.length > 0
 
   return {
     ...state,
+    requiredFields,
     setFileName,
     setHeaders,
     setRows,

@@ -202,7 +202,7 @@ export async function generatePdfForDocument(doc: PdfDocumentInput) {
 
   // render to canvas
   document.body.appendChild(wrapper)
-  const canvas = await html2canvas(wrapper as HTMLElement, { scale: 2 })
+  const canvas = await html2canvas(wrapper as HTMLElement, { scale: 2, logging: false, useCORS: true })
   const imgData = canvas.toDataURL('image/png')
   document.body.removeChild(wrapper)
 

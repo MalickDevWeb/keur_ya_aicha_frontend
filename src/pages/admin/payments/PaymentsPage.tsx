@@ -78,8 +78,8 @@ export default function PaymentsPage() {
                 rows={filteredRows}
                 getClientName={getClientName}
                 getPaymentDetails={getPaymentDetails}
-                onView={(payment) => navigate(`/payments/${payment.rentalId}`)}
-                onEdit={(payment) => navigate(`/payments/edit/${payment.id}`)}
+                onView={(payment) => navigate(`/rentals/${payment.rentalId}`)}
+                onEdit={(payment) => navigate(`/payments/${payment.rentalId}/edit/${payment.id}`)}
                 onOpenReceipt={openReceiptModal}
               />
             ) : (
@@ -87,8 +87,8 @@ export default function PaymentsPage() {
                 rows={filteredRows}
                 getClientName={getClientName}
                 getPaymentDetails={getPaymentDetails}
-                onView={(payment) => navigate(`/payments/${payment.rentalId}`)}
-                onEdit={(payment) => navigate(`/payments/edit/${payment.id}`)}
+                onView={(payment) => navigate(`/rentals/${payment.rentalId}`)}
+                onEdit={(payment) => navigate(`/payments/${payment.rentalId}/edit/${payment.id}`)}
                 onOpenReceipt={openReceiptModal}
               />
             )}

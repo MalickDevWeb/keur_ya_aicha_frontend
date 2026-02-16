@@ -31,73 +31,121 @@ export function ArchivedListSection({ clients, formatDate, onReactivate, onView 
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gradient-to-r from-slate-50 to-transparent">
-                  <TableHead>Nom Complet</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>CNI</TableHead>
-                  <TableHead className="text-center">Propriétés</TableHead>
-                  <TableHead>Date d'Archivage</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id} className="hover:bg-slate-50/50">
-                    <TableCell>
+          <>
+            <div className="space-y-3 md:hidden">
+              {clients.map((client) => (
+                <div key={client.id} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="font-medium text-slate-900">
                         {client.firstName} {client.lastName}
                       </p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-slate-600">{client.phone}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-slate-600 font-mono">{client.cni}</p>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-slate-50">
-                        {client.rentals.length}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-slate-600">{formatDate(client.createdAt)}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-slate-700 text-white">
-                        <Archive className="h-3 w-3 mr-1" />
-                        Archivé
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-2 hover:bg-green-50 hover:text-green-700"
-                          onClick={() => onReactivate(client.id)}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          Réactiver
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onView(client.id)}
-                          className="hover:bg-blue-50 hover:text-blue-700"
-                        >
-                          Détails
-                        </Button>
-                      </div>
-                    </TableCell>
+                      <p className="mt-1 text-sm text-slate-600">{client.phone}</p>
+                      <p className="mt-1 text-sm text-slate-600 font-mono break-all">{client.cni || '—'}</p>
+                    </div>
+                    <Badge variant="secondary" className="bg-slate-700 text-white shrink-0">
+                      <Archive className="h-3 w-3 mr-1" />
+                      Archivé
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <Badge variant="outline" className="bg-slate-50">
+                      {client.rentals.length} propriété(s)
+                    </Badge>
+                    <p className="text-xs text-slate-600">{formatDate(client.createdAt)}</p>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => onReactivate(client.id)}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Réactiver
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onView(client.id)}
+                    >
+                      Détails
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-slate-50 to-transparent">
+                    <TableHead>Nom Complet</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>CNI</TableHead>
+                    <TableHead className="text-center">Propriétés</TableHead>
+                    <TableHead>Date d'Archivage</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.id} className="hover:bg-slate-50/50">
+                      <TableCell>
+                        <p className="font-medium text-slate-900">
+                          {client.firstName} {client.lastName}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm text-slate-600">{client.phone}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm text-slate-600 font-mono">{client.cni}</p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-slate-50">
+                          {client.rentals.length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm text-slate-600">{formatDate(client.createdAt)}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-slate-700 text-white">
+                          <Archive className="h-3 w-3 mr-1" />
+                          Archivé
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-2 hover:bg-green-50 hover:text-green-700"
+                            onClick={() => onReactivate(client.id)}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Réactiver
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onView(client.id)}
+                            className="hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            Détails
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

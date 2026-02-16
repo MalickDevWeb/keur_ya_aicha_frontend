@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import {
   clearImpersonation as clearImpersonationApi,
@@ -9,16 +8,20 @@ import {
   setImpersonation as setImpersonationApi,
 } from '@/services/api';
 
-interface User {
+export type User = {
   id: string;
   username: string;
   name: string;
   email: string;
   role: string;
   status?: string;
-}
+  subscriptionBlocked?: boolean;
+  subscriptionOverdueMonth?: string | null;
+  subscriptionDueAt?: string | null;
+  subscriptionRequiredMonth?: string | null;
+};
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -31,7 +34,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
+type AuthProviderProps = {
   children: ReactNode;
 }
 
@@ -64,19 +67,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    try {
-      const payload = await loginAuthContext(username, password);
-      const userData = payload?.user;
-      if (userData) {
-        setUser(userData as User);
-        setImpersonationState(null);
-        setIsLoading(false);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      throw err;
+    const payload = await loginAuthContext(username, password);
+    const userData = payload?.user;
+    if (userData) {
+      setUser(userData as User);
+      setImpersonationState(null);
+      setIsLoading(false);
+      return true;
     }
+    return false;
   }, []);
 
   const logout = useCallback(() => {

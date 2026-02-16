@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, Download, Printer, Grid3x3, List, Eye } from "lucide-react";
 import SendDownloadModal from '@/components/SendDownloadModal';
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,9 +14,10 @@ import { Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle, } from "@/components/ui/dialog";
+import { useGoBack } from '@/hooks/useGoBack';
 
 export default function PaymentReceipts() {
-  const navigate = useNavigate();
+  const goBack = useGoBack('/payments');
   const clients = useStore((state) => state.clients)
   type PaymentRow = {
     id: string;
@@ -112,7 +112,7 @@ export default function PaymentReceipts() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="rounded-lg">
+          <Button variant="outline" size="icon" onClick={() => goBack('/payments')} className="rounded-lg">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useStore } from '@/stores/dataStore'
 import { useToast } from '@/contexts/ToastContext'
+import { useGoBack } from '@/hooks/useGoBack'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import type { ArchiveClient } from './types'
 import { formatArchiveDate, matchesClientSearch } from './utils'
@@ -21,6 +22,7 @@ type ConfirmDialogState = {
 
 export default function ArchivedClientsPage() {
   const navigate = useNavigate()
+  const goBack = useGoBack('/archive')
   const clients = useStore((state) => state.clients)
   const updateClient = useStore((state) => state.updateClient)
   const { addToast } = useToast()
@@ -89,9 +91,9 @@ export default function ArchivedClientsPage() {
   const rentalsArchived = archivedClients.reduce((sum, client) => sum + client.rentals.length, 0)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-24 sm:space-y-6 sm:pb-6">
       <SectionWrapper>
-        <ArchivedHeaderSection onBack={() => navigate(-1)} />
+        <ArchivedHeaderSection onBack={() => goBack('/archive')} />
       </SectionWrapper>
 
       <SectionWrapper>

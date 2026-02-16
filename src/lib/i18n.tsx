@@ -1,9 +1,8 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
 export type Language = 'fr' | 'en';
 
-type TranslationKey = string;
+export type TranslationKey = string;
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   fr: {
@@ -288,7 +287,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
   },
 };
 
-interface I18nContextType {
+type I18nContextType = {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: TranslationKey) => string;
@@ -296,7 +295,7 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
-interface I18nProviderProps {
+type I18nProviderProps = {
   children: ReactNode;
 }
 

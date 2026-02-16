@@ -20,9 +20,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/stores/dataStore';
 import { ajoutLocationSchema, AjoutLocationFormData } from '@/validators/frontend';
 import { applyApiFieldErrors } from '@/utils/apiFieldErrors';
+import { useGoBack } from '@/hooks/useGoBack';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AddRental() {
   const navigate = useNavigate();
+  const goBack = useGoBack('/rentals');
+  const { toast } = useToast();
   const { clientId: routeClientId, id: routeId } = useParams<{ clientId?: string; id?: string }>();
   const clientId = routeClientId || routeId || '';
   const clients = useStore((state) => state.clients)
@@ -60,7 +64,11 @@ export default function AddRental() {
     setIsLoading(true);
     try {
       if (!selectedClientId) {
-        alert('Veuillez sélectionner un client');
+        toast({
+          title: 'Erreur',
+          description: 'Veuillez sélectionner un client.',
+          variant: 'destructive',
+        });
         return;
       }
 
@@ -85,7 +93,11 @@ export default function AddRental() {
       const raw = e instanceof Error ? e.message : 'Impossible d’ajouter la location.';
       const message = raw.includes(':') ? raw.split(':').slice(-1)[0].trim() : raw;
       applyApiFieldErrors(form.setError, message);
-      alert(message || 'Impossible d’ajouter la location. Veuillez réessayer.');
+      toast({
+        title: 'Erreur',
+        description: message || 'Impossible d’ajouter la location. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +111,7 @@ export default function AddRental() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/rentals')}
+            onClick={() => goBack('/rentals')}
             className="border-slate-300 hover:bg-slate-100"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Home, RotateCcw, MapPin, Compass, AlertTriangle, Eye } from "lucide-react";
+import { useGoBack } from "@/hooks/useGoBack";
 
 const NotFound = () => {
+  const goBack = useGoBack("/");
   const [logoPosition, setLogoPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -189,7 +191,7 @@ const NotFound = () => {
             </span>
           </a>
           <button
-            onClick={() => window.history.back()}
+            onClick={() => goBack("/")}
             className="group flex items-center gap-2 rounded-full border-2 border-blue-300 px-8 py-4 font-semibold text-blue-700 transition-all hover:border-blue-500 hover:bg-blue-50 hover:text-blue-800"
           >
             <RotateCcw className="h-5 w-5 transition-transform group-hover:rotate-180" />

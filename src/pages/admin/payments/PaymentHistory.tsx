@@ -11,6 +11,7 @@ import type { Client, PaymentStatus, Rental } from "@/lib/types";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { BadgeStatut } from "@/components/BadgeStatut";
+import { useGoBack } from '@/hooks/useGoBack';
 
 type PaymentRow = {
   id: string;
@@ -33,6 +34,7 @@ type ReceiptDoc = {
 
 export default function PaymentHistory() {
   const navigate = useNavigate();
+  const goBack = useGoBack('/payments');
   const clients = useStore((state) => state.clients)
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
@@ -92,7 +94,7 @@ export default function PaymentHistory() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="rounded-lg">
+          <Button variant="outline" size="icon" onClick={() => goBack('/payments')} className="rounded-lg">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

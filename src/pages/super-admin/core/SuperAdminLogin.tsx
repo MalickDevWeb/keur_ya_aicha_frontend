@@ -279,6 +279,10 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, .7); }
           50% { box-shadow: 0 0 0 8px rgba(255, 0, 0, 0); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         .scanlines {
           background: repeating-linear-gradient(
             0deg, transparent, transparent 2px, rgba(0, 255, 255, .03) 2px, rgba(0, 255, 255, .03) 4px
@@ -292,10 +296,59 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           0%, 100% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.1); opacity: 0.8; }
         }
+        @media (max-width: 1024px) {
+          .superadmin-login {
+            grid-template-columns: 1fr !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: auto !important;
+            cursor: default !important;
+          }
+          .superadmin-panel {
+            padding: 40px 24px !important;
+          }
+          .superadmin-camera {
+            padding: 36px 20px !important;
+            justify-content: flex-start !important;
+          }
+          .superadmin-maincam {
+            height: 52vw !important;
+            max-height: 320px !important;
+            min-height: 200px !important;
+            border-width: 2px !important;
+          }
+          .superadmin-smallcam {
+            display: none !important;
+          }
+          .superadmin-auth {
+            max-width: 100% !important;
+            margin-top: 24px !important;
+          }
+          .superadmin-alerts {
+            display: none !important;
+          }
+          .superadmin-footer {
+            display: none !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .superadmin-panel {
+            padding: 32px 18px !important;
+          }
+          .superadmin-camera {
+            padding: 28px 16px !important;
+          }
+          .superadmin-maincam {
+            height: 60vw !important;
+            max-height: 300px !important;
+            min-height: 180px !important;
+          }
+        }
       `}} />
 
       <div
         onClick={handlePageClick}
+        className="superadmin-login"
         style={{
           height: '100vh',
           minHeight: '-webkit-fill-available',
@@ -309,6 +362,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
       >
         {/* LEFT - Security Panel */}
         <div
+          className="superadmin-panel"
           style={{
             position: 'relative',
             display: 'flex',
@@ -486,7 +540,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           </div>
 
           {/* Capture alerts */}
-          <div style={{ position: 'absolute', bottom: 80, left: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="superadmin-alerts" style={{ position: 'absolute', bottom: 80, left: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {capturedAlerts.map((alert) => (
               <div
                 key={alert.id}
@@ -515,6 +569,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
 
           {/* Footer */}
           <p
+            className="superadmin-footer"
             style={{
               position: 'absolute',
               bottom: 24,
@@ -529,6 +584,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
 
         {/* RIGHT - Camera View */}
         <div
+          className="superadmin-camera"
           style={{
             background: 'linear-gradient(180deg, #0a0a15 0%, #050510 100%)',
             display: 'flex',
@@ -543,6 +599,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           {/* Small camera in corner when form is shown */}
           {showFingerprint && (
             <div
+              className="superadmin-smallcam"
               style={{
                 position: 'absolute',
                 top: 20,
@@ -614,6 +671,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           {/* Main camera view - only visible when fingerprint is NOT clicked */}
           {!showFingerprint && (
             <div
+              className="superadmin-maincam"
               style={{
                 position: 'relative',
                 width: '100%',
@@ -715,6 +773,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           {/* Auth form when fingerprint clicked */}
           {showFingerprint && (
             <div
+              className="superadmin-auth"
               style={{
                 position: 'relative',
                 zIndex: 5,

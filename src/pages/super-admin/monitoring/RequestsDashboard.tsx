@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
-import { listAuditLogs } from '@/services/api/auditLogs.api'
-import { listBlockedIps, unblockIp } from '@/services/api/blockedIps.api'
+import { deleteAuditLogs, listAuditLogs } from '@/services/api/auditLogs.api'
+import { blockIp, listBlockedIps, unblockIp } from '@/services/api/blockedIps.api'
 import type { AuditLogDTO, BlockedIpDTO } from '@/dto/frontend/responses'
 import { Card } from '@/components/ui/card'
 import { CardContent } from '@/components/ui/card'
@@ -10,6 +10,10 @@ import { StatsCards } from '@/pages/common/StatsCards'
 import { AlertTriangle, Activity, Server, ShieldAlert, Unlock } from 'lucide-react'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 type SeriesPoint = { name: string; slow: number; errors: number }
 
@@ -40,11 +44,21 @@ function buildSeries(logs: AuditLogDTO[]): SeriesPoint[] {
 }
 
 export function RequestsDashboard() {
+  const { toast } = useToast()
   const [logs, setLogs] = useState<AuditLogDTO[]>([])
   const [blockedIps, setBlockedIps] = useState<BlockedIpDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingBlocks, setLoadingBlocks] = useState(true)
   const [unblockingId, setUnblockingId] = useState<string | null>(null)
+  const [blockIpValue, setBlockIpValue] = useState('')
+  const [blockReason, setBlockReason] = useState('')
+  const [blocking, setBlocking] = useState(false)
+  const [blockError, setBlockError] = useState('')
+  const [logSearch, setLogSearch] = useState('')
+  const [logFilter, setLogFilter] = useState<'all' | 'slow' | 'error' | 'server'>('all')
+  const [showAllLogs, setShowAllLogs] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [resettingLogs, setResettingLogs] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -73,6 +87,41 @@ export function RequestsDashboard() {
     }
   }
 
+  const isValidIp = (value: string) => {
+    const v = value.trim()
+    if (!v) return false
+    if (v.includes(':')) return /^[a-fA-F0-9:]+$/.test(v)
+    const parts = v.split('.')
+    if (parts.length !== 4) return false
+    return parts.every((p) => p !== '' && Number(p) >= 0 && Number(p) <= 255)
+  }
+
+  const handleBlock = async () => {
+    const ip = blockIpValue.trim()
+    if (!ip) {
+      setBlockError('Adresse IP requise.')
+      return
+    }
+    if (!isValidIp(ip)) {
+      setBlockError('Adresse IP invalide.')
+      return
+    }
+    if (blockedIps.some((b) => b.ip === ip)) {
+      setBlockError('Cette IP est déjà bloquée.')
+      return
+    }
+    setBlockError('')
+    setBlocking(true)
+    try {
+      const created = await blockIp({ ip, reason: blockReason.trim() })
+      setBlockedIps((prev) => [created, ...prev])
+      setBlockIpValue('')
+      setBlockReason('')
+    } finally {
+      setBlocking(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
     const loadBlocks = async () => {
@@ -95,12 +144,70 @@ export function RequestsDashboard() {
     [logs]
   )
 
+  const filteredRequestLogs = useMemo(() => {
+    const needle = String(logSearch || '').toLowerCase().trim()
+    return requestLogs.filter((log) => {
+      const action = String(log.action || '')
+      if (logFilter === 'slow' && !SLOW_ACTIONS.has(action)) return false
+      if (logFilter === 'error' && !ERROR_ACTIONS.has(action)) return false
+      if (logFilter === 'server' && action !== 'SERVER_ERROR') return false
+
+      if (!needle) return true
+      const haystack = [
+        log.message,
+        log.action,
+        log.targetType,
+        log.targetId,
+        log.actor,
+        log.ipAddress,
+      ]
+        .map((v) => String(v || '').toLowerCase())
+        .join(' ')
+      return haystack.includes(needle)
+    })
+  }, [requestLogs, logSearch, logFilter])
+
+  const visibleRequestLogs = useMemo(
+    () => (showAllLogs ? filteredRequestLogs : filteredRequestLogs.slice(0, 20)),
+    [filteredRequestLogs, showAllLogs]
+  )
+
+  const handleResetRequestLogs = async () => {
+    const idsToDelete = requestLogs.map((log) => log.id).filter(Boolean)
+    if (idsToDelete.length === 0) {
+      setResetDialogOpen(false)
+      return
+    }
+
+    setResettingLogs(true)
+    try {
+      await deleteAuditLogs(idsToDelete)
+      const idSet = new Set(idsToDelete.map((id) => String(id)))
+      setLogs((prev) => prev.filter((log) => !idSet.has(String(log.id))))
+      setShowAllLogs(false)
+      setResetDialogOpen(false)
+      toast({
+        title: 'Logs remis à zéro',
+        description: 'Les logs de surveillance ont été vidés.',
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Impossible de remettre les logs à zéro.'
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      })
+    } finally {
+      setResettingLogs(false)
+    }
+  }
+
   const slowCount = requestLogs.filter((l) => SLOW_ACTIONS.has(String(l.action || ''))).length
   const errorCount = requestLogs.filter((l) => ERROR_ACTIONS.has(String(l.action || ''))).length
   const series = useMemo(() => buildSeries(requestLogs), [requestLogs])
 
   return (
-    <main className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6 animate-fade-in">
+    <main className="max-w-6xl mx-auto w-full px-0 py-4 space-y-4 animate-fade-in sm:px-4 sm:py-6 sm:space-y-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader />
       </SectionWrapper>
@@ -166,7 +273,7 @@ export function RequestsDashboard() {
         <Card className="border-[#0B153D]/20 bg-[#0B153D] text-white shadow-[0_30px_80px_rgba(10,16,48,0.45)]">
           <CardContent className="p-0">
             <div className="border-b border-white/10 px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
                     <ShieldAlert className="h-5 w-5 text-[#7BA2FF]" />
@@ -176,10 +283,38 @@ export function RequestsDashboard() {
                     <p className="text-xs text-white/70">Détection active des tentatives excessives</p>
                   </div>
                 </div>
-                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
-                  {blockedIps.length} IP
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
+                    {blockedIps.length} IP
+                  </div>
                 </div>
               </div>
+            </div>
+            <div className="border-b border-white/10 px-5 py-4">
+              <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_auto]">
+                <input
+                  value={blockIpValue}
+                  onChange={(e) => setBlockIpValue(e.target.value)}
+                  placeholder="Bloquer une IP (ex: 192.168.0.10)"
+                  className="h-10 rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#7BA2FF]/60"
+                />
+                <input
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                  placeholder="Raison (optionnel)"
+                  className="h-10 rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#7BA2FF]/60"
+                />
+                <Button
+                  onClick={handleBlock}
+                  disabled={blocking}
+                  className="bg-white/15 text-white hover:bg-white/25"
+                >
+                  {blocking ? 'Blocage...' : 'Bloquer'}
+                </Button>
+              </div>
+              {blockError ? (
+                <div className="mt-2 text-xs text-rose-200">{blockError}</div>
+              ) : null}
             </div>
             {loadingBlocks ? (
               <div className="py-10 text-center text-sm text-white/70">Chargement...</div>
@@ -232,29 +367,102 @@ export function RequestsDashboard() {
             ) : requestLogs.length === 0 ? (
               <div className="py-12 text-center text-sm text-muted-foreground">Aucune alerte détectée.</div>
             ) : (
-              <div className="divide-y divide-[#121B53]/10">
-                {requestLogs.map((log) => (
-                  <div key={log.id} className="px-5 py-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-sm font-semibold text-[#121B53]">{log.message || log.action}</div>
-                      {log.createdAt ? (
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </div>
-                      ) : null}
+              <>
+                <div className="border-b border-[#121B53]/10 p-3 sm:p-5">
+                  <div className="flex flex-col gap-3">
+                    <Input
+                      value={logSearch}
+                      onChange={(e) => setLogSearch(e.target.value)}
+                      placeholder="Filtrer (action, endpoint, IP, message)"
+                      className="w-full sm:max-w-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                      {([
+                        { key: 'all', label: 'Tout' },
+                        { key: 'slow', label: 'Lentes' },
+                        { key: 'error', label: 'Erreurs' },
+                        { key: 'server', label: 'Serveur' },
+                      ] as const).map((option) => (
+                        <Button
+                          key={option.key}
+                          size="sm"
+                          variant={logFilter === option.key ? 'default' : 'outline'}
+                          className={cn(
+                            'w-full whitespace-normal text-center sm:w-auto',
+                            logFilter === option.key && 'bg-[#121B53] text-white hover:bg-[#0B153D]'
+                          )}
+                          onClick={() => setLogFilter(option.key)}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {log.action ? <span>Action: {log.action}</span> : null}
-                      {log.targetId ? <span> · Endpoint: {log.targetId}</span> : null}
-                      {log.ipAddress ? <span> · IP: {log.ipAddress}</span> : null}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-xs text-muted-foreground">
+                        Total: {requestLogs.length} · Filtrés: {filteredRequestLogs.length} · Affichés: {visibleRequestLogs.length}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setResetDialogOpen(true)}
+                        disabled={requestLogs.length === 0}
+                        className="w-full sm:w-auto"
+                      >
+                        Mettre tous les logs à 0
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+
+                {filteredRequestLogs.length === 0 ? (
+                  <div className="py-10 text-center text-sm text-muted-foreground">
+                    Aucun log ne correspond au filtre.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[#121B53]/10">
+                    {visibleRequestLogs.map((log) => (
+                      <div key={log.id} className="px-3 py-3 sm:px-5 sm:py-4">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                          <div className="text-sm font-semibold text-[#121B53] break-words">{log.message || log.action}</div>
+                          {log.createdAt ? (
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(log.createdAt).toLocaleString()}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground break-all">
+                          {log.action ? <span>Action: {log.action}</span> : null}
+                          {log.targetId ? <span> · Endpoint: {log.targetId}</span> : null}
+                          {log.ipAddress ? <span> · IP: {log.ipAddress}</span> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {filteredRequestLogs.length > 20 ? (
+                  <div className="border-t border-[#121B53]/10 px-3 py-3 sm:px-5">
+                    <Button variant="outline" size="sm" onClick={() => setShowAllLogs((prev) => !prev)}>
+                      {showAllLogs ? 'Voir moins' : 'Voir tout'}
+                    </Button>
+                  </div>
+                ) : null}
+              </>
             )}
           </CardContent>
         </Card>
       </SectionWrapper>
+
+      <ConfirmDialog
+        open={resetDialogOpen}
+        title="Réinitialiser les logs de surveillance ?"
+        description="Tous les logs de requêtes lentes/erreurs seront supprimés. Cette action est irréversible."
+        confirmText="Tout remettre à 0"
+        isDestructive
+        onCancel={() => setResetDialogOpen(false)}
+        onConfirm={handleResetRequestLogs}
+        isLoading={resettingLogs}
+      />
     </main>
   )
 }

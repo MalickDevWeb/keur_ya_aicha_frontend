@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
+import { useGoBack } from '@/hooks/useGoBack'
+import { useAuth } from '@/contexts/AuthContext'
 import { useStore } from '@/stores/dataStore'
+import type { ClientImportMapping } from '@/lib/importClients'
 import {
   buildRow,
   ClientImportError,
-  ClientImportMapping,
   DEFAULT_IMPORT_ALIASES,
+  DEFAULT_REQUIRED_FIELDS,
+  FIELD_LABELS,
+  CLIENT_IMPORT_FIELDS,
   guessMapping,
   parseSpreadsheet,
   validateRow,
@@ -16,14 +21,18 @@ import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { ImportHeaderSection } from './sections/ImportHeaderSection'
 import { FileUploadCard } from './sections/FileUploadCard'
 import { ErrorsCard } from './sections/ErrorsCard'
+import { MappingCard } from './sections/MappingCard'
 import type { RowOverrides } from './types'
 import { buildDuplicateLookup, buildDuplicateMessage, formatBackendError } from './utils'
+import { normalizeEmailForCompare, normalizePhoneForCompare } from '@/validators/frontend'
 
-const REQUIRED_FIELDS = ['firstName', 'lastName', 'phone'] as const
+const REQUIRED_FIELDS_KEY = 'import_clients_required_fields'
 
 export default function ImportClientsPage() {
   const navigate = useNavigate()
+  const goBack = useGoBack('/clients')
   const { toast } = useToast()
+  const { user } = useAuth()
   const clients = useStore((state) => state.clients)
   const addClient = useStore((state) => state.addClient)
 
@@ -38,6 +47,7 @@ export default function ImportClientsPage() {
   const [importAliases, setImportAliases] = useState<
     Partial<Record<keyof ClientImportMapping, string[]>> | null
   >(null)
+  const [requiredFields, setRequiredFields] = useState<Array<keyof ClientImportMapping>>(DEFAULT_REQUIRED_FIELDS)
 
   const { ownerByEmail, ownerByPhone } = useMemo(() => buildDuplicateLookup(clients), [clients])
   const hasData = headers.length > 0 && rows.length > 0
@@ -46,7 +56,8 @@ export default function ImportClientsPage() {
     let mounted = true
     async function loadImportAliases() {
       try {
-        const raw = await getSetting('import_clients_aliases')
+        const key = user?.id ? `import_clients_aliases:${user.id}` : 'import_clients_aliases'
+        const raw = await getSetting(key)
         if (!mounted) return
         if (!raw) {
           setImportAliases(DEFAULT_IMPORT_ALIASES)
@@ -62,14 +73,44 @@ export default function ImportClientsPage() {
     return () => {
       mounted = false
     }
+  }, [user?.id])
+
+  useEffect(() => {
+    let mounted = true
+    async function loadRequiredFields() {
+      try {
+        const raw = await getSetting(REQUIRED_FIELDS_KEY)
+        if (!mounted) return
+        if (!raw) {
+          setRequiredFields(DEFAULT_REQUIRED_FIELDS)
+          return
+        }
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter((field) => CLIENT_IMPORT_FIELDS.includes(field)) as Array<
+            keyof ClientImportMapping
+          >
+          setRequiredFields(valid.length > 0 ? valid : DEFAULT_REQUIRED_FIELDS)
+        } else {
+          setRequiredFields(DEFAULT_REQUIRED_FIELDS)
+        }
+      } catch {
+        setRequiredFields(DEFAULT_REQUIRED_FIELDS)
+      }
+    }
+    loadRequiredFields()
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const collectErrors = useCallback((): ClientImportError[] | null => {
-    const missingMapping = REQUIRED_FIELDS.filter((field) => mapping[field] === undefined)
+    const missingMapping = requiredFields.filter((field) => mapping[field] === undefined)
     if (missingMapping.length > 0) {
+      const missingLabels = missingMapping.map((field) => FIELD_LABELS[field] || field)
       toast({
         title: 'Mapping incomplet',
-        description: `Colonnes manquantes: ${missingMapping.join(', ')}`,
+        description: `Colonnes manquantes: ${missingLabels.join(', ')}`,
         variant: 'destructive',
       })
       return null
@@ -89,9 +130,9 @@ export default function ImportClientsPage() {
       if (isRowEmpty(row)) return
 
       const parsed = buildRow(row, mapping, overrides[idx])
-      const rowErrors = validateRow(parsed)
+      const rowErrors = validateRow(parsed, requiredFields)
 
-      const normalizedPhone = parsed.phone ? String(parsed.phone).trim() : ''
+      const normalizedPhone = normalizePhoneForCompare(String(parsed.phone || ''))
       if (normalizedPhone) {
         if (existingPhones.has(normalizedPhone)) {
           rowErrors.push(buildDuplicateMessage('phone', normalizedPhone, ownerByPhone))
@@ -102,7 +143,7 @@ export default function ImportClientsPage() {
         seenPhonesInFile.add(normalizedPhone)
       }
 
-      const normalizedEmail = parsed.email ? String(parsed.email).trim().toLowerCase() : ''
+      const normalizedEmail = normalizeEmailForCompare(String(parsed.email || ''))
       if (normalizedEmail) {
         if (existingEmails.has(normalizedEmail)) {
           rowErrors.push(buildDuplicateMessage('email', normalizedEmail, ownerByEmail))
@@ -125,7 +166,7 @@ export default function ImportClientsPage() {
     })
 
     return nextErrors
-  }, [rows, mapping, overrides, ownerByPhone, ownerByEmail, toast])
+  }, [rows, mapping, overrides, ownerByPhone, ownerByEmail, requiredFields, toast])
 
   const computeErrors = useCallback((opts?: { keepFixOpen?: boolean }) => {
     if (!hasData) {
@@ -170,7 +211,7 @@ export default function ImportClientsPage() {
     }
   }
 
-  const onUpdateOverride = (rowIndex: number, field: 'firstName' | 'lastName' | 'phone', value: string) => {
+  const onUpdateOverride = (rowIndex: number, field: 'firstName' | 'lastName' | 'phone' | 'cni', value: string) => {
     setOverrides((prev) => ({
       ...prev,
       [rowIndex]: {
@@ -181,19 +222,27 @@ export default function ImportClientsPage() {
   }
 
   const saveErrorsToServer = async (nextErrors: ClientImportError[]) => {
-    await createImportRun({
-      createdAt: new Date().toISOString(),
-      fileName,
-      totalRows: rows.length,
-      inserted: [],
-      errors: nextErrors.map((err) => ({
-        rowNumber: err.rowNumber,
-        errors: err.errors,
-        parsed: err.parsed,
-      })),
-      ignored: false,
-    })
-    navigate('/import/errors')
+    try {
+      await createImportRun({
+        createdAt: new Date().toISOString(),
+        adminId: user?.id,
+        fileName,
+        totalRows: rows.length,
+        inserted: [],
+        errors: nextErrors.map((err) => ({
+          rowNumber: err.rowNumber,
+          errors: err.errors,
+          parsed: err.parsed,
+        })),
+        ignored: false,
+        readSuccess: true,
+        readErrors: false,
+      })
+      navigate('/import/errors')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d'enregistrer les erreurs"
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    }
   }
 
   const handleImport = async () => {
@@ -211,16 +260,16 @@ export default function ImportClientsPage() {
         if (!row.some((cell) => cell !== null && cell !== undefined && String(cell).trim() !== '')) continue
 
         const parsed = buildRow(row, mapping, overrides[idx])
-        const rowErrors = validateRow(parsed)
+        const rowErrors = validateRow(parsed, requiredFields)
         if (rowErrors.length > 0) continue
 
         try {
           const result = await addClient({
             firstName: parsed.firstName || '',
             lastName: parsed.lastName || '',
-            phone: parsed.phone || '',
-            email: parsed.email || undefined,
-            cni: parsed.cni || undefined,
+            phone: String(parsed.phone || '').trim(),
+            email: parsed.email ? String(parsed.email).trim() : undefined,
+            cni: parsed.cni ? String(parsed.cni).trim() : undefined,
             status: parsed.status === 'archived' || parsed.status === 'blacklisted' ? parsed.status : 'active',
             rental: {
               propertyType: (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
@@ -255,6 +304,7 @@ export default function ImportClientsPage() {
 
       await createImportRun({
         createdAt: new Date().toISOString(),
+        adminId: user?.id,
         fileName,
         totalRows: rows.length,
         inserted,
@@ -264,6 +314,8 @@ export default function ImportClientsPage() {
           parsed: err.parsed,
         })),
         ignored: false,
+        readSuccess: inserted.length === 0,
+        readErrors: nextErrors.length === 0,
       })
 
       toast({
@@ -280,9 +332,9 @@ export default function ImportClientsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <SectionWrapper>
-        <ImportHeaderSection onBack={() => navigate('/clients')} />
+        <ImportHeaderSection onBack={() => goBack('/clients')} />
       </SectionWrapper>
 
       <SectionWrapper>
@@ -291,6 +343,17 @@ export default function ImportClientsPage() {
 
       {hasData && (
         <>
+          <SectionWrapper>
+            <MappingCard
+              headers={headers}
+              mapping={mapping}
+              requiredFields={requiredFields}
+              onMappingChange={setMapping}
+              onAnalyze={() => computeErrors()}
+              onImport={handleImport}
+              isImporting={isImporting}
+            />
+          </SectionWrapper>
           <SectionWrapper>
             <ErrorsCard
               errors={errors}

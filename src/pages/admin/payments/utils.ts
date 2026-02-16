@@ -18,6 +18,7 @@ export const buildPaymentRows = (clients: ClientDTO[]): PaymentRow[] => {
           ...payment,
           clientName,
           clientId: client.id,
+          clientPhone: client.phone || '',
           rentalId: rental.id,
           propertyName: rental.propertyName,
           propertyType: rental.propertyType,
@@ -39,7 +40,8 @@ export const filterPaymentRows = (rows: PaymentRow[], filters: PaymentFilters) =
     const matchesSearch =
       !needle ||
       payment.clientName.toLowerCase().includes(needle) ||
-      payment.propertyName.toLowerCase().includes(needle)
+      payment.propertyName.toLowerCase().includes(needle) ||
+      String(payment.clientPhone || '').toLowerCase().includes(needle)
 
     const matchesStatus = filters.statusFilter === 'all' || payment.status === filters.statusFilter
 
@@ -82,6 +84,7 @@ export const buildReceiptDocument = (
   return {
     payerName: client ? `${client.firstName} ${client.lastName}` : payment.clientName,
     payerPhone: client?.phone,
+    clientPhone: client?.phone,
     amount: record ? record.amount : payment.paidAmount || payment.amount,
     uploadedAt: record ? record.date : new Date(),
     name: `Reçu-${payment.id}`,

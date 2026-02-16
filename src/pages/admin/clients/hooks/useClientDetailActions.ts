@@ -1,9 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Client, MonthlyPayment, Rental } from '@/lib/types'
 import { useStore } from '@/stores/dataStore'
 import { useToast } from '@/hooks/use-toast'
 import { useI18n } from '@/lib/i18n'
 import { formatCurrency } from '@/lib/types'
+import { listUndoActions, rollbackUndoAction } from '@/services/api'
+
+type UndoEventDetail = {
+  id?: string
+  expiresAt?: string | null
+  resource?: string
+  resourceId?: string | null
+}
 
 export type SelectedPayment = {
   payment: MonthlyPayment
@@ -21,12 +29,14 @@ export type EditPayment = {
   rental: Rental
 }
 
-export function useClientDetailActions(_client: Client | null) {
+export function useClientDetailActions(client: Client | null) {
   const { t } = useI18n()
   const { toast } = useToast()
   const addMonthlyPayment = useStore((state) => state.addMonthlyPayment)
   const editMonthlyPayment = useStore((state) => state.editMonthlyPayment)
   const addDepositPayment = useStore((state) => state.addDepositPayment)
+  const fetchClients = useStore((state) => state.fetchClients)
+  const fetchStats = useStore((state) => state.fetchStats)
   const [selectedPayment, setSelectedPayment] = useState<SelectedPayment | null>(null)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [editPayment, setEditPayment] = useState<EditPayment | null>(null)
@@ -34,6 +44,50 @@ export function useClientDetailActions(_client: Client | null) {
   const [selectedDeposit, setSelectedDeposit] = useState<SelectedDeposit | null>(null)
   const [depositModalOpen, setDepositModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [latestUndoId, setLatestUndoId] = useState<string | null>(null)
+  const [isRollingBack, setIsRollingBack] = useState(false)
+
+  const resolveLatestClientUndoId = async () => {
+    if (!client?.id) return null
+    const list = await listUndoActions(20)
+    const latestForClient = list.find(
+      (entry) =>
+        entry.resource === 'clients' &&
+        String(entry.resourceId || '') === String(client.id) &&
+        new Date(entry.expiresAt).getTime() > Date.now()
+    )
+    return latestForClient?.id || null
+  }
+
+  const refreshUndoAvailability = async () => {
+    try {
+      const id = await resolveLatestClientUndoId()
+      setLatestUndoId(id)
+    } catch {
+      setLatestUndoId(null)
+    }
+  }
+
+  useEffect(() => {
+    void refreshUndoAvailability()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client?.id])
+
+  useEffect(() => {
+    const onUndoAvailable = (event: Event) => {
+      const detail = (event as CustomEvent<UndoEventDetail>).detail
+      if (!detail?.id) return
+      if (detail.expiresAt && new Date(detail.expiresAt).getTime() <= Date.now()) return
+      if (detail.resource === 'clients' && String(detail.resourceId || '') === String(client?.id || '')) {
+        setLatestUndoId(detail.id)
+      }
+    }
+
+    window.addEventListener('api-undo-available', onUndoAvailable)
+    return () => {
+      window.removeEventListener('api-undo-available', onUndoAvailable)
+    }
+  }, [client?.id])
 
   const openPaymentModal = (payment: MonthlyPayment, rental: Rental) => {
     setSelectedPayment({ payment, rental, maxAmount: payment.amount - payment.paidAmount })
@@ -59,6 +113,7 @@ export function useClientDetailActions(_client: Client | null) {
         title: t('common.success'),
         description: `Paiement de ${formatCurrency(selectedPayment.maxAmount)} FCFA enregistré`,
       })
+      await refreshUndoAvailability()
       setPaymentModalOpen(false)
       setSelectedPayment(null)
     } catch {
@@ -81,6 +136,7 @@ export function useClientDetailActions(_client: Client | null) {
         title: t('common.success'),
         description: `Paiement de ${formatCurrency(amount)} FCFA enregistré`,
       })
+      await refreshUndoAvailability()
       setPaymentModalOpen(false)
       setSelectedPayment(null)
     } catch {
@@ -103,6 +159,7 @@ export function useClientDetailActions(_client: Client | null) {
         title: t('common.success'),
         description: 'Paiement corrigé',
       })
+      await refreshUndoAvailability()
       setEditPaymentModalOpen(false)
       setEditPayment(null)
     } catch {
@@ -125,6 +182,7 @@ export function useClientDetailActions(_client: Client | null) {
         title: t('common.success'),
         description: `Paiement de caution de ${formatCurrency(selectedDeposit.maxAmount)} FCFA enregistré`,
       })
+      await refreshUndoAvailability()
       setDepositModalOpen(false)
       setSelectedDeposit(null)
     } catch {
@@ -147,6 +205,7 @@ export function useClientDetailActions(_client: Client | null) {
         title: t('common.success'),
         description: `Paiement de caution de ${formatCurrency(amount)} FCFA enregistré`,
       })
+      await refreshUndoAvailability()
       setDepositModalOpen(false)
       setSelectedDeposit(null)
     } catch {
@@ -157,6 +216,41 @@ export function useClientDetailActions(_client: Client | null) {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleRollbackLatestAction = async () => {
+    if (isRollingBack) return
+    try {
+      setIsRollingBack(true)
+      let undoId = latestUndoId
+      if (!undoId) {
+        undoId = await resolveLatestClientUndoId()
+        if (!undoId) {
+          throw new Error("Aucune action récente à annuler")
+        }
+        setLatestUndoId(undoId)
+      }
+
+      await rollbackUndoAction(undoId)
+      await Promise.all([fetchClients(), fetchStats()])
+      toast({
+        title: 'Rollback effectué',
+        description: 'La dernière action a été annulée.',
+      })
+      await refreshUndoAvailability()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Rollback impossible'
+      toast({
+        title: 'Rollback impossible',
+        description: message,
+        variant: 'destructive',
+      })
+      if (message.toLowerCase().includes('expir')) {
+        setLatestUndoId(null)
+      }
+    } finally {
+      setIsRollingBack(false)
     }
   }
 
@@ -179,5 +273,8 @@ export function useClientDetailActions(_client: Client | null) {
     handleEditPayment,
     handleDepositPayTotal,
     handleDepositPayPartial,
+    canRollback: !!latestUndoId,
+    isRollingBack,
+    handleRollbackLatestAction,
   }
 }

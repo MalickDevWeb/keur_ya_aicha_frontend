@@ -22,11 +22,13 @@ import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/stores/dataStore';
 import { PropertyType, formatCurrency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useGoBack } from '@/hooks/useGoBack';
 import { ajoutClientSchema, AjoutClientFormData } from '@/validators/frontend';
 import { applyApiFieldErrors } from '@/utils/apiFieldErrors';
 
 export default function AddClient() {
   const navigate = useNavigate();
+  const goBack = useGoBack('/clients');
   const { t } = useI18n();
   const addClient = useStore((state) => state.addClient)
   const { toast } = useToast();
@@ -230,7 +232,7 @@ export default function AddClient() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => goBack('/clients')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-foreground">{t('addClient.title')}</h1>
@@ -452,7 +454,7 @@ export default function AddClient() {
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => navigate(-1)}
+              onClick={() => goBack('/clients')}
             >
               {t('common.cancel')}
             </Button>

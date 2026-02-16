@@ -32,7 +32,6 @@ export function CreateAdminForm({
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
-    username: '',
     name: '',
     email: '',
     entreprise: '',
@@ -46,15 +45,19 @@ export function CreateAdminForm({
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    if (!formData.username || !formData.password) {
-      setError('Nom d\'utilisateur et mot de passe requis')
+    if (!formData.name || !formData.password) {
+      setError('Nom et mot de passe requis')
       return
     }
 
     setCreating(true)
     try {
+      const generatedUsername =
+        formData.phone?.trim() ||
+        formData.name.trim().toLowerCase().replace(/\s+/g, '') ||
+        `admin-${Date.now().toString(36)}`
       const newAdmin = await createAdmin({
-        username: formData.username,
+        username: generatedUsername,
         password: formData.password,
         name: formData.name,
         email: formData.email,
@@ -64,7 +67,6 @@ export function CreateAdminForm({
 
       onSuccess(newAdmin)
       setFormData({
-        username: '',
         name: '',
         email: '',
         entreprise: '',
@@ -91,11 +93,6 @@ export function CreateAdminForm({
         {error && <FormError message={error} />}
 
         <div className="space-y-4">
-          <Input
-            placeholder="Nom d'utilisateur"
-            value={formData.username}
-            onChange={(e) => handleChange('username', e.target.value)}
-          />
           <Input
             placeholder="Nom complet"
             value={formData.name}

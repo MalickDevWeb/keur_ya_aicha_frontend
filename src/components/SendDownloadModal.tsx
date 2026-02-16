@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useElectronAPI } from '@/hooks/useElectronAPI';
+import { getCloudinaryOpenUrl } from '@/services/api/uploads.api';
+import { useToast } from '@/hooks/use-toast';
 
 // Dynamic import for os module (only available in Node.js/Electron context)
 const getHomeDir = async (): Promise<string> => {
@@ -21,16 +23,32 @@ interface Props {
     url?: string;
     type?: string;
     clientPhone?: string;
+    payerPhone?: string;
     clientId?: string;
     [key: string]: unknown;
   } | null;
   onClose: () => void;
 }
 
+const normalizeWhatsappPhone = (phone?: string): string => {
+  const digits = String(phone || '').replace(/[^\d]/g, '')
+  if (!digits) return ''
+  if (digits.startsWith('221')) return digits
+  if (digits.length === 9) return `221${digits}`
+  return digits
+}
+
+const buildWhatsAppUrl = (phone: string, text: string): string => {
+  const encoded = encodeURIComponent(text)
+  if (!phone) return `https://wa.me/?text=${encoded}`
+  return `https://wa.me/${phone}?text=${encoded}`
+}
+
 export default function SendDownloadModal({ document: doc, onClose }: Props) {
   const [generating, setGenerating] = useState(false);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const { isElectron, saveDocument, openFolder } = useElectronAPI();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!doc) {
@@ -50,8 +68,9 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
     try {
       // if original file url exists and not a receipt, download it directly
       if (doc.url && doc.type !== 'receipt') {
+        const openUrl = await getCloudinaryOpenUrl(String(doc.url));
         const a = document.createElement('a');
-        a.href = doc.url;
+        a.href = openUrl;
         a.download = doc.name || 'document';
         document.body.appendChild(a);
         a.click();
@@ -69,7 +88,10 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
         const clientPhone = doc.clientPhone || doc.clientId || 'unknown';
         const result = await saveDocument(`${doc.name || 'document'}.pdf`, blob, docType, clientPhone);
         if (result?.success) {
-          alert(`Fichier sauvegardé dans:\n${result.folderPath}`);
+          toast({
+            title: 'Document sauvegardé',
+            description: String(result.folderPath || 'Le fichier a été sauvegardé.'),
+          });
         }
       } else {
         // Fallback: télécharger normalement
@@ -80,7 +102,7 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       setBlobUrl(url);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Impossible de générer le PDF.';
-      alert(message);
+      toast({ title: 'Erreur', description: message, variant: 'destructive' });
     } finally {
       setGenerating(false);
     }
@@ -98,11 +120,15 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
     }
     try {
       setGenerating(true);
-      const { generatePdfForDocument, shareBlobViaWebShare, uploadBlobToFileIo } = await import('@/lib/pdfUtils');
+      const { generatePdfForDocument, uploadBlobToFileIo } = await import('@/lib/pdfUtils');
+      const whatsappPhone = normalizeWhatsappPhone(String(doc.clientPhone || doc.payerPhone || ''))
+      let text = `Voici le document ${doc.name || ''}`;
+
       let blob: Blob | null = null;
       if (doc.url && doc.type !== 'receipt') {
         try {
-          const resp = await fetch(doc.url);
+          const openUrl = await getCloudinaryOpenUrl(String(doc.url));
+          const resp = await fetch(openUrl);
           if (resp.ok) blob = await resp.blob();
         } catch (err) {
           void err;
@@ -111,68 +137,29 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       if (!blob) {
         blob = await generatePdfForDocument(doc);
       }
+      try {
+        const link = await uploadBlobToFileIo(blob, `${doc.name || 'document'}.pdf`);
+        text = `Voici le document ${doc.name || ''} : ${link}`;
+      } catch (err) {
+        void err;
+      }
 
-      const shared = await shareBlobViaWebShare(blob, `${doc.name || 'document'}.pdf`, `${doc.name || 'Document'}`);
-
-      if (!shared) {
-        try {
-          const allowUpload = window.confirm('Partager un lien nécessite un envoi du document vers un service externe. Continuer ?');
-          if (!allowUpload) {
-            const text = `Voici le document ${doc.name || ''}`;
-            const webUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-            if (win) win.location.href = webUrl;
-            else {
-              const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
-              if (popup) {
-                try {
-                  popup.opener = null;
-                } catch (err) {
-                  void err;
-                }
-              }
-            }
-            return;
+      const webUrl = buildWhatsAppUrl(whatsappPhone, text);
+      if (win) {
+        win.location.href = webUrl;
+      } else {
+        const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
+        if (popup) {
+          try {
+            popup.opener = null;
+          } catch (err) {
+            void err;
           }
-          const link = await uploadBlobToFileIo(blob, `${doc.name || 'document'}.pdf`);
-          const text = `Voici le document ${doc.name || ''} : ${link}`;
-          const webUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-          if (win) win.location.href = webUrl;
-          else {
-            const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
-            if (popup) {
-              try {
-                popup.opener = null;
-              } catch (err) {
-                void err;
-              }
-            }
-          }
-        } catch (err) {
-          void err;
-          const text = `Voici le document ${doc.name || ''}`;
-          const webUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-          if (win) win.location.href = webUrl;
-          else {
-            const popup = window.open(webUrl, '_blank', 'noopener,noreferrer');
-            if (popup) {
-              try {
-                popup.opener = null;
-              } catch (err) {
-                void err;
-              }
-            }
-          }
-        }
-      } else if (win) {
-        try {
-          win.close();
-        } catch (err) {
-          void err;
         }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Impossible d\u2019envoyer le document.';
-      alert(message);
+      toast({ title: 'Erreur', description: message, variant: 'destructive' });
       if (win) {
         try {
           win.close();
@@ -187,7 +174,10 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
 
   const handleOpenFolder = async () => {
     if (!isElectron) {
-      alert('Cette fonction n\'est disponible que dans la version desktop');
+      toast({
+        title: 'Information',
+        description: "Cette fonction n'est disponible que dans la version desktop.",
+      });
       return;
     }
     try {
@@ -208,7 +198,11 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       await openFolder(folderPath);
     } catch (err) {
       void err;
-      alert('Erreur lors de l\'ouverture du dossier');
+      toast({
+        title: 'Erreur',
+        description: "Erreur lors de l'ouverture du dossier.",
+        variant: 'destructive',
+      });
     }
   };
 
@@ -239,7 +233,9 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
               <Button variant="secondary" onClick={handleOpenFolder}>📁 Ouvrir le dossier</Button>
             )}
             <Button variant="outline" onClick={handleDownload} disabled={generating}>{generating ? 'Génération...' : 'Télécharger'}</Button>
-            <Button className="bg-secondary hover:bg-secondary/90" onClick={handleSendWhatsapp} disabled={generating}>Envoyer sur WhatsApp</Button>
+            <Button className="bg-secondary hover:bg-secondary/90" onClick={handleSendWhatsapp} disabled={generating}>
+              Envoyer au client (WhatsApp)
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>

@@ -27,6 +27,7 @@ export type ParsedRow = {
 
 export type StoredErrors = {
   id: string
+  adminId?: string
   createdAt: string
   fileName: string
   totalRows: number
@@ -39,6 +40,8 @@ export type StoredErrors = {
   }>
   errors: Array<{ rowNumber: number; errors: string[]; parsed: ParsedRow }>
   ignored: boolean
+  readSuccess?: boolean
+  readErrors?: boolean
 }
 
 export const buildDuplicateLookup = (
@@ -83,12 +86,45 @@ export const formatBackendError = (
   ownerByEmail: Map<string, Owner>
 ) => {
   const message = String((err as { message?: string })?.message || 'Erreur lors de la création')
-  if (message.includes('409')) {
+  const lowerMessage = message.toLowerCase()
+  const isDuplicateConflict =
+    message.includes('409') ||
+    lowerMessage.includes('existe déjà') ||
+    lowerMessage.includes('existe deja') ||
+    lowerMessage.includes('already exists') ||
+    lowerMessage.includes('duplicate') ||
+    lowerMessage.includes('doublon') ||
+    lowerMessage.includes('conflit')
+
+  if (isDuplicateConflict) {
     const phone = normalizePhoneForCompare(parsed?.phone || '')
-    if (phone && ownerByPhone.has(phone)) return buildDuplicateMessage('phone', phone, ownerByPhone)
     const email = normalizeEmailForCompare(parsed?.email || '')
-    if (email && ownerByEmail.has(email)) return buildDuplicateMessage('email', email, ownerByEmail)
-    return 'Doublon détecté (numéro/email déjà utilisé)'
+
+    const reasons: string[] = []
+    if (phone && ownerByPhone.has(phone)) {
+      reasons.push(buildDuplicateMessage('phone', phone, ownerByPhone))
+    }
+    if (email && ownerByEmail.has(email)) {
+      reasons.push(buildDuplicateMessage('email', email, ownerByEmail))
+    }
+
+    if (reasons.length === 1) {
+      return `${reasons[0]} (doublon en base / HTTP 409)`
+    }
+    if (reasons.length > 1) {
+      return `${reasons.join(' ; ')} (doublon en base / HTTP 409)`
+    }
+
+    const details = [
+      parsed?.phone ? `téléphone: ${String(parsed.phone).trim()}` : null,
+      parsed?.email ? `email: ${String(parsed.email).trim()}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ')
+
+    return details
+      ? `Doublon en base (HTTP 409) détecté par le serveur, champ exact non précisé. Vérifiez téléphone/email (${details}).`
+      : 'Doublon en base (HTTP 409) détecté par le serveur, champ exact non précisé (téléphone ou email).'
   }
   if (message.includes('401')) return 'Non autorisé (session expirée)'
   return message

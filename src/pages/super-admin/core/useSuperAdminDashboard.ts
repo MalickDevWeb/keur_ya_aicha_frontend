@@ -5,6 +5,7 @@ import {
   fetchAdminRequests,
   fetchAdmins,
   fetchAuditLogs,
+  fetchAdminPayments,
   fetchClients,
   fetchEntreprises,
   fetchUsers,
@@ -14,7 +15,7 @@ import type {
   AdminRequestDTO,
 } from '@/dto/frontend/responses'
 import type { CreatedAdmin } from './types'
-import { createEntityId, normalize, normalizePhone } from './utils'
+import { buildCredentialsMessage, createEntityId, formatPhoneForWhatsapp, normalize, normalizePhone } from './utils'
 
 export function useSuperAdminDashboard() {
   const [state, setState] = useState({
@@ -31,6 +32,7 @@ export function useSuperAdminDashboard() {
     },
     createdAdmin: null,
     admins: [],
+    adminPayments: [],
     requests: [],
     entreprises: [],
     users: [],
@@ -50,13 +52,14 @@ export function useSuperAdminDashboard() {
   const refresh = async () => {
     setState((prev) => ({ ...prev, loading: true }))
     try {
-      const [admins, requests, entreprises, users, clients, logs] = await Promise.all([
+      const [admins, requests, entreprises, users, clients, logs, adminPayments] = await Promise.all([
         fetchAdmins(),
         fetchAdminRequests(),
         fetchEntreprises(),
         fetchUsers(),
         fetchClients(),
         fetchAuditLogs(),
+        fetchAdminPayments(),
       ])
       const paymentStats = calculatePaymentStats(clients)
       setState((prev) => ({
@@ -66,6 +69,7 @@ export function useSuperAdminDashboard() {
         entreprises,
         users,
         auditLogs: logs,
+        adminPayments,
         paymentStats,
         loading: false,
       }))
@@ -95,18 +99,23 @@ export function useSuperAdminDashboard() {
 
   const handleCreateAdmin = async () => {
     const { newAdmin } = state
-    if (!newAdmin.username || !newAdmin.name || !newAdmin.entreprise) {
-      setState((prev) => ({ ...prev, createError: 'Tous les champs sont obligatoires.' }))
+    if (!newAdmin.name || !newAdmin.entreprise) {
+      setState((prev) => ({ ...prev, createError: 'Nom et entreprise requis.' }))
       return
     }
     setState((prev) => ({ ...prev, creating: true, createError: '' }))
     try {
       const createdAt = new Date().toISOString()
       const userId = createEntityId('user')
+      const generatedUsername =
+        newAdmin.username?.trim() ||
+        normalizePhone(newAdmin.phone || '') ||
+        normalize(newAdmin.name).replace(/\s+/g, '') ||
+        createEntityId('admin')
 
       await createUser({
         id: userId,
-        username: newAdmin.username,
+        username: generatedUsername,
         password: newAdmin.password || 'admin123',
         name: newAdmin.name,
         email: newAdmin.email,
@@ -119,7 +128,7 @@ export function useSuperAdminDashboard() {
       await createAdmin({
         id: userId,
         userId,
-        username: newAdmin.username,
+        username: generatedUsername,
         name: newAdmin.name,
         email: newAdmin.email,
         status: 'ACTIF',
@@ -129,7 +138,7 @@ export function useSuperAdminDashboard() {
 
       setState((prev) => ({
         ...prev,
-        createdAdmin: { ...newAdmin, createdAt },
+        createdAdmin: { ...newAdmin, username: generatedUsername, createdAt },
         newAdmin: {
           username: '',
           name: '',
@@ -197,21 +206,32 @@ export function useSuperAdminDashboard() {
         paidAt: new Date().toISOString(),
       })
 
+      const createdAdmin: CreatedAdmin = {
+        name: req.name,
+        username,
+        password,
+        email: req.email || '',
+        entreprise: req.entrepriseName || '',
+        phone: req.phone || '',
+        createdAt: new Date().toISOString(),
+      }
+
       setState((prev) => ({
         ...prev,
         requests: prev.requests.map((r) => (r.id === req.id ? updated : r)),
         approveErrors: { ...prev.approveErrors, [req.id]: '' },
-        createdAdmin: {
-          name: req.name,
-          username,
-          password,
-          email: req.email || '',
-          entreprise: req.entrepriseName || '',
-          phone: req.phone || '',
-          createdAt: new Date().toISOString(),
-        },
+        createdAdmin,
         isCreateOpen: true,
       }))
+
+      if (createdAdmin.phone) {
+        const phone = formatPhoneForWhatsapp(createdAdmin.phone)
+        if (phone) {
+          const appUrl = `${window.location.origin}/login`
+          const message = encodeURIComponent(buildCredentialsMessage(createdAdmin, appUrl))
+          window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
+        }
+      }
       refresh()
     } catch {
       setState((prev) => ({
@@ -242,6 +262,7 @@ export function useSuperAdminDashboard() {
   return {
     admins: state.admins,
     entreprises: state.entreprises,
+    adminPayments: state.adminPayments,
     pendingRequests,
     visiblePending,
     showAllPending: state.showAllPending,
@@ -262,8 +283,6 @@ export function useSuperAdminDashboard() {
     setCreateError: (value: string) => setState((prev) => ({ ...prev, createError: value })),
     isCreateOpen: state.isCreateOpen,
     setIsCreateOpen: (value: boolean) => setState((prev) => ({ ...prev, isCreateOpen: value })),
-    newUsername: state.newAdmin.username,
-    setNewUsername: (value: string) => setNewAdminField('username', value),
     newName: state.newAdmin.name,
     setNewName: (value: string) => setNewAdminField('name', value),
     newEmail: state.newAdmin.email,

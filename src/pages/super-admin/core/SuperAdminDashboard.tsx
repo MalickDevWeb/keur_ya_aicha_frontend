@@ -27,6 +27,7 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
   const {
     admins,
     entreprises,
+    adminPayments,
     pendingRequests,
     visiblePending,
     showAllPending,
@@ -47,8 +48,6 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
     setCreateError,
     isCreateOpen,
     setIsCreateOpen,
-    newUsername,
-    setNewUsername,
     newName,
     setNewName,
     newEmail,
@@ -129,7 +128,6 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
       doc.setFontSize(11)
       const rows = [
         ['Nom', data.name],
-        ['Username', data.username],
         ['Mot de passe', data.password],
         ['Email', data.email || '—'],
         ['Entreprise', data.entreprise || '—'],
@@ -194,7 +192,8 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
       doc.setFontSize(9)
       doc.text('Document généré par le Super Admin', 12, pageHeight - 16)
 
-      doc.save(`admin-${data.username}.pdf`)
+      const safeName = String(data.name || 'admin').trim().toLowerCase().replace(/\s+/g, '-')
+      doc.save(`admin-${safeName}.pdf`)
     } finally {
       setPdfLoading(false)
     }
@@ -228,8 +227,6 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
         creating={creating}
         createError={createError}
         setCreateError={setCreateError}
-        newUsername={newUsername}
-        setNewUsername={setNewUsername}
         newName={newName}
         setNewName={setNewName}
         newEmail={newEmail}
@@ -262,15 +259,16 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
         onApprove={approveRequest}
       />
 
-      <GlobalStatsSection
-        sectionId={SECTION_IDS.globalStats}
-        admins={admins}
-        entreprises={entreprises}
-        pendingRequests={pendingRequests}
-        paymentDistribution={paymentDistribution}
-        totalPayments={totalPayments}
-        pieColors={[...PIE_COLORS]}
-      />
+        <GlobalStatsSection
+          sectionId={SECTION_IDS.globalStats}
+          admins={admins}
+          entreprises={entreprises}
+          pendingRequests={pendingRequests}
+          adminPayments={adminPayments}
+          paymentDistribution={paymentDistribution}
+          totalPayments={totalPayments}
+          pieColors={[...PIE_COLORS]}
+        />
     </div>
   )
 }

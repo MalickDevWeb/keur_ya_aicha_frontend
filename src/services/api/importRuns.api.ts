@@ -19,7 +19,7 @@ export async function createImportRun(data: ImportRunCreateDTO): Promise<ImportR
  * @returns Array d'exécutions triées par date
  */
 export async function listImportRuns(): Promise<ImportRunDTO[]> {
-  const data = await apiFetch<Array<{ createdAt?: string }>>('/import_runs')
+  const data = await apiFetch<ImportRunDTO[]>('/import_runs')
   return Array.isArray(data)
     ? [...data].sort(
         (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
@@ -38,4 +38,11 @@ export async function updateImportRun(id: string, data: ImportRunUpdateDTO): Pro
     method: 'PATCH',
     body: JSON.stringify(data),
   })
+}
+
+export async function markImportRunRead(
+  id: string,
+  type: 'success' | 'errors'
+): Promise<ImportRunDTO> {
+  return updateImportRun(id, type === 'success' ? { readSuccess: true } : { readErrors: true })
 }

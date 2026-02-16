@@ -60,13 +60,11 @@ export function AdminsDashboard() {
     if (!needle) return rows
     return rows.filter(({ admin, entreprises }) => {
       const name = String(admin.name || '').toLowerCase()
-      const username = String(admin.username || '').toLowerCase()
       const email = String(admin.email || '').toLowerCase()
       const status = String(admin.status || '').toLowerCase()
       const entNames = entreprises.map((e) => String(e.name || '').toLowerCase()).join(' ')
       return (
         name.includes(needle) ||
-        username.includes(needle) ||
         email.includes(needle) ||
         status.includes(needle) ||
         entNames.includes(needle)

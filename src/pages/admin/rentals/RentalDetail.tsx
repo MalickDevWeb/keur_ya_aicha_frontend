@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Download, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,10 +20,12 @@ import { formatCurrency } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRentalDetail } from './hooks/useRentalDetail';
+import { useGoBack } from '@/hooks/useGoBack';
 
 export default function RentalDetail() {
-  const { id: rentalId } = useParams();
-  const navigate = useNavigate();
+  const params = useParams();
+  const rentalId = params.id || params.rentalId;
+  const goBack = useGoBack('/rentals');
   const {
     rental,
     client,
@@ -57,7 +59,7 @@ export default function RentalDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Location non trouvée</p>
-        <Button onClick={() => navigate('/rentals')} className="mt-4">
+        <Button onClick={() => goBack('/rentals')} className="mt-4">
           Retour aux locations
         </Button>
       </div>
@@ -82,7 +84,7 @@ export default function RentalDetail() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/rentals')}
+          onClick={() => goBack('/rentals')}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour

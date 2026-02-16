@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
+import { useGoBack } from '@/hooks/useGoBack'
 import { useStore } from '@/stores/dataStore'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { getCloudinaryOpenUrl } from '@/services/api/uploads.api'
 import type { DocumentFilter, DocumentGroup, DocumentRow } from './types'
 import {
   buildDocumentsList,
@@ -28,6 +31,7 @@ const getGroupCounts = (groups: DocumentGroup[]) =>
 
 export default function DocumentsPage() {
   const navigate = useNavigate()
+  const goBack = useGoBack('/dashboard')
   const [searchParams] = useSearchParams()
   const clients = useStore((state) => state.clients)
   const addDocument = useStore((state) => state.addDocument)
@@ -45,6 +49,7 @@ export default function DocumentsPage() {
   const [modalDoc, setModalDoc] = useState<DocumentRow | null>(null)
   const [modalGenerating, setModalGenerating] = useState(false)
   const [modalBlobUrl, setModalBlobUrl] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null)
 
   useEffect(() => {
     const filter = (searchParams.get('filter') || '') as DocumentFilter
@@ -157,8 +162,9 @@ export default function DocumentsPage() {
     if (!modalDoc) return
     try {
       if (modalDoc.url && modalDoc.type !== 'receipt') {
+        const openUrl = await getCloudinaryOpenUrl(String(modalDoc.url))
         const link = document.createElement('a')
-        link.href = modalDoc.url
+        link.href = openUrl
         link.download = modalDoc.name || 'document'
         document.body.appendChild(link)
         link.click()
@@ -183,7 +189,8 @@ export default function DocumentsPage() {
       let blob: Blob | null = null
       if (modalDoc.url && modalDoc.type !== 'receipt') {
         try {
-          const response = await fetch(modalDoc.url)
+          const openUrl = await getCloudinaryOpenUrl(String(modalDoc.url))
+          const response = await fetch(openUrl)
           if (response.ok) blob = await response.blob()
         } catch {
           blob = null
@@ -212,8 +219,19 @@ export default function DocumentsPage() {
 
   const handleDelete = (doc: DocumentRow) => {
     if (doc.isMissing) return
-    if (!window.confirm(`Supprimer le document "${doc.name}" ?`)) return
-    deleteDocument(doc.clientId, doc.rentalId, doc.id)
+    setDeleteTarget(doc)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      await deleteDocument(deleteTarget.clientId, deleteTarget.rentalId, deleteTarget.id)
+      toast({ title: 'Document supprimé', description: `"${deleteTarget.name}" a été supprimé.` })
+      setDeleteTarget(null)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Impossible de supprimer le document.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    }
   }
 
   const hasNoResults = filteredDocuments.length === 0 && (searchQuery || filterType)
@@ -222,7 +240,7 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-6">
       <SectionWrapper>
-        <DocumentsHeaderSection filterType={filterType} onBack={() => navigate(-1)} />
+        <DocumentsHeaderSection filterType={filterType} onBack={() => goBack('/dashboard')} />
       </SectionWrapper>
 
       <SectionWrapper>
@@ -305,6 +323,18 @@ export default function DocumentsPage() {
         }}
         onDownload={handleModalDownload}
         onSendWhatsapp={handleModalSendWhatsapp}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Supprimer le document ?"
+        description={deleteTarget ? `Le document "${deleteTarget.name}" sera supprimé.` : ''}
+        confirmText="Supprimer"
+        isDestructive
+        onConfirm={() => {
+          void confirmDelete()
+        }}
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   )

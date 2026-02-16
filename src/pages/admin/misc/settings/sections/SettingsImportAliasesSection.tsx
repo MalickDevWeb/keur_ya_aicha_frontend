@@ -24,7 +24,7 @@ export function SettingsImportAliasesSection({
     <section className="mt-10">
       <h3 className="font-medium">Format d'import Excel</h3>
       <p className="text-sm text-muted-foreground mt-2">
-        Définissez les alias de colonnes pour l'import. Exemple: si votre fichier contient "CN1", ajoutez-le dans la
+        Définissez votre format d'import (par admin). Exemple: si votre fichier contient "CN1", ajoutez-le dans la
         liste de <span className="font-medium">cni</span>.
       </p>
 
