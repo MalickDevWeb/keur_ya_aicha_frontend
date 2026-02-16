@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Shield, Lock, User, Eye, EyeOff, Loader2, ArrowRight, Key, Fingerprint, Radio, AlertTriangle, Camera, CheckCircle } from 'lucide-react'
+import { Shield, Lock, User, Eye, EyeOff, Loader2, ArrowRight, Key, Fingerprint, Radio, AlertTriangle, Camera } from 'lucide-react'
 
 export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAuth?: boolean }) {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, user, verifySuperAdminSecondAuth } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -32,6 +32,12 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (!requireSecondAuth) return
+    if (!user?.username) return
+    setUsername(String(user.username))
+  }, [requireSecondAuth, user?.username])
 
   // Animated scanline effect
   useEffect(() => {
@@ -68,8 +74,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
 
         streamRef.current = stream
         setCameraReady(true)
-      } catch (err) {
-        console.log('Camera not available:', err)
+      } catch {
         if (mounted) setCameraReady(false)
       }
     }
@@ -105,13 +110,12 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
     setError('')
     setLoading(true)
     try {
-      const ok = await login(username, password)
+      const ok = requireSecondAuth
+        ? await verifySuperAdminSecondAuth(password)
+        : await login(username, password)
       if (!ok) {
-        setError('Identifiants invalides')
+        setError(requireSecondAuth ? 'Mot de passe invalide' : 'Identifiants invalides')
         return
-      }
-      if (requireSecondAuth) {
-        sessionStorage.setItem('superadminSecondAuth', 'true')
       }
       navigate('/pmt/admin', { replace: true })
     } catch (err: unknown) {
@@ -212,8 +216,8 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
       clickOsc.start(t + 0.025)
       clickOsc.stop(t + 0.05)
 
-    } catch (err) {
-      console.log('Audio not available')
+    } catch {
+      // ignore audio availability errors
     }
   }, [])
 
@@ -229,18 +233,8 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
     if (ctx) {
       ctx.drawImage(video, 0, 0)
 
-      canvasRef.current!.toBlob(async (blob) => {
+      canvasRef.current!.toBlob((blob) => {
         if (blob) {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-          const filename = `surveillance-capture-${timestamp}.jpg`
-
-          console.log('📸 CAPTURED:', {
-            filename,
-            size: blob.size,
-            type: blob.type,
-            timestamp: new Date().toLocaleString()
-          })
-
           setCapturedAlerts(prev => [...prev.slice(-4), { id: Date.now(), time: new Date().toLocaleTimeString() }])
         }
       }, 'image/jpeg', 0.85)
@@ -795,13 +789,13 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(0, 200, 255, .7)', marginBottom: 8 }}>
-                    Identifiant
+                    {requireSecondAuth ? 'Compte Super Admin' : 'Identifiant'}
                   </label>
                   <div style={{ position: 'relative', borderRadius: 14, border: `2px solid ${error ? 'rgba(239,68,68,.5)' : username ? 'rgba(0, 200, 255, .3)' : 'rgba(255,255,255,.1)'}`, background: 'rgba(255,255,255,.02)', transition: 'all .25s' }}>
                     <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: username ? '#00c8ff' : 'rgba(255,255,255,.3)' }}>
                       <User size={18} />
                     </span>
-                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="superadmin"
+                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="superadmin" disabled={requireSecondAuth}
                       style={{ width: '100%', padding: '14px 46px 14px 50px', border: 'none', background: 'transparent', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500, color: '#fff', outline: 'none', borderRadius: 14 }} />
                   </div>
                 </div>

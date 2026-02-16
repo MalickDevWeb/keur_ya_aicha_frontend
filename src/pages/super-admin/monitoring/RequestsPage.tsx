@@ -7,7 +7,7 @@ import { Navigate } from 'react-router-dom'
 export default function RequestsPage() {
   const { user } = useAuth()
   const role = String(user?.role || '').toUpperCase()
-  const needsSecondAuth = role === 'SUPER_ADMIN' && sessionStorage.getItem('superadminSecondAuth') !== 'true'
+  const needsSecondAuth = role === 'SUPER_ADMIN' && user?.superAdminSecondAuthRequired !== false
 
   if (!user) return <Navigate to="/login" replace />
   if (needsSecondAuth) return <Navigate to="/pmt/admin" replace />

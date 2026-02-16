@@ -28,13 +28,93 @@ type ElectronRuntimeApi = {
   setRuntimeConfig?: (payload: RuntimeConfigPayload) => Promise<RuntimeConfigResponse>
 }
 
-const DEFAULT_API_BASE = String(import.meta.env.VITE_API_URL || 'http://localhost:4000')
-  .trim()
-  .replace(/\/+$/, '')
-const DEFAULT_CLOUDINARY_SIGN_URL = String(import.meta.env.VITE_CLOUDINARY_SIGN_URL || '').trim()
+const URL_PROTOCOLS = new Set(['http:', 'https:'])
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
 
 const RUNTIME_API_BASE_KEY = 'kya_runtime_api_base'
 const RUNTIME_SIGN_URL_KEY = 'kya_runtime_sign_url'
+
+function isPrivateIpv4Host(hostname: string): boolean {
+  const match = String(hostname || '').trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (!match) return false
+
+  const octets = match.slice(1).map((value) => Number(value))
+  if (octets.some((value) => !Number.isFinite(value) || value < 0 || value > 255)) return false
+
+  const [first, second] = octets
+  if (first === 10) return true
+  if (first === 172 && second >= 16 && second <= 31) return true
+  if (first === 192 && second === 168) return true
+  if (first === 169 && second === 254) return true
+  return false
+}
+
+function isLocalHost(hostname: string): boolean {
+  const safeHostname = String(hostname || '').trim().toLowerCase()
+  if (!safeHostname) return false
+  if (LOCAL_HOSTS.has(safeHostname)) return true
+  if (safeHostname.endsWith('.local')) return true
+  return isPrivateIpv4Host(safeHostname)
+}
+
+function normalizeRuntimeUrl(value: string, label: string, stripTrailingSlash = false): string {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    throw new Error(`${label} invalide.`)
+  }
+
+  if (!URL_PROTOCOLS.has(parsed.protocol)) {
+    throw new Error(`${label} doit utiliser http(s).`)
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error(`${label} ne doit pas contenir d'identifiants.`)
+  }
+
+  if (parsed.protocol === 'http:' && !isLocalHost(parsed.hostname)) {
+    throw new Error(`${label} doit être en https hors réseau local.`)
+  }
+
+  const serialized = parsed.toString()
+  if (stripTrailingSlash) return serialized.replace(/\/+$/, '')
+  return serialized
+}
+
+export function validateRuntimeApiBaseUrl(value: string): string {
+  return normalizeRuntimeUrl(value, "L'URL de l'API backend", true)
+}
+
+export function validateRuntimeSignUrl(value: string): string {
+  return normalizeRuntimeUrl(value, "L'URL de signature Cloudinary", false)
+}
+
+const normalizeApiBaseUrl = (value: string): string => validateRuntimeApiBaseUrl(value)
+const normalizeSignUrl = (value: string): string => validateRuntimeSignUrl(value)
+
+const normalizeApiBaseUrlSafe = (value: string): string => {
+  try {
+    return normalizeApiBaseUrl(value)
+  } catch {
+    return ''
+  }
+}
+
+const normalizeSignUrlSafe = (value: string): string => {
+  try {
+    return normalizeSignUrl(value)
+  } catch {
+    return ''
+  }
+}
+
+const DEFAULT_API_BASE =
+  normalizeApiBaseUrlSafe(String(import.meta.env.VITE_API_URL || 'http://localhost:4000')) || 'http://localhost:4000'
+const DEFAULT_CLOUDINARY_SIGN_URL = normalizeSignUrlSafe(String(import.meta.env.VITE_CLOUDINARY_SIGN_URL || ''))
 
 const runtimeState: RuntimeConfigState = {
   apiBaseUrl: DEFAULT_API_BASE,
@@ -53,26 +133,35 @@ const getElectronRuntimeApi = (): ElectronRuntimeApi | undefined => {
   return (window as Window & { electronAPI?: ElectronRuntimeApi }).electronAPI
 }
 
-const normalizeApiBaseUrl = (value: string): string => String(value || '').trim().replace(/\/+$/, '')
-const normalizeSignUrl = (value: string): string => String(value || '').trim()
-
-const readLocalStorageConfig = (): RuntimeConfigPayload => {
-  if (typeof window === 'undefined') return {}
+const readLocalStorageKey = (
+  key: string,
+  normalize: (value: string) => string
+): string => {
+  if (typeof window === 'undefined') return ''
   try {
-    return {
-      apiBaseUrl: normalizeApiBaseUrl(localStorage.getItem(RUNTIME_API_BASE_KEY) || ''),
-      cloudinarySignUrl: normalizeSignUrl(localStorage.getItem(RUNTIME_SIGN_URL_KEY) || ''),
+    const rawValue = String(localStorage.getItem(key) || '').trim()
+    if (!rawValue) return ''
+    try {
+      return normalize(rawValue)
+    } catch {
+      localStorage.removeItem(key)
+      return ''
     }
   } catch {
-    return {}
+    return ''
   }
 }
+
+const readLocalStorageConfig = (): RuntimeConfigPayload => ({
+  apiBaseUrl: readLocalStorageKey(RUNTIME_API_BASE_KEY, normalizeApiBaseUrl),
+  cloudinarySignUrl: readLocalStorageKey(RUNTIME_SIGN_URL_KEY, normalizeSignUrl),
+})
 
 const writeLocalStorageConfig = (payload: RuntimeConfigPayload): void => {
   if (typeof window === 'undefined') return
   try {
-    const apiBaseUrl = normalizeApiBaseUrl(payload.apiBaseUrl || '')
-    const cloudinarySignUrl = normalizeSignUrl(payload.cloudinarySignUrl || '')
+    const apiBaseUrl = normalizeApiBaseUrlSafe(payload.apiBaseUrl || '')
+    const cloudinarySignUrl = normalizeSignUrlSafe(payload.cloudinarySignUrl || '')
 
     if (apiBaseUrl) localStorage.setItem(RUNTIME_API_BASE_KEY, apiBaseUrl)
     else localStorage.removeItem(RUNTIME_API_BASE_KEY)
@@ -89,11 +178,12 @@ const applyConfig = (
   source: RuntimeConfigState['source'],
   paths?: { userPath?: string; portablePath?: string; writtenPath?: string }
 ) => {
-  const apiBaseUrl = normalizeApiBaseUrl(payload.apiBaseUrl || '')
-  const cloudinarySignUrl = normalizeSignUrl(payload.cloudinarySignUrl || '')
-
-  if (apiBaseUrl || payload.apiBaseUrl === '') runtimeState.apiBaseUrl = apiBaseUrl
-  if (cloudinarySignUrl || payload.cloudinarySignUrl === '') runtimeState.cloudinarySignUrl = cloudinarySignUrl
+  if (Object.prototype.hasOwnProperty.call(payload, 'apiBaseUrl')) {
+    runtimeState.apiBaseUrl = normalizeApiBaseUrlSafe(payload.apiBaseUrl || '')
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'cloudinarySignUrl')) {
+    runtimeState.cloudinarySignUrl = normalizeSignUrlSafe(payload.cloudinarySignUrl || '')
+  }
 
   runtimeState.source = source
   runtimeState.loaded = true

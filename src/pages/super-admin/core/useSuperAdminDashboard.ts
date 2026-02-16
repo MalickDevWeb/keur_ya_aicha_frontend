@@ -229,7 +229,7 @@ export function useSuperAdminDashboard() {
         if (phone) {
           const appUrl = `${window.location.origin}/login`
           const message = encodeURIComponent(buildCredentialsMessage(createdAdmin, appUrl))
-          window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
+          window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener,noreferrer')
         }
       }
       refresh()

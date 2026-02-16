@@ -10,6 +10,8 @@ const DEFAULT_RUNTIME_CONFIG = Object.freeze({
   apiBaseUrl: '',
   cloudinarySignUrl: '',
 })
+const URL_PROTOCOLS = new Set(['http:', 'https:'])
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
 
 if (process.platform === 'linux') {
   app.disableHardwareAcceleration()
@@ -24,16 +26,64 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.keuryaicha.app')
 }
 
-function normalizeRuntimeConfig(value = {}) {
-  const apiBaseUrl = String(value?.apiBaseUrl || '')
-    .trim()
-    .replace(/\/+$/, '')
-  const cloudinarySignUrl = String(value?.cloudinarySignUrl || '').trim()
+function isPrivateIpv4Host(hostname = '') {
+  const match = String(hostname || '').trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (!match) return false
 
-  return {
-    apiBaseUrl,
-    cloudinarySignUrl,
+  const octets = match.slice(1).map((value) => Number(value))
+  if (octets.some((value) => !Number.isFinite(value) || value < 0 || value > 255)) return false
+
+  const [first, second] = octets
+  if (first === 10) return true
+  if (first === 172 && second >= 16 && second <= 31) return true
+  if (first === 192 && second === 168) return true
+  if (first === 169 && second === 254) return true
+  return false
+}
+
+function isLocalHost(hostname = '') {
+  const safeHostname = String(hostname || '').trim().toLowerCase()
+  if (!safeHostname) return false
+  if (LOCAL_HOSTS.has(safeHostname)) return true
+  if (safeHostname.endsWith('.local')) return true
+  return isPrivateIpv4Host(safeHostname)
+}
+
+function normalizeRuntimeUrl(value = '', { label = 'URL', stripTrailingSlash = false } = {}) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+
+  let parsed
+  try {
+    parsed = new URL(raw)
+  } catch {
+    throw new Error(`${label} invalide.`)
   }
+
+  if (!URL_PROTOCOLS.has(parsed.protocol)) {
+    throw new Error(`${label} doit utiliser http(s).`)
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error(`${label} ne doit pas contenir d'identifiants.`)
+  }
+  if (parsed.protocol === 'http:' && !isLocalHost(parsed.hostname)) {
+    throw new Error(`${label} doit être en https hors réseau local.`)
+  }
+
+  const serialized = parsed.toString()
+  return stripTrailingSlash ? serialized.replace(/\/+$/, '') : serialized
+}
+
+function normalizeRuntimeConfig(value = {}) {
+  const apiBaseUrl = normalizeRuntimeUrl(value?.apiBaseUrl || '', {
+    label: "URL API backend",
+    stripTrailingSlash: true,
+  })
+  const cloudinarySignUrl = normalizeRuntimeUrl(value?.cloudinarySignUrl || '', {
+    label: "URL Cloudinary Sign",
+  })
+
+  return { apiBaseUrl, cloudinarySignUrl }
 }
 
 function getUserRuntimeConfigPath() {

@@ -9,6 +9,7 @@ export interface AuthUser {
   subscriptionOverdueMonth?: string | null
   subscriptionDueAt?: string | null
   subscriptionRequiredMonth?: string | null
+  superAdminSecondAuthRequired?: boolean
 }
 
 export interface UserDTO extends AuthUser {

@@ -61,10 +61,10 @@ describe('Login page', () => {
     render(<LoginPage />)
 
     fireEvent.change(screen.getByPlaceholderText('+221 77 123 45 67'), { target: { value: '770000000' } })
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'bad' } })
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'badpass' } })
 
     fireEvent.click(screen.getByRole('button', { name: /Se connecter/i }))
 
-    await waitFor(() => expect(screen.getByText(/Identifiants invalides/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText(/Identifiants incorrects/i).length).toBeGreaterThan(0))
   })
 })

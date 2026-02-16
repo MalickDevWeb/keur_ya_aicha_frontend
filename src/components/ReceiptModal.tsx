@@ -86,34 +86,16 @@ export function ReceiptModal({
         downloadBlob(blob, `${docForPdf.name || 'recu'}.pdf`);
         const shared = await shareBlobViaWebShare(blob, `${docForPdf.name || 'recu'}.pdf`, `Reçu: ${docForPdf.name}`);
         if (!shared) {
-          try {
-            const { uploadBlobToFileIo } = await import('@/lib/pdfUtils');
-            const link = await uploadBlobToFileIo(blob, `${docForPdf.name || 'recu'}.pdf`);
-            const win = window.open(
-              `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}: ${link}`)}`,
-              '_blank',
-              'noopener,noreferrer'
-            );
-            if (win) {
-              try {
-                win.opener = null;
-              } catch (err) {
-                void err;
-              }
-            }
-          } catch (err) {
-            void err;
-            const win = window.open(
-              `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`,
-              '_blank',
-              'noopener,noreferrer'
-            );
-            if (win) {
-              try {
-                win.opener = null;
-              } catch (err) {
-                void err;
-              }
+          const win = window.open(
+            `https://wa.me/?text=${encodeURIComponent(`Reçu ${docForPdf.name} pour ${clientName}`)}`,
+            '_blank',
+            'noopener,noreferrer'
+          );
+          if (win) {
+            try {
+              win.opener = null;
+            } catch (err) {
+              void err;
             }
           }
         }

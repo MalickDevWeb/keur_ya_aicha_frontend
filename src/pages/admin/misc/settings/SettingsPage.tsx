@@ -15,7 +15,13 @@ import {
   savePlatformConfig,
   sendComplianceWebhookAlert,
 } from '@/services/platformConfig'
-import { ensureRuntimeConfigLoaded, getRuntimeConfigSnapshot, updateRuntimeConfig } from '@/services/runtimeConfig'
+import {
+  ensureRuntimeConfigLoaded,
+  getRuntimeConfigSnapshot,
+  updateRuntimeConfig,
+  validateRuntimeApiBaseUrl,
+  validateRuntimeSignUrl,
+} from '@/services/runtimeConfig'
 import { SettingsHeaderSection } from './sections/SettingsHeaderSection'
 import { SettingsGovernanceSection } from './sections/SettingsGovernanceSection'
 import { SettingsImportAliasesSection } from './sections/SettingsImportAliasesSection'
@@ -254,18 +260,13 @@ export default function SettingsPage() {
 
   const saveRuntimeConfig = async () => {
     void logAction('settings.runtimeConfig.save.start')
-    const apiBaseUrl = normalizeApiBaseUrl(runtimeApiBaseUrl)
-    const cloudinarySignUrl = normalizeSignUrl(runtimeSignUrl)
-
-    if (apiBaseUrl && !isValidHttpUrl(apiBaseUrl)) {
-      const message = "L'URL de l'API backend est invalide."
-      toast({ title: 'Erreur', description: message, variant: 'destructive' })
-      void logAction('settings.runtimeConfig.save.error', { message })
-      return
-    }
-
-    if (cloudinarySignUrl && !isValidHttpUrl(cloudinarySignUrl)) {
-      const message = "L'URL de signature Cloudinary est invalide."
+    let apiBaseUrl = ''
+    let cloudinarySignUrl = ''
+    try {
+      apiBaseUrl = validateRuntimeApiBaseUrl(normalizeApiBaseUrl(runtimeApiBaseUrl))
+      cloudinarySignUrl = validateRuntimeSignUrl(normalizeSignUrl(runtimeSignUrl))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'URL runtime invalide.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
       void logAction('settings.runtimeConfig.save.error', { message })
       return

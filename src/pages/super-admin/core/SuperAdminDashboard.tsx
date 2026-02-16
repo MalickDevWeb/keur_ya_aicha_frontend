@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { jsPDF } from 'jspdf'
 import { CreateAdminDialog } from '../sections/CreateAdminDialog'
 import { PendingRequestsSection } from '../sections/PendingRequestsSection'
 import { GlobalStatsSection } from '../sections/GlobalStatsSection'
 import type { CreatedAdmin } from './types'
 import { CONTRACT_META, PIE_COLORS, SECTION_IDS } from './constants'
-import { extractSuperAdminSectionHash } from './hash-routing'
+import { extractSuperAdminSectionHash, extractSuperAdminSectionSearch } from './hash-routing'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import {
@@ -17,13 +16,14 @@ import {
 } from './utils'
 import { useSuperAdminDashboard } from './useSuperAdminDashboard'
 import type { AdminDTO } from '@/dto/frontend/responses'
-import { Input } from '@/components/ui/input' // Fix missing Input import
+import { useLocation } from 'react-router-dom'
 
 interface SuperAdminDashboardProps {
   onCreatedAdmin?: (admin: AdminDTO) => void
 }
 
 export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAdminDashboardProps) {
+  const location = useLocation()
   const [pdfLoading, setPdfLoading] = useState(false)
   const {
     admins,
@@ -62,21 +62,16 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
     loading,
   } = useSuperAdminDashboard()
 
-  const [filterBy, setFilterBy] = useState('entreprise')
-
   useEffect(() => {
-    const handleHash = () => {
-      const sectionId = extractSuperAdminSectionHash(window.location.hash)
-      if (!sectionId) return
-      const el = document.getElementById(sectionId)
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
+    const sectionId =
+      extractSuperAdminSectionSearch(location.search) ||
+      extractSuperAdminSectionHash(location.hash)
+    if (!sectionId) return
+    const el = document.getElementById(sectionId)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-    handleHash()
-    window.addEventListener('hashchange', handleHash)
-    return () => window.removeEventListener('hashchange', handleHash)
-  }, [])
+  }, [location.hash, location.search])
 
   useEffect(() => {
     const shouldOpen = sessionStorage.getItem('superadminOpenCreate') === 'true'
@@ -205,7 +200,7 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
     if (!phone) return
     const appUrl = `${window.location.origin}/login`
     const message = encodeURIComponent(buildCredentialsMessage(data, appUrl))
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener,noreferrer')
   }
 
   if (loading) {

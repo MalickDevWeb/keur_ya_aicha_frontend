@@ -4,23 +4,39 @@ import { MainLayout } from '@/layouts/MainLayout'
 import { SuperAdminDashboard } from './SuperAdminDashboard'
 import { SuperAdminLogin } from './SuperAdminLogin'
 import { ForbiddenMessage } from './ForbiddenMessage'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { SECTION_IDS } from './constants'
-import { buildSuperAdminSectionHash, extractSuperAdminSectionHash } from './hash-routing'
+import {
+  buildSuperAdminSectionSearch,
+  extractSuperAdminSectionHash,
+  extractSuperAdminSectionSearch,
+} from './hash-routing'
 
 export default function SuperAdminPage() {
   const { user } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const role = String(user?.role || '').toUpperCase()
-  const needsSecondAuth = role === 'SUPER_ADMIN' && sessionStorage.getItem('superadminSecondAuth') !== 'true'
+  const needsSecondAuth = role === 'SUPER_ADMIN' && user?.superAdminSecondAuthRequired !== false
 
   useEffect(() => {
     if (role !== 'SUPER_ADMIN') return
-    if (extractSuperAdminSectionHash(window.location.hash)) return
-    const nextHash = buildSuperAdminSectionHash(window.location.hash, SECTION_IDS.pendingRequests)
-    if (nextHash && nextHash !== window.location.hash) {
-      window.location.hash = nextHash
+    const sectionInSearch = extractSuperAdminSectionSearch(location.search)
+    const legacySection = extractSuperAdminSectionHash(location.hash)
+    const section = sectionInSearch || legacySection || SECTION_IDS.pendingRequests
+    const nextSearch = buildSuperAdminSectionSearch(location.search, section)
+
+    if (nextSearch !== location.search || (legacySection && !sectionInSearch) || location.hash) {
+      navigate(
+        {
+          pathname: location.pathname,
+          search: nextSearch,
+          hash: '',
+        },
+        { replace: true }
+      )
     }
-  }, [role])
+  }, [location.hash, location.pathname, location.search, navigate, role])
 
   if (!user) return <Navigate to="/login" replace />
   if (needsSecondAuth) return <SuperAdminLogin requireSecondAuth />

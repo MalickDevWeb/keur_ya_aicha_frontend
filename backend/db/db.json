@@ -3660,6 +3660,62 @@
         "role": "SUPER_ADMIN",
         "name": "Super Admin"
       }
+    },
+    {
+      "id": "b2fb",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext/super-admin/second-auth",
+      "message": "Erreur API POST /authContext/super-admin/second-auth",
+      "createdAt": "2026-02-16T22:49:35.002Z"
+    },
+    {
+      "id": "d15e",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext/super-admin/second-auth",
+      "message": "Erreur API POST /authContext/super-admin/second-auth",
+      "createdAt": "2026-02-16T22:49:49.703Z"
+    },
+    {
+      "id": "2362",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext/super-admin/second-auth",
+      "message": "Erreur API POST /authContext/super-admin/second-auth",
+      "createdAt": "2026-02-16T22:50:58.662Z"
+    },
+    {
+      "id": "2256",
+      "actor": "client",
+      "action": "API_ERROR",
+      "targetType": "request",
+      "targetId": "/authContext/super-admin/second-auth",
+      "message": "Erreur API POST /authContext/super-admin/second-auth",
+      "createdAt": "2026-02-16T22:55:46.185Z"
+    },
+    {
+      "id": "log-mlps7vcy-f1l2",
+      "actor": "superadmin-001",
+      "action": "SUPER_ADMIN_SECOND_AUTH_SUCCESS",
+      "targetType": "auth",
+      "targetId": "superadmin-001",
+      "message": "Seconde authentification Super Admin validée",
+      "ipAddress": "::1",
+      "createdAt": "2026-02-16T23:04:50.050Z"
+    },
+    {
+      "id": "log-mlpskzgl-e23d",
+      "actor": "superadmin-001",
+      "action": "SUPER_ADMIN_SECOND_AUTH_SUCCESS",
+      "targetType": "auth",
+      "targetId": "superadmin-001",
+      "message": "Seconde authentification Super Admin validée",
+      "ipAddress": "::1",
+      "createdAt": "2026-02-16T23:15:01.893Z"
     }
   ],
   "entreprises": [],

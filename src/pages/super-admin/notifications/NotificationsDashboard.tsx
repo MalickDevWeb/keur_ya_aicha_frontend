@@ -94,7 +94,7 @@ export function NotificationsDashboard() {
                   onClick={() => {
                     handleRead(notif)
                     if (notif.type === 'ADMIN_REQUEST') {
-                      navigate('/pmt/admin#demandes-en-attente')
+                      navigate('/pmt/admin?section=demandes-en-attente')
                     } else if (notif.type === 'SECURITY_ALERT') {
                       navigate('/pmt/admin/monitoring/requests')
                     }

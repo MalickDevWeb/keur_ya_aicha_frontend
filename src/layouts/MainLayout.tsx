@@ -318,7 +318,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                       className="col-span-2 w-full text-white hover:bg-white/10 md:col-auto md:w-auto"
                       onClick={() => {
                         clearImpersonation();
-                        navigate('/pmt/admin#demandes-en-attente');
+                        navigate('/pmt/admin?section=demandes-en-attente');
                       }}
                     >
                       Quitter

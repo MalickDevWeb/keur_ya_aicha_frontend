@@ -40,7 +40,7 @@ export interface CrudEndpoint<T extends BaseEntity, CreateDTO, UpdateDTO = Parti
  */
 export function createCrudEndpoint<T extends BaseEntity, CreateDTO, UpdateDTO = Partial<CreateDTO>>(
   path: string,
-  resourceName: string
+  _resourceName: string
 ): CrudEndpoint<T, CreateDTO, UpdateDTO> {
   return {
     async list(): Promise<T[]> {

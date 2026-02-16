@@ -187,9 +187,11 @@ export default function DocumentsPage() {
     if (!modalDoc) return
     try {
       let blob: Blob | null = null
+      let shareableUrl = ''
       if (modalDoc.url && modalDoc.type !== 'receipt') {
         try {
           const openUrl = await getCloudinaryOpenUrl(String(modalDoc.url))
+          shareableUrl = openUrl
           const response = await fetch(openUrl)
           if (response.ok) blob = await response.blob()
         } catch {
@@ -199,17 +201,20 @@ export default function DocumentsPage() {
 
       if (!blob) blob = await generateAndGetBlob(modalDoc)
 
-      const { shareBlobViaWebShare, uploadBlobToFileIo } = await import('@/lib/pdfUtils')
+      const { shareBlobViaWebShare } = await import('@/lib/pdfUtils')
       const shared = await shareBlobViaWebShare(blob, `${modalDoc.name || 'document'}.pdf`, modalDoc.name || 'Document')
       if (shared) return
 
-      try {
-        const link = await uploadBlobToFileIo(blob, `${modalDoc.name || 'document'}.pdf`)
-        const text = `Voici le document ${modalDoc.name || ''} : ${link}`
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
-      } catch {
-        const text = `Voici le document ${modalDoc.name || ''}`
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+      const text = shareableUrl
+        ? `Voici le document ${modalDoc.name || ''} : ${shareableUrl}`
+        : `Voici le document ${modalDoc.name || ''}`
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+
+      if (!shareableUrl) {
+        toast({
+          title: 'Information',
+          description: 'Le PDF est local. Joignez-le manuellement dans WhatsApp si nécessaire.',
+        })
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Impossible d’envoyer le document.'

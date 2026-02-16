@@ -6,6 +6,7 @@ import {
   loginAuthContext,
   logoutAuthContext,
   setImpersonation as setImpersonationApi,
+  verifySuperAdminSecondAuth as verifySuperAdminSecondAuthApi,
 } from '@/services/api';
 import {
   clearFailedLoginAttempts,
@@ -24,6 +25,7 @@ export type User = {
   subscriptionOverdueMonth?: string | null;
   subscriptionDueAt?: string | null;
   subscriptionRequiredMonth?: string | null;
+  superAdminSecondAuthRequired?: boolean;
 };
 
 type AuthContextType = {
@@ -32,6 +34,7 @@ type AuthContextType = {
   isLoading: boolean;
   impersonation: ImpersonationState;
   login: (username: string, password: string) => Promise<boolean>;
+  verifySuperAdminSecondAuth: (password: string) => Promise<boolean>;
   logout: () => void;
   setImpersonation: (payload: ImpersonationState) => Promise<void>;
   clearImpersonation: () => Promise<void>;
@@ -49,6 +52,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [impersonation, setImpersonationState] = useState<ImpersonationState>(null);
   const SESSION_LOGIN_AT_KEY = 'kya_session_login_at';
   const SESSION_LAST_ACTIVITY_KEY = 'kya_session_last_activity';
+  const LAST_LOGIN_USERNAME_KEY = 'kya_last_login_username';
 
   // Restore user session from backend (persistent)
   useEffect(() => {
@@ -62,7 +66,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!mounted) return;
         setUser(null);
         setImpersonationState(null);
-        sessionStorage.removeItem('superadminSecondAuth');
         sessionStorage.removeItem(SESSION_LOGIN_AT_KEY);
         sessionStorage.removeItem(SESSION_LAST_ACTIVITY_KEY);
         setIsLoading(false);
@@ -74,6 +77,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!mounted) return;
         setUser(ctx.user as User | null);
         setImpersonationState(ctx.impersonation || null);
+        if (ctx.user?.username) {
+          localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(ctx.user.username));
+        }
         if (ctx.user?.id && !sessionStorage.getItem(SESSION_LOGIN_AT_KEY)) {
           sessionStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()));
         }
@@ -102,6 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setImpersonationState(null);
       setIsLoading(false);
       clearFailedLoginAttempts();
+      localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(userData.username || username || ''));
       sessionStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()));
       sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
       return true;
@@ -109,10 +116,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return false;
   }, []);
 
+  const verifySuperAdminSecondAuth = useCallback(async (password: string): Promise<boolean> => {
+    const payload = await verifySuperAdminSecondAuthApi(password, user?.username);
+    const userData = payload?.user;
+    if (userData) {
+      setUser(userData as User);
+      setIsLoading(false);
+      localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(userData.username || user?.username || ''));
+      sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
+      return true;
+    }
+    return false;
+  }, [user?.username]);
+
   const logout = useCallback(() => {
     setUser(null);
     setImpersonationState(null);
-    sessionStorage.removeItem('superadminSecondAuth');
     sessionStorage.removeItem(SESSION_LOGIN_AT_KEY);
     sessionStorage.removeItem(SESSION_LAST_ACTIVITY_KEY);
     logoutAuthContext();
@@ -133,7 +152,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!user?.id) return;
 
     let active = true;
-    void refreshPlatformConfigFromServer();
+    const role = String(user.role || '').toUpperCase();
+    const requiresSecondAuth = role === 'SUPER_ADMIN' && user.superAdminSecondAuthRequired !== false;
+    if (!requiresSecondAuth) {
+      void refreshPlatformConfigFromServer();
+    }
 
     const markActivity = () => {
       sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
@@ -178,7 +201,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       events.forEach((eventName) => window.removeEventListener(eventName, markActivity));
       window.clearInterval(interval);
     };
-  }, [logout, user?.id]);
+  }, [logout, user?.id, user?.role, user?.superAdminSecondAuthRequired]);
 
   return (
     <AuthContext.Provider
@@ -188,6 +211,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading,
         impersonation,
         login,
+        verifySuperAdminSecondAuth,
         logout,
         setImpersonation,
         clearImpersonation: clearImpersonationState,

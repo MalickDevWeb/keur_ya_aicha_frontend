@@ -247,23 +247,3 @@ export async function shareBlobViaWebShare(blob: Blob, filename = 'document.pdf'
   }
   return false
 }
-
-export async function uploadBlobToFileIo(blob: Blob, filename = 'document.pdf') {
-  try {
-    const form = new FormData()
-    form.append('file', new File([blob], filename, { type: 'application/pdf' }))
-    // expires parameter: 1w = one week
-    const res = await fetch('https://file.io/?expires=1w', {
-      method: 'POST',
-      body: form,
-    })
-    const data = await res.json()
-    // file.io returns { success: true, link: 'https://file.io/...' }
-    if (data && data.success && data.link) return data.link
-    if (data && data.link) return data.link
-    throw new Error('Upload failed')
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : 'Upload to file.io failed'
-    throw new Error(message)
-  }
-}

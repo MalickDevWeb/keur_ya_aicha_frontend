@@ -26,6 +26,13 @@ export function DataProvider({ children }: DataProviderProps) {
       return
     }
 
+    const role = String(user.role || '').toUpperCase()
+    const requiresSecondAuth = role === 'SUPER_ADMIN' && user.superAdminSecondAuthRequired !== false
+    if (requiresSecondAuth) {
+      resetData()
+      return
+    }
+
     const initializeStore = async () => {
       try {
         await Promise.all([fetchClients(), fetchStats()])
@@ -36,7 +43,17 @@ export function DataProvider({ children }: DataProviderProps) {
     }
 
     void initializeStore()
-  }, [fetchClients, fetchStats, resetData, isAuthenticated, isLoading, user?.id, impersonation?.adminId])
+  }, [
+    fetchClients,
+    fetchStats,
+    resetData,
+    isAuthenticated,
+    isLoading,
+    user?.id,
+    user?.role,
+    user?.superAdminSecondAuthRequired,
+    impersonation?.adminId,
+  ])
 
   return <>{children}</>
 }

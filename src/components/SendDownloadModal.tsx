@@ -120,14 +120,17 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
     }
     try {
       setGenerating(true);
-      const { generatePdfForDocument, uploadBlobToFileIo } = await import('@/lib/pdfUtils');
+      const { generatePdfForDocument, shareBlobViaWebShare } = await import('@/lib/pdfUtils');
       const whatsappPhone = normalizeWhatsappPhone(String(doc.clientPhone || doc.payerPhone || ''))
       let text = `Voici le document ${doc.name || ''}`;
+      let shareableUrl = '';
+      const fileName = `${doc.name || 'document'}.pdf`;
 
       let blob: Blob | null = null;
       if (doc.url && doc.type !== 'receipt') {
         try {
           const openUrl = await getCloudinaryOpenUrl(String(doc.url));
+          shareableUrl = openUrl;
           const resp = await fetch(openUrl);
           if (resp.ok) blob = await resp.blob();
         } catch (err) {
@@ -137,11 +140,21 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       if (!blob) {
         blob = await generatePdfForDocument(doc);
       }
-      try {
-        const link = await uploadBlobToFileIo(blob, `${doc.name || 'document'}.pdf`);
-        text = `Voici le document ${doc.name || ''} : ${link}`;
-      } catch (err) {
-        void err;
+
+      const shared = await shareBlobViaWebShare(blob, fileName, text);
+      if (shared) {
+        if (win) {
+          try {
+            win.close();
+          } catch (closeErr) {
+            void closeErr;
+          }
+        }
+        return;
+      }
+
+      if (shareableUrl) {
+        text = `Voici le document ${doc.name || ''} : ${shareableUrl}`;
       }
 
       const webUrl = buildWhatsAppUrl(whatsappPhone, text);
@@ -156,6 +169,13 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
             void err;
           }
         }
+      }
+
+      if (!shareableUrl) {
+        toast({
+          title: 'Information',
+          description: "Le PDF a été généré localement. Joignez-le manuellement dans WhatsApp si nécessaire.",
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Impossible d\u2019envoyer le document.';

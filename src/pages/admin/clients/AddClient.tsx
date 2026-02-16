@@ -173,7 +173,7 @@ export default function AddClient() {
       `Bonjour ${firstName},\n\nVotre contrat de location pour ${createdClient.propertyName} est prêt !\n\nDétails :\n- Loyer mensuel : ${createdClient.monthlyRent.toLocaleString()} FCFA\n- Date de début : ${new Date(createdClient.startDate).toLocaleDateString('fr-FR')}\n\nPour toute question, contactez-nous.\n\nKeur Ya Aicha - Location Immobilier & Services`
     );
 
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener,noreferrer');
   };
 
   if (createdClient) {

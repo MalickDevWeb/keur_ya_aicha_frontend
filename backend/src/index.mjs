@@ -52,6 +52,7 @@ const UNDO_EXCLUDED_RESOURCES = new Set(['audit_logs', 'undo_actions', 'deposits
 const ADMIN_SUBSCRIPTION_GRACE_DAYS = 5
 const DEFAULT_DOCUMENT_RETENTION_DAYS = 365
 const DEFAULT_AUDIT_RETENTION_DAYS = 365
+const SUPER_ADMIN_SECOND_AUTH_TTL_MS = 30 * 60 * 1000
 const SYSTEM_POLICY_SETTING_KEY = 'platform_config_v1'
 const RETENTION_SWEEP_INTERVAL_MS = 60 * 1000
 const ADMIN_PAYMENT_METHODS = new Set(['wave', 'orange_money', 'cash'])
@@ -186,7 +187,7 @@ function ensureDbCollections(data = {}) {
 await db.read()
 db.data = ensureDbCollections(db.data || {})
 
-const authContext = { userId: null, impersonation: null, updatedAt: null }
+const authContext = { userId: null, impersonation: null, updatedAt: null, superAdminSecondAuthAt: null }
 const sessions = []
 
 const service = new Service(db)
@@ -774,9 +775,43 @@ function isSubscriptionAllowedPath(reqPath = '') {
   return false
 }
 
+function isSecondAuthExemptPath(reqPath = '') {
+  const path = String(reqPath || '').split('?')[0]
+  if (path === '/auth' || path.startsWith('/auth/')) return true
+  if (path === '/authContext' || path.startsWith('/authContext/')) return true
+  if (path.startsWith('/admin_payments/webhook/')) return true
+  return false
+}
+
+function clearSuperAdminSecondAuth() {
+  authContext.superAdminSecondAuthAt = null
+}
+
+function isSuperAdminSecondAuthValid(userId) {
+  const safeUserId = String(userId || '')
+  if (!safeUserId) return false
+  if (String(authContext.userId || '') !== safeUserId) return false
+
+  const verifiedAtMs = new Date(authContext.superAdminSecondAuthAt || 0).getTime()
+  if (!Number.isFinite(verifiedAtMs) || verifiedAtMs <= 0) {
+    clearSuperAdminSecondAuth()
+    return false
+  }
+
+  const notExpired = Date.now() - verifiedAtMs <= SUPER_ADMIN_SECOND_AUTH_TTL_MS
+  if (!notExpired) {
+    clearSuperAdminSecondAuth()
+    return false
+  }
+  return true
+}
+
 function enrichAuthUserWithSubscription(user) {
   const safeUser = { ...user }
   const role = String(safeUser?.role || '').toUpperCase()
+  const superAdminSecondAuthRequired =
+    role === 'SUPER_ADMIN' ? !isSuperAdminSecondAuthValid(safeUser?.id) : false
+
   if (role !== 'ADMIN' || !safeUser?.id) {
     return {
       ...safeUser,
@@ -784,6 +819,7 @@ function enrichAuthUserWithSubscription(user) {
       subscriptionOverdueMonth: null,
       subscriptionDueAt: null,
       subscriptionRequiredMonth: null,
+      superAdminSecondAuthRequired,
     }
   }
   const status = getAdminSubscriptionStatus(safeUser.id)
@@ -793,6 +829,7 @@ function enrichAuthUserWithSubscription(user) {
     subscriptionOverdueMonth: status.overdueMonth,
     subscriptionDueAt: status.dueAt,
     subscriptionRequiredMonth: status.requiredMonth,
+    superAdminSecondAuthRequired,
   }
 }
 
@@ -1483,6 +1520,7 @@ app.post('/auth/login', (req, res) => {
   })
   sessions.length = 0
   sessions.push({ id: 'session-current', userId: user.id, createdAt: new Date().toISOString() })
+  clearSuperAdminSecondAuth()
   return res.json({ user: safeUser })
 })
 
@@ -1511,6 +1549,7 @@ app.get('/authContext', (req, res) => {
       authContext.userId = null
       authContext.impersonation = null
       authContext.updatedAt = new Date().toISOString()
+      clearSuperAdminSecondAuth()
       return res.status(403).json({ error: 'Accès interdit. Décision du Super Admin.' })
     }
   }
@@ -1585,6 +1624,7 @@ app.post('/authContext/login', async (req, res) => {
   authContext.userId = user.id
   authContext.impersonation = null
   authContext.updatedAt = new Date().toISOString()
+  clearSuperAdminSecondAuth()
   return res.json({
     user: enrichAuthUserWithSubscription({
       id: user.id,
@@ -1598,26 +1638,87 @@ app.post('/authContext/login', async (req, res) => {
   })
 })
 
+app.post('/authContext/super-admin/second-auth', async (req, res) => {
+  const ctx = authContext
+  if (!ctx.userId) return res.status(401).json({ error: 'Not authenticated' })
+
+  const password = String(req.body?.password || '')
+  if (!password) return res.status(400).json({ error: 'Missing password' })
+
+  const users = Array.isArray(db.data?.users) ? db.data.users : []
+  const user = users.find((entry) => String(entry?.id || '') === String(ctx.userId || '')) || null
+  const role = String(user?.role || '').toUpperCase()
+
+  if (!user || role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ error: 'Accès réservé au Super Admin.' })
+  }
+
+  if (String(user.password || '') !== password) {
+    appendAuditLog({
+      actorId: user.id,
+      action: 'SUPER_ADMIN_SECOND_AUTH_FAILED',
+      targetType: 'auth',
+      targetId: user.id,
+      message: 'Échec de seconde authentification Super Admin',
+      ipAddress: getClientIp(req),
+    })
+    return res.status(401).json({ error: 'Mot de passe invalide.' })
+  }
+
+  authContext.superAdminSecondAuthAt = new Date().toISOString()
+  authContext.updatedAt = new Date().toISOString()
+
+  appendAuditLog({
+    actorId: user.id,
+    action: 'SUPER_ADMIN_SECOND_AUTH_SUCCESS',
+    targetType: 'auth',
+    targetId: user.id,
+    message: 'Seconde authentification Super Admin validée',
+    ipAddress: getClientIp(req),
+  })
+  await db.write()
+
+  return res.json({
+    ok: true,
+    user: enrichAuthUserWithSubscription({
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    }),
+    impersonation: authContext.impersonation || null,
+  })
+})
+
 app.post('/authContext/logout', async (req, res) => {
   authContext.userId = null
   authContext.impersonation = null
   authContext.updatedAt = new Date().toISOString()
+  clearSuperAdminSecondAuth()
   return res.json({ ok: true })
 })
 
 app.post('/authContext/impersonate', async (req, res) => {
   const { adminId, adminName, userId } = req.body || {}
   if (!adminId || !adminName) return res.status(400).json({ error: 'Missing admin' })
-  const ctx = authContext
-  if (!ctx.userId) return res.status(401).json({ error: 'Not authenticated' })
+  const { user, role } = getAuthContextUser()
+  if (!user) return res.status(401).json({ error: 'Not authenticated' })
+  if (String(role || '').toUpperCase() === 'SUPER_ADMIN' && !isSuperAdminSecondAuthValid(user.id)) {
+    return res.status(403).json({ error: 'Seconde authentification Super Admin requise.' })
+  }
   authContext.impersonation = { adminId, adminName, userId: userId || null }
   authContext.updatedAt = new Date().toISOString()
   return res.json({ ok: true })
 })
 
 app.post('/authContext/clear-impersonation', async (req, res) => {
-  const ctx = authContext
-  if (!ctx.userId) return res.status(401).json({ error: 'Not authenticated' })
+  const { user, role } = getAuthContextUser()
+  if (!user) return res.status(401).json({ error: 'Not authenticated' })
+  if (String(role || '').toUpperCase() === 'SUPER_ADMIN' && !isSuperAdminSecondAuthValid(user.id)) {
+    return res.status(403).json({ error: 'Seconde authentification Super Admin requise.' })
+  }
   authContext.impersonation = null
   authContext.updatedAt = new Date().toISOString()
   return res.json({ ok: true })
@@ -1695,6 +1796,7 @@ app.get('/auth/session', async (req, res) => {
 
 app.post('/auth/logout', async (req, res) => {
   sessions.length = 0
+  clearSuperAdminSecondAuth()
   return res.json({ ok: true })
 })
 
@@ -1794,6 +1896,20 @@ app.post('/admin_payments/webhook/:provider?', async (req, res) => {
 
   await db.write()
   return res.json({ ok: true, paymentId: payment.id, status: payment.status })
+})
+
+app.use((req, res, next) => {
+  const path = String(req.path || req.url || '')
+  if (isSecondAuthExemptPath(path)) return next?.()
+
+  const { user, role, adminId } = getAuthContextUser()
+  if (String(role || '').toUpperCase() !== 'SUPER_ADMIN' || adminId) return next?.()
+  if (isSuperAdminSecondAuthValid(user?.id)) return next?.()
+
+  return res.status(403).json({
+    error: 'Seconde authentification Super Admin requise.',
+    code: 'SUPER_ADMIN_SECOND_AUTH_REQUIRED',
+  })
 })
 
 app.use((req, res, next) => {

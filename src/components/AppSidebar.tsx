@@ -185,8 +185,14 @@ export function AppSidebar() {
     navigate(path);
   };
 
+  const normalizeSearch = (value: string) => new URLSearchParams(String(value || '').replace(/^\?/, '')).toString();
+
   const isActive = (path?: string) => {
     if (!path) return false;
+    if (path.includes('?')) {
+      const [base, search = ''] = path.split('?');
+      return location.pathname === base && normalizeSearch(location.search) === normalizeSearch(search);
+    }
     if (path.includes('#')) {
       const [base, hash] = path.split('#');
       return location.pathname === base && location.hash === `#${hash}`;
@@ -198,7 +204,7 @@ export function AppSidebar() {
     {
       label: t(MENU.GROUP_SUPER_ADMIN),
       items: [
-        { key: 'superAdminPending', label: t(MENU.SUPER_ADMIN_PENDING), icon: Shield, path: '/pmt/admin#demandes-en-attente' },
+        { key: 'superAdminPending', label: t(MENU.SUPER_ADMIN_PENDING), icon: Shield, path: '/pmt/admin?section=demandes-en-attente' },
         { key: 'superAdminAdmins', label: t(MENU.SUPER_ADMIN_ADMINS), icon: Users, path: '/pmt/admin/admins' },
         { key: 'superAdminEntreprises', label: t(MENU.SUPER_ADMIN_ENTREPRISES), icon: Building2, path: '/pmt/admin/entreprises' },
         { key: 'superAdminStats', label: t(MENU.SUPER_ADMIN_STATS), icon: LayoutDashboard, path: '/pmt/admin/stats' },

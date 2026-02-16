@@ -1,6 +1,9 @@
 import type { AuthResponseDTO, AuthUser } from '@/dto/frontend/responses'
 import type { AuthRequestDTO } from '@/dto/frontend/requests'
 import { apiFetch } from '../http'
+import { ensureRuntimeConfigLoaded, getApiBaseUrl } from '../runtimeConfig'
+
+let superAdminSecondAuthEndpointSupport: boolean | null = null
 
 /**
  * État d'usurpation d'identité admin
@@ -97,6 +100,54 @@ export async function loginAuthContext(
     method: 'POST',
     body: JSON.stringify({ username, password } as AuthRequestDTO),
   })
+}
+
+/**
+ * Vérifie la seconde authentification du Super Admin
+ * @param password - Mot de passe du Super Admin connecté
+ * @returns Réponse d'authentification mise à jour
+ */
+export async function verifySuperAdminSecondAuth(password: string, username?: string): Promise<AuthResponseDTO> {
+  const safePassword = String(password || '')
+  const fallbackUsername = String(username || localStorage.getItem('kya_last_login_username') || '').trim()
+  const fallbackToLegacy = async (): Promise<AuthResponseDTO> => {
+    if (!fallbackUsername) {
+      throw new Error('Backend non synchronisé: route seconde authentification introuvable.')
+    }
+    return loginAuthContext(fallbackUsername, safePassword)
+  }
+
+  if (superAdminSecondAuthEndpointSupport === false) {
+    return fallbackToLegacy()
+  }
+
+  await ensureRuntimeConfigLoaded()
+  const apiBase = getApiBaseUrl()
+
+  // Compatibility path: new backend supports this endpoint.
+  // If backend is older (404), fallback to standard authContext login.
+  const response = await fetch(`${apiBase}/authContext/super-admin/second-auth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: safePassword }),
+  })
+
+  const payload = (await response.json().catch(() => ({}))) as AuthResponseDTO & {
+    error?: string
+    message?: string
+  }
+
+  if (response.ok) {
+    superAdminSecondAuthEndpointSupport = true
+    return payload
+  }
+
+  if (response.status === 404) {
+    superAdminSecondAuthEndpointSupport = false
+    return fallbackToLegacy()
+  }
+
+  throw new Error(payload.error || payload.message || `Erreur HTTP ${response.status}`)
 }
 
 /**

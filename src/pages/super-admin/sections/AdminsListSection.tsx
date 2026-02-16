@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CardStat } from '@/components/CardStat'
 import { StatsCards } from '@/pages/common/StatsCards'
-import { Building2, Shield, Users } from 'lucide-react'
+import { Building2, Users } from 'lucide-react'
 import { AdminDTO, AdminStatus, ADMIN_STATUS_COLORS, ADMIN_STATUS_LABELS, EntrepriseDTO } from '@/dto/frontend/responses'
 import type { AdminAction } from '../types'
 
