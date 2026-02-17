@@ -131,7 +131,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
 // ─── 2. Main Page ─────────────────────────────────────────────────────
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading, user } = useAuth();
+  const { login } = useAuth();
   const { addToast } = useToast();
 
   const [isMuted, setIsMuted] = useState(false);
@@ -364,20 +364,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  // Redirect if already authenticated (use useEffect to avoid render-time navigation)
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      const role = String(user?.role || '').toUpperCase();
-      if (role === 'SUPER_ADMIN') {
-        navigate("/pmt/admin", { replace: true });
-      } else if (role === 'ADMIN' && user?.subscriptionBlocked) {
-        navigate("/subscription", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
-    }
-  }, [isAuthenticated, isLoading, navigate, user?.role, user?.subscriptionBlocked]);
 
   // ─── styles constants
   const NAVY = "#0F2854";
