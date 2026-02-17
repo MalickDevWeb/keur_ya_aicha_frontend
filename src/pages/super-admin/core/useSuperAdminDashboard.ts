@@ -148,7 +148,9 @@ export function useSuperAdminDashboard() {
           phone: '',
         },
       }))
-      refresh()
+      if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+        refresh()
+      }
     } catch {
       setState((prev) => ({ ...prev, createError: "Échec de la création de l'admin." }))
     } finally {

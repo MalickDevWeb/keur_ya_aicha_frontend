@@ -340,6 +340,17 @@ export default function LoginPage() {
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : "Erreur lors de la connexion";
       const normalized = typeof raw === 'string' ? raw.toLowerCase() : '';
+      const isNetworkError =
+        normalized.includes('failed to fetch') ||
+        normalized.includes('networkerror') ||
+        normalized.includes('network request failed') ||
+        normalized.includes('réseau indisponible') ||
+        normalized.includes('mode hors ligne') ||
+        normalized.includes('connexion internet requise');
+      if (isNetworkError) {
+        setLoginFieldError('Connexion internet indisponible. Réessaie quand le réseau revient.');
+        return;
+      }
       const isApprovalBlock =
         normalized.includes('accès interdit') ||
         normalized.includes("demande en attente") ||

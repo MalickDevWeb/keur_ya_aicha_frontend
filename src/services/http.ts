@@ -15,6 +15,8 @@ import {
 const SLOW_REQUEST_MS = 1500
 const AUDIT_BUFFER_KEY = 'audit_buffer'
 const UNDO_EVENT_NAME = 'api-undo-available'
+const NETWORK_RETRY_BACKOFF_MS = 10_000
+let networkUnavailableUntil = 0
 
 const resolveApiBase = async (): Promise<string> => {
   await ensureRuntimeConfigLoaded()
@@ -111,6 +113,18 @@ function isLikelyNetworkError(error: unknown): boolean {
 function isBrowserOffline(): boolean {
   if (typeof navigator === 'undefined') return false
   return navigator.onLine === false
+}
+
+function isNetworkTemporarilyUnavailable(): boolean {
+  return Date.now() < networkUnavailableUntil
+}
+
+function markNetworkUnavailable(): void {
+  networkUnavailableUntil = Date.now() + NETWORK_RETRY_BACKOFF_MS
+}
+
+function markNetworkAvailable(): void {
+  networkUnavailableUntil = 0
 }
 
 function reportApiError(method: string, path: string, err: unknown) {
@@ -273,8 +287,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   const shouldUseHttpCache = safeMethod === 'GET' && isOfflineCacheEnabled() && shouldCacheGetPath(path)
   const cacheScope = shouldUseHttpCache ? getCurrentCacheScope() : ''
+  const shouldSkipNetworkAttempt = isBrowserOffline() || isNetworkTemporarilyUnavailable()
 
-  if (isBrowserOffline()) {
+  if (shouldSkipNetworkAttempt) {
     if (shouldUseHttpCache) {
       const cached = await readHttpCache<T>(path, cacheScope, { allowExpired: true })
       if (cached !== null) {
@@ -282,7 +297,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
         return cached
       }
     }
-    throw new Error(`Mode hors ligne: ${safeMethod} ${path} indisponible sans cache.`)
+    throw new Error(`Réseau indisponible: ${safeMethod} ${path} sans cache.`)
   }
 
   const apiBase = getApiBaseUrl()
@@ -295,6 +310,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     res = await fetch(url, { ...options, headers })
   } catch (networkError) {
     if (shouldUseHttpCache && isLikelyNetworkError(networkError)) {
+      markNetworkUnavailable()
       const cached = await readHttpCache<T>(path, cacheScope, { allowExpired: true })
       if (cached !== null) {
         logger.debug(`Mode offline: cache utilisé pour ${safeMethod} ${path}`)
@@ -319,6 +335,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   try {
     const data = await handleResponse<T>(res)
+    markNetworkAvailable()
     if (shouldUseHttpCache && typeof data !== 'undefined') {
       void saveHttpCache(path, cacheScope, data)
     }

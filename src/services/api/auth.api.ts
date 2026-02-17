@@ -10,6 +10,8 @@ import { ensureRuntimeConfigLoaded, getApiBaseUrl } from '../runtimeConfig'
 
 let superAdminSecondAuthEndpointSupport: boolean | null = null
 const AUTH_CONTEXT_SNAPSHOT_KEY = 'kya_auth_context_snapshot'
+let secondAuthNetworkRetryAt = 0
+const SECOND_AUTH_NETWORK_BACKOFF_MS = 10_000
 
 /**
  * État d'usurpation d'identité admin
@@ -217,6 +219,9 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
   if (isOffline) {
     throw new Error('Connexion internet requise pour la seconde authentification.')
   }
+  if (Date.now() < secondAuthNetworkRetryAt) {
+    throw new Error('Réseau indisponible. Réessaie dans quelques secondes.')
+  }
 
   if (superAdminSecondAuthEndpointSupport === false) {
     return fallbackToLegacy()
@@ -236,6 +241,7 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
     })
   } catch (error) {
     if (isLikelyNetworkError(error)) {
+      secondAuthNetworkRetryAt = Date.now() + SECOND_AUTH_NETWORK_BACKOFF_MS
       throw new Error('Connexion internet requise pour la seconde authentification.')
     }
     throw error
@@ -247,6 +253,7 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
   }
 
   if (response.ok) {
+    secondAuthNetworkRetryAt = 0
     superAdminSecondAuthEndpointSupport = true
     applyAuthCacheScope(payload?.user || null, (payload as { impersonation?: ImpersonationState })?.impersonation || null)
     return payload
