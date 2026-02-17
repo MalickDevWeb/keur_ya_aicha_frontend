@@ -795,7 +795,13 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                     <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: username ? '#00c8ff' : 'rgba(255,255,255,.3)' }}>
                       <User size={18} />
                     </span>
-                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="superadmin" disabled={requireSecondAuth}
+                    <input
+                      type="text"
+                      autoComplete="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="superadmin"
+                      disabled={requireSecondAuth}
                       style={{ width: '100%', padding: '14px 46px 14px 50px', border: 'none', background: 'transparent', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500, color: '#fff', outline: 'none', borderRadius: 14 }} />
                   </div>
                 </div>
@@ -808,7 +814,12 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                     <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: password ? '#00c8ff' : 'rgba(255,255,255,.3)' }}>
                       <Lock size={18} />
                     </span>
-                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe"
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mot de passe"
                       style={{ width: '100%', padding: '14px 46px 14px 50px', border: 'none', background: 'transparent', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500, color: '#fff', outline: 'none', borderRadius: 14 }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,.4)', padding: 4, display: 'flex' }}>
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

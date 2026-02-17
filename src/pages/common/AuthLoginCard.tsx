@@ -44,6 +44,7 @@ export function AuthLoginCard({
             <div>
               <label className="text-sm font-medium">{usernameLabel}</label>
               <Input
+                autoComplete="username"
                 value={username}
                 onChange={(event) => onUsernameChange(event.target.value)}
                 placeholder={usernamePlaceholder}
@@ -53,6 +54,7 @@ export function AuthLoginCard({
               <label className="text-sm font-medium">{passwordLabel}</label>
               <Input
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => onPasswordChange(event.target.value)}
                 placeholder={passwordPlaceholder}

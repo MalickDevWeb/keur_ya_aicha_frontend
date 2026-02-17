@@ -4,6 +4,13 @@ import {
   sendComplianceWebhookAlert,
   shouldBlockWriteByMaintenance,
 } from './platformConfig'
+import {
+  getCurrentCacheScope,
+  isOfflineCacheEnabled,
+  readHttpCache,
+  saveHttpCache,
+  shouldCacheGetPath,
+} from '@/infrastructure/offlineCache'
 
 const SLOW_REQUEST_MS = 1500
 const AUDIT_BUFFER_KEY = 'audit_buffer'
@@ -89,6 +96,49 @@ const logger = new ApiLogger()
 
 function isFormDataBody(body: RequestInit['body']): body is FormData {
   return typeof FormData !== 'undefined' && body instanceof FormData
+}
+
+function isLikelyNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return (
+    message.includes('networkerror') ||
+    message.includes('failed to fetch') ||
+    message.includes('network request failed')
+  )
+}
+
+function isBrowserOffline(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return navigator.onLine === false
+}
+
+function reportApiError(method: string, path: string, err: unknown) {
+  const likelyNetworkError = isLikelyNetworkError(err)
+  if (likelyNetworkError) {
+    logger.warn(`Réseau indisponible: ${method} ${path}`, err)
+  } else {
+    logger.error(`Appel API échoué: ${method} ${path}`, err)
+  }
+  const shouldSkipRemoteAudit = likelyNetworkError
+
+  if (!shouldSkipRemoteAudit) {
+    void sendComplianceWebhookAlert('api_error', {
+      method: String(method || 'GET').toUpperCase(),
+      path,
+      error: err instanceof Error ? err.message : String(err || 'Unknown error'),
+    })
+  }
+  if (!path.startsWith('/audit_logs') && !shouldSkipRemoteAudit) {
+    sendAuditLog({
+      actor: 'client',
+      action: 'API_ERROR',
+      targetType: 'request',
+      targetId: path,
+      message: `Erreur API ${method} ${path}`,
+      createdAt: new Date().toISOString(),
+    })
+  }
 }
 
 function dispatchUndoEvent(res: Response, method: string, path: string) {
@@ -206,12 +256,13 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
 
   const method = options.method || 'GET'
-  if (shouldBlockWriteByMaintenance(path, method)) {
+  const safeMethod = String(method || 'GET').toUpperCase()
+  if (shouldBlockWriteByMaintenance(path, safeMethod)) {
     const message = buildMaintenanceBlockedMessage()
     window.dispatchEvent(
       new CustomEvent('platform-maintenance-blocked', {
         detail: {
-          method: String(method || 'GET').toUpperCase(),
+          method: safeMethod,
           path,
           message,
         },
@@ -219,46 +270,63 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     )
     throw new Error(message)
   }
+
+  const shouldUseHttpCache = safeMethod === 'GET' && isOfflineCacheEnabled() && shouldCacheGetPath(path)
+  const cacheScope = shouldUseHttpCache ? getCurrentCacheScope() : ''
+
+  if (isBrowserOffline()) {
+    if (shouldUseHttpCache) {
+      const cached = await readHttpCache<T>(path, cacheScope, { allowExpired: true })
+      if (cached !== null) {
+        logger.debug(`Mode offline: cache utilisé pour ${safeMethod} ${path}`)
+        return cached
+      }
+    }
+    throw new Error(`Mode hors ligne: ${safeMethod} ${path} indisponible sans cache.`)
+  }
+
   const apiBase = getApiBaseUrl()
   const url = `${apiBase}${path}`
 
-  logger.debug(`${method} ${path}`)
+  logger.debug(`${safeMethod} ${path}`)
+  const start = Date.now()
+  let res: Response
+  try {
+    res = await fetch(url, { ...options, headers })
+  } catch (networkError) {
+    if (shouldUseHttpCache && isLikelyNetworkError(networkError)) {
+      const cached = await readHttpCache<T>(path, cacheScope, { allowExpired: true })
+      if (cached !== null) {
+        logger.debug(`Mode offline: cache utilisé pour ${safeMethod} ${path}`)
+        return cached
+      }
+    }
+    reportApiError(safeMethod, path, networkError)
+    throw networkError
+  }
+
+  const duration = Date.now() - start
+  if (duration >= SLOW_REQUEST_MS && !path.startsWith('/audit_logs')) {
+    sendAuditLog({
+      actor: 'client',
+      action: 'SLOW_REQUEST_CLIENT',
+      targetType: 'request',
+      targetId: path,
+      message: `Requête lente ${safeMethod} ${path} (${duration}ms)`,
+      createdAt: new Date().toISOString(),
+    })
+  }
 
   try {
-    const start = Date.now()
-    const res = await fetch(url, { ...options, headers })
-    const duration = Date.now() - start
-    if (duration >= SLOW_REQUEST_MS && !path.startsWith('/audit_logs')) {
-      sendAuditLog({
-        actor: 'client',
-        action: 'SLOW_REQUEST_CLIENT',
-        targetType: 'request',
-        targetId: path,
-        message: `Requête lente ${method} ${path} (${duration}ms)`,
-        createdAt: new Date().toISOString(),
-      })
-    }
     const data = await handleResponse<T>(res)
-    dispatchUndoEvent(res, method, path)
+    if (shouldUseHttpCache && typeof data !== 'undefined') {
+      void saveHttpCache(path, cacheScope, data)
+    }
+    dispatchUndoEvent(res, safeMethod, path)
     void flushAuditBuffer()
     return data
   } catch (err) {
-    logger.error(`Appel API échoué: ${method} ${path}`, err)
-    void sendComplianceWebhookAlert('api_error', {
-      method: String(method || 'GET').toUpperCase(),
-      path,
-      error: err instanceof Error ? err.message : String(err || 'Unknown error'),
-    })
-    if (!path.startsWith('/audit_logs')) {
-      sendAuditLog({
-        actor: 'client',
-        action: 'API_ERROR',
-        targetType: 'request',
-        targetId: path,
-        message: `Erreur API ${method} ${path}`,
-        createdAt: new Date().toISOString(),
-      })
-    }
+    reportApiError(safeMethod, path, err)
     throw err
   }
 }

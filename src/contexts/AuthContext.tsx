@@ -134,7 +134,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setImpersonationState(null);
     sessionStorage.removeItem(SESSION_LOGIN_AT_KEY);
     sessionStorage.removeItem(SESSION_LAST_ACTIVITY_KEY);
-    logoutAuthContext();
+    void logoutAuthContext();
   }, []);
 
   const setImpersonation = useCallback(async (payload: ImpersonationState) => {

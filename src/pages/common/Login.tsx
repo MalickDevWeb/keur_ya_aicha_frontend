@@ -38,6 +38,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
   const [focused, setFocused] = useState(false);
   const hasValue = watchValue && watchValue.length > 0;
   const active = focused || hasValue;
+  const autoComplete = name === "motDePasse" ? "current-password" : "username";
 
   return (
     <div style={{ marginBottom: 20 }}>
@@ -87,6 +88,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
 
         <input
           id={name}
+          autoComplete={autoComplete}
           type={type}
           placeholder={placeholder}
           value={watchValue || ""}

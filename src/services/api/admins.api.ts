@@ -5,6 +5,7 @@ import type {
   AdminRequestUpdateDTO,
   AdminUpdateDTO,
 } from '@/dto/frontend/requests'
+import { enqueueCreateAdminAction } from '@/infrastructure/syncQueue'
 import { createCrudEndpoint } from './endpoint.factory'
 
 /**
@@ -23,6 +24,16 @@ const adminRequestApi = createCrudEndpoint<
   AdminRequestCreateDTO,
   AdminRequestUpdateDTO
 >('/admin_requests', "Demandes d'administrateur")
+
+function isLikelyNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return (
+    message.includes('networkerror') ||
+    message.includes('failed to fetch') ||
+    message.includes('network request failed')
+  )
+}
 
 /**
  * Récupère la liste complète des administrateurs
@@ -47,7 +58,19 @@ export async function getAdmin(id: string): Promise<AdminDTO> {
  * @returns Administrateur créé
  */
 export async function createAdmin(data: AdminCreateDTO): Promise<AdminDTO> {
-  return adminApi.create(data)
+  const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false
+  if (isOffline) {
+    await enqueueCreateAdminAction(data)
+    return data as unknown as AdminDTO
+  }
+
+  try {
+    return await adminApi.create(data)
+  } catch (error) {
+    if (!isLikelyNetworkError(error)) throw error
+    await enqueueCreateAdminAction(data)
+    return data as unknown as AdminDTO
+  }
 }
 
 /**

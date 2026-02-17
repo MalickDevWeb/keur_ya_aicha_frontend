@@ -1,9 +1,15 @@
 import type { AuthResponseDTO, AuthUser } from '@/dto/frontend/responses'
 import type { AuthRequestDTO } from '@/dto/frontend/requests'
+import {
+  resetCacheScope,
+  setCacheScopeImpersonationAdminId,
+  setCacheScopeUserId,
+} from '@/infrastructure/offlineCache'
 import { apiFetch } from '../http'
 import { ensureRuntimeConfigLoaded, getApiBaseUrl } from '../runtimeConfig'
 
 let superAdminSecondAuthEndpointSupport: boolean | null = null
+const AUTH_CONTEXT_SNAPSHOT_KEY = 'kya_auth_context_snapshot'
 
 /**
  * État d'usurpation d'identité admin
@@ -12,6 +18,65 @@ export type ImpersonationState = null | {
   adminId: string
   adminName: string
   userId?: string | null
+}
+
+function isLikelyNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return (
+    message.includes('networkerror') ||
+    message.includes('failed to fetch') ||
+    message.includes('network request failed')
+  )
+}
+
+function persistAuthContextSnapshot(user: AuthUser | null, impersonation: ImpersonationState): void {
+  try {
+    if (typeof localStorage === 'undefined') return
+    if (!user) {
+      localStorage.removeItem(AUTH_CONTEXT_SNAPSHOT_KEY)
+      return
+    }
+    localStorage.setItem(
+      AUTH_CONTEXT_SNAPSHOT_KEY,
+      JSON.stringify({
+        user,
+        impersonation: impersonation || null,
+      })
+    )
+  } catch {
+    // ignore snapshot storage errors
+  }
+}
+
+function readAuthContextSnapshot(): { user: AuthUser | null; impersonation: ImpersonationState } | null {
+  try {
+    if (typeof localStorage === 'undefined') return null
+    const raw = localStorage.getItem(AUTH_CONTEXT_SNAPSHOT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { user?: AuthUser | null; impersonation?: ImpersonationState }
+    return {
+      user: parsed?.user || null,
+      impersonation: parsed?.impersonation || null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function clearAuthContextSnapshot(): void {
+  try {
+    if (typeof localStorage === 'undefined') return
+    localStorage.removeItem(AUTH_CONTEXT_SNAPSHOT_KEY)
+  } catch {
+    // ignore snapshot storage errors
+  }
+}
+
+function applyAuthCacheScope(user: AuthUser | null, impersonation: ImpersonationState = null): void {
+  setCacheScopeUserId(user?.id || null)
+  setCacheScopeImpersonationAdminId(impersonation?.adminId || null)
+  persistAuthContextSnapshot(user, impersonation || null)
 }
 
 /**
@@ -34,6 +99,7 @@ export async function loginUser(username: string, password: string): Promise<Aut
 
   const user = (data as { user?: AuthUser })?.user || (data as AuthUser)
   if (!user) return null
+  applyAuthCacheScope(user, null)
   return {
     id: user.id,
     username: user.username,
@@ -51,8 +117,19 @@ export async function loginUser(username: string, password: string): Promise<Aut
 export async function getSessionUser(): Promise<AuthUser | null> {
   try {
     const data = await apiFetch<{ user?: AuthUser }>('/auth/session')
-    return data?.user || null
-  } catch {
+    const user = data?.user || null
+    applyAuthCacheScope(user, null)
+    return user
+  } catch (error) {
+    if (isLikelyNetworkError(error)) {
+      const snapshot = readAuthContextSnapshot()
+      if (snapshot?.user) {
+        applyAuthCacheScope(snapshot.user, snapshot.impersonation || null)
+        return snapshot.user
+      }
+    }
+    resetCacheScope()
+    clearAuthContextSnapshot()
     return null
   }
 }
@@ -65,6 +142,9 @@ export async function logoutUser(): Promise<void> {
     await apiFetch<void>('/auth/logout', { method: 'POST' })
   } catch {
     // Ignorer les erreurs de déconnexion
+  } finally {
+    resetCacheScope()
+    clearAuthContextSnapshot()
   }
 }
 
@@ -77,11 +157,25 @@ export async function getAuthContext(): Promise<{
   impersonation: ImpersonationState
 }> {
   try {
-    return await apiFetch<{
+    const ctx = await apiFetch<{
       user: AuthUser | null
       impersonation: ImpersonationState
     }>('/authContext')
-  } catch {
+    applyAuthCacheScope(ctx.user || null, ctx.impersonation || null)
+    return ctx
+  } catch (error) {
+    if (isLikelyNetworkError(error)) {
+      const snapshot = readAuthContextSnapshot()
+      if (snapshot?.user) {
+        applyAuthCacheScope(snapshot.user, snapshot.impersonation || null)
+        return {
+          user: snapshot.user,
+          impersonation: snapshot.impersonation || null,
+        }
+      }
+    }
+    resetCacheScope()
+    clearAuthContextSnapshot()
     return { user: null, impersonation: null }
   }
 }
@@ -96,10 +190,12 @@ export async function loginAuthContext(
   username: string,
   password: string
 ): Promise<AuthResponseDTO> {
-  return apiFetch<AuthResponseDTO>('/authContext/login', {
+  const response = await apiFetch<AuthResponseDTO & { impersonation?: ImpersonationState }>('/authContext/login', {
     method: 'POST',
     body: JSON.stringify({ username, password } as AuthRequestDTO),
   })
+  applyAuthCacheScope(response?.user || null, response?.impersonation || null)
+  return response
 }
 
 /**
@@ -110,11 +206,16 @@ export async function loginAuthContext(
 export async function verifySuperAdminSecondAuth(password: string, username?: string): Promise<AuthResponseDTO> {
   const safePassword = String(password || '')
   const fallbackUsername = String(username || localStorage.getItem('kya_last_login_username') || '').trim()
+  const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false
   const fallbackToLegacy = async (): Promise<AuthResponseDTO> => {
     if (!fallbackUsername) {
       throw new Error('Backend non synchronisé: route seconde authentification introuvable.')
     }
     return loginAuthContext(fallbackUsername, safePassword)
+  }
+
+  if (isOffline) {
+    throw new Error('Connexion internet requise pour la seconde authentification.')
   }
 
   if (superAdminSecondAuthEndpointSupport === false) {
@@ -126,11 +227,19 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
 
   // Compatibility path: new backend supports this endpoint.
   // If backend is older (404), fallback to standard authContext login.
-  const response = await fetch(`${apiBase}/authContext/super-admin/second-auth`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: safePassword }),
-  })
+  let response: Response
+  try {
+    response = await fetch(`${apiBase}/authContext/super-admin/second-auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: safePassword }),
+    })
+  } catch (error) {
+    if (isLikelyNetworkError(error)) {
+      throw new Error('Connexion internet requise pour la seconde authentification.')
+    }
+    throw error
+  }
 
   const payload = (await response.json().catch(() => ({}))) as AuthResponseDTO & {
     error?: string
@@ -139,6 +248,7 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
 
   if (response.ok) {
     superAdminSecondAuthEndpointSupport = true
+    applyAuthCacheScope(payload?.user || null, (payload as { impersonation?: ImpersonationState })?.impersonation || null)
     return payload
   }
 
@@ -154,7 +264,14 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
  * Déconnexion du contexte d'authentification
  */
 export async function logoutAuthContext(): Promise<void> {
-  await apiFetch<void>('/authContext/logout', { method: 'POST' })
+  try {
+    await apiFetch<void>('/authContext/logout', { method: 'POST' })
+  } catch {
+    // Ignorer les erreurs de déconnexion réseau (offline)
+  } finally {
+    resetCacheScope()
+    clearAuthContextSnapshot()
+  }
 }
 
 /**
@@ -167,6 +284,7 @@ export async function setImpersonation(payload: ImpersonationState): Promise<voi
     method: 'POST',
     body: JSON.stringify(payload),
   })
+  setCacheScopeImpersonationAdminId(payload.adminId || null)
 }
 
 /**
@@ -174,4 +292,5 @@ export async function setImpersonation(payload: ImpersonationState): Promise<voi
  */
 export async function clearImpersonation(): Promise<void> {
   await apiFetch<void>('/authContext/clear-impersonation', { method: 'POST' })
+  setCacheScopeImpersonationAdminId(null)
 }

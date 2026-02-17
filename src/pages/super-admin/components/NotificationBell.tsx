@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bell } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,16 @@ type NotificationItem = {
   created_at?: string
 }
 
+function isLikelyNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return (
+    message.includes('networkerror') ||
+    message.includes('failed to fetch') ||
+    message.includes('network request failed')
+  )
+}
+
 export function NotificationBell() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -23,14 +33,17 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator === 'undefined' ? true : navigator.onLine !== false
+  )
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.is_read).length,
     [notifications]
   )
 
-  const refresh = async () => {
-    if (!user?.id) return
+  const refresh = useCallback(async () => {
+    if (!user?.id || !isOnline) return
     setLoading(true)
     try {
       let data = role === 'SUPER_ADMIN' ? await listAllNotifications() : await listNotifications(user.id)
@@ -41,10 +54,25 @@ export function NotificationBell() {
         ? [...data].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
         : []
       setNotifications(sorted)
+    } catch (error) {
+      if (isLikelyNetworkError(error)) {
+        setIsOnline((current) => (current ? false : current))
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [isOnline, role, user?.id])
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true)
+    const onOffline = () => setIsOnline(false)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -52,17 +80,20 @@ export function NotificationBell() {
       if (!mounted) return
       await refresh()
     }
-    run()
-    const interval = setInterval(run, 8000)
+    void run()
+    const interval = setInterval(() => {
+      void run()
+    }, 8000)
     return () => {
       mounted = false
       clearInterval(interval)
     }
-  }, [user?.id])
+  }, [refresh])
 
   useEffect(() => {
-    if (open) refresh()
-  }, [open])
+    if (!open) return
+    void refresh()
+  }, [open, refresh])
 
   const handleMarkRead = async (notif: NotificationItem) => {
     if (notif.is_read) return

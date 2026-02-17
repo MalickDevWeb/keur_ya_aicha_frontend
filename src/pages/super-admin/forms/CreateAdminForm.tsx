@@ -92,24 +92,34 @@ export function CreateAdminForm({
 
         {error && <FormError message={error} />}
 
-        <div className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handleSubmit()
+          }}
+        >
           <Input
+            autoComplete="name"
             placeholder="Nom complet"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
           />
           <Input
+            autoComplete="email"
             placeholder="Email"
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
           />
           <Input
+            autoComplete="tel"
             placeholder="Téléphone"
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
           />
           <Input
+            autoComplete="new-password"
             placeholder="Mot de passe"
             type="password"
             value={formData.password}
@@ -127,16 +137,16 @@ export function CreateAdminForm({
               </option>
             ))}
           </select>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={creating}>
-            Annuler
-          </Button>
-          <Button onClick={handleSubmit} loading={creating}>
-            Créer
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={creating}>
+              Annuler
+            </Button>
+            <Button type="submit" loading={creating}>
+              Créer
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

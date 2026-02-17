@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { addDays, addMonths } from 'date-fns'
 import type { Client, DashboardStats, MonthlyPayment, Rental } from '@/lib/types'
 import type { ClientCreateDTO, ClientUpdateDTO } from '@/dto/backend/requests'
+import { enqueueCreateClientAction } from '@/infrastructure/syncQueue'
 import {
   fetchClients as fetchClientsAPI,
   createClient,
@@ -25,6 +26,21 @@ import { calculateDashboardStats } from '@/services/data/stats'
 import { generateId } from '@/services/data/normalizers'
 import { serializeClientForApi } from '@/services/data/serialization'
 import { transformClientDTO } from '@/services/data/transform'
+
+function isLikelyNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return (
+    message.includes('networkerror') ||
+    message.includes('failed to fetch') ||
+    message.includes('network request failed')
+  )
+}
+
+function isBrowserOffline(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return navigator.onLine === false
+}
 
 export interface DataState {
   // State
@@ -193,8 +209,35 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
 
       const payload = serializeClientForApi({ ...newClient, createdAt: newClient.createdAt })
-      await createClient(payload as ClientCreateDTO)
-      await get().fetchClients()
+      const createPayload = payload as ClientCreateDTO
+
+      const applyClientOptimistically = () => {
+        set((state) => {
+          const clients = [...state.clients, newClient]
+          return {
+            clients,
+            stats: calculateDashboardStats(clients),
+            error: null,
+          }
+        })
+      }
+
+      if (isBrowserOffline()) {
+        await enqueueCreateClientAction(createPayload)
+        applyClientOptimistically()
+        return newClient
+      }
+
+      try {
+        await createClient(createPayload)
+        await get().fetchClients()
+      } catch (error) {
+        if (!isLikelyNetworkError(error)) {
+          throw error
+        }
+        await enqueueCreateClientAction(createPayload)
+        applyClientOptimistically()
+      }
 
       return newClient
     } catch (error) {

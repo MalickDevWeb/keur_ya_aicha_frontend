@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import { DataProvider } from "@/stores/DataProvider";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ToastContainer } from "@/components/ToastContainer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineSyncBadge } from "@/components/OfflineSyncBadge";
 import { MainLayout } from "@/layouts/MainLayout";
 import Login from "./pages/common/Login";
 import Dashboard from "./pages/admin/Dashboard";
@@ -49,103 +51,157 @@ import RequestsPage from "./pages/super-admin/monitoring/RequestsPage";
 import PerformancePage from "./pages/super-admin/monitoring/PerformancePage";
 import AdminSignup from "./pages/common/AdminSignup";
 import DangerClients from "./pages/admin/DangerClients";
+import {
+  OFFLINE_SYNC_QUEUE_UPDATED_EVENT,
+  syncQueuedActions,
+} from "@/infrastructure/syncQueue";
 
 const queryClient = new QueryClient();
 const isElectronDesktop =
   typeof navigator !== "undefined" && /electron/i.test(navigator.userAgent);
 const Router = isElectronDesktop ? HashRouter : BrowserRouter;
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <AuthProvider>
-          <DataProvider>
-            <ToastProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <ToastContainer />
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/admin/signup" element={<AdminSignup />} />
-                <Route path="/pmt/admin" element={<SuperAdminPage />} />
-                <Route path="/pmt/admin/entreprises" element={<EntreprisesPage />} />
-                <Route path="/pmt/admin/admins" element={<AdminsPage />} />
-                <Route path="/pmt/admin/stats" element={<SuperAdminStatsPage />} />
-                <Route path="/pmt/admin/notifications" element={<NotificationsPage />} />
-                <Route path="/pmt/admin/settings" element={<SuperAdminSettingsPage />} />
-                <Route path="/pmt/admin/logs" element={<LogsPage />} />
-                <Route path="/pmt/admin/monitoring/requests" element={<RequestsPage />} />
-                <Route path="/pmt/admin/monitoring/performance" element={<PerformancePage />} />
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route element={<MainLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/import/clients" element={<ImportClients />} />
-                  <Route path="/import/errors" element={<ImportErrors />} />
-                  <Route path="/import/success" element={<ImportSuccess />} />
+const App = () => {
+  useEffect(() => {
+    let isSyncRunning = false
+    const runSync = async () => {
+      if (isSyncRunning) return
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return
+      isSyncRunning = true
+      try {
+        await syncQueuedActions()
+      } catch {
+        // ignore sync errors, queue will retry on next online event
+      } finally {
+        isSyncRunning = false
+      }
+    }
 
-                  {/* Clients Routes */}
-                  <Route path="/clients" element={<Clients />} />
-                  <Route path="/clients/add" element={<AddClient />} />
-                  <Route path="/clients/:id" element={<ClientDetail />} />
-                  <Route path="/clients/:id/edit" element={<AddClient />} />
-                  <Route path="/clients/:id/add-rental" element={<AddRental />} />
+    const handleOnline = () => {
+      void runSync()
+    }
+    const handleQueueUpdated = () => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return
+      void runSync()
+    }
+    let intervalId: number | null = null
 
-                  {/* Rentals Routes */}
-                  <Route path="/rentals" element={<Rentals />} />
-                  <Route path="/rentals/add" element={<AddRental />} />
-                  <Route path="/rentals/add/:clientId" element={<AddRental />} />
-                  <Route path="/rentals/:id" element={<RentalDetail />} />
-                  <Route path="/rentals/:id/edit" element={<EditRental />} />
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", handleOnline)
+      window.addEventListener(OFFLINE_SYNC_QUEUE_UPDATED_EVENT, handleQueueUpdated)
+      intervalId = window.setInterval(() => {
+        void runSync()
+      }, 30_000)
+    }
 
-                  {/* Payments Routes - Note: IDs can contain dashes like client-6-rental-1 */}
-                  <Route path="/payments" element={<Payments />} />
-                  <Route path="/payments/add" element={<AddPayment />} />
-                  <Route path="/payments/add/:clientId" element={<AddPayment />} />
-                  <Route path="/payments/add/:clientId/:rentalId" element={<AddPayment />} />
-                  <Route path="/payments/:rentalId/edit/:paymentId" element={<AddPayment />} />
-                  <Route path="/payments/edit/:paymentId" element={<AddPayment />} />
-                  <Route path="/payments/:rentalId" element={<RentalDetail />} />
-                  <Route path="/payments/deposit" element={<Deposits />} />
-                  <Route path="/payments/deposit/:rentalId/edit" element={<Deposits />} />
-                  <Route path="/payments/deposit/:rentalId" element={<Deposits />} />
-                  <Route path="/payments/history" element={<PaymentHistory />} />
-                  <Route path="/payments/receipts" element={<PaymentReceipts />} />
-                  <Route path="/subscription" element={<AdminSubscriptionPayments />} />
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      void runSync()
+    }
 
-                  {/* Documents & Archive Routes */}
-                  <Route path="/documents/dossiers" element={<ClientDossier />} />
-                  <Route path="/documents/contracts" element={<SignedContracts />} />
-                  <Route path="/documents/archive" element={<Documents />} />
-                  <Route path="/documents/receipts" element={<PaymentReceipts />} />
-                  <Route path="/documents" element={<Documents />} />
-                  <Route path="/documents/:id/edit" element={<Documents />} />
-                  <Route path="/archive" element={<ArchivedClients />} />
-                  <Route path="/archive/clients" element={<ArchivedClients />} />
-                  <Route path="/archive/blacklist" element={<BlacklistedClients />} />
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("online", handleOnline)
+        window.removeEventListener(OFFLINE_SYNC_QUEUE_UPDATED_EVENT, handleQueueUpdated)
+        if (intervalId !== null) {
+          window.clearInterval(intervalId)
+        }
+      }
+    }
+  }, [])
 
-                  {/* Settings & Archive */}
-                  <Route path="/settings" element={
-                    <PrivateAdminRoute>
-                      <Settings />
-                    </PrivateAdminRoute>
-                  } />
-                  <Route path="/archive" element={<Archive />} />
-                  <Route path="/work" element={<Work />} />
-                  <Route path="/danger/clients" element={<DangerClients />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Router>
-            </TooltipProvider>
-          </ToastProvider>
-        </DataProvider>
-      </AuthProvider>
-    </I18nProvider>
-  </QueryClientProvider>
-  </ErrorBoundary>
-);
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <AuthProvider>
+            <DataProvider>
+              <ToastProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <ToastContainer />
+                <OfflineSyncBadge />
+                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/admin/signup" element={<AdminSignup />} />
+                  <Route path="/pmt/admin" element={<SuperAdminPage />} />
+                  <Route path="/pmt/admin/entreprises" element={<EntreprisesPage />} />
+                  <Route path="/pmt/admin/admins" element={<AdminsPage />} />
+                  <Route path="/pmt/admin/stats" element={<SuperAdminStatsPage />} />
+                  <Route path="/pmt/admin/notifications" element={<NotificationsPage />} />
+                  <Route path="/pmt/admin/settings" element={<SuperAdminSettingsPage />} />
+                  <Route path="/pmt/admin/logs" element={<LogsPage />} />
+                  <Route path="/pmt/admin/monitoring/requests" element={<RequestsPage />} />
+                  <Route path="/pmt/admin/monitoring/performance" element={<PerformancePage />} />
+                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route element={<MainLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/import/clients" element={<ImportClients />} />
+                    <Route path="/import/errors" element={<ImportErrors />} />
+                    <Route path="/import/success" element={<ImportSuccess />} />
+
+                    {/* Clients Routes */}
+                    <Route path="/clients" element={<Clients />} />
+                    <Route path="/clients/add" element={<AddClient />} />
+                    <Route path="/clients/:id" element={<ClientDetail />} />
+                    <Route path="/clients/:id/edit" element={<AddClient />} />
+                    <Route path="/clients/:id/add-rental" element={<AddRental />} />
+
+                    {/* Rentals Routes */}
+                    <Route path="/rentals" element={<Rentals />} />
+                    <Route path="/rentals/add" element={<AddRental />} />
+                    <Route path="/rentals/add/:clientId" element={<AddRental />} />
+                    <Route path="/rentals/:id" element={<RentalDetail />} />
+                    <Route path="/rentals/:id/edit" element={<EditRental />} />
+
+                    {/* Payments Routes - Note: IDs can contain dashes like client-6-rental-1 */}
+                    <Route path="/payments" element={<Payments />} />
+                    <Route path="/payments/add" element={<AddPayment />} />
+                    <Route path="/payments/add/:clientId" element={<AddPayment />} />
+                    <Route path="/payments/add/:clientId/:rentalId" element={<AddPayment />} />
+                    <Route path="/payments/:rentalId/edit/:paymentId" element={<AddPayment />} />
+                    <Route path="/payments/edit/:paymentId" element={<AddPayment />} />
+                    <Route path="/payments/:rentalId" element={<RentalDetail />} />
+                    <Route path="/payments/deposit" element={<Deposits />} />
+                    <Route path="/payments/deposit/:rentalId/edit" element={<Deposits />} />
+                    <Route path="/payments/deposit/:rentalId" element={<Deposits />} />
+                    <Route path="/payments/history" element={<PaymentHistory />} />
+                    <Route path="/payments/receipts" element={<PaymentReceipts />} />
+                    <Route path="/subscription" element={<AdminSubscriptionPayments />} />
+
+                    {/* Documents & Archive Routes */}
+                    <Route path="/documents/dossiers" element={<ClientDossier />} />
+                    <Route path="/documents/contracts" element={<SignedContracts />} />
+                    <Route path="/documents/archive" element={<Documents />} />
+                    <Route path="/documents/receipts" element={<PaymentReceipts />} />
+                    <Route path="/documents" element={<Documents />} />
+                    <Route path="/documents/:id/edit" element={<Documents />} />
+                    <Route path="/archive" element={<ArchivedClients />} />
+                    <Route path="/archive/clients" element={<ArchivedClients />} />
+                    <Route path="/archive/blacklist" element={<BlacklistedClients />} />
+
+                    {/* Settings & Archive */}
+                    <Route path="/settings" element={
+                      <PrivateAdminRoute>
+                        <Settings />
+                      </PrivateAdminRoute>
+                    } />
+                    <Route path="/archive" element={<Archive />} />
+                    <Route path="/work" element={<Work />} />
+                    <Route path="/danger/clients" element={<DangerClients />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Router>
+              </TooltipProvider>
+            </ToastProvider>
+          </DataProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </QueryClientProvider>
+    </ErrorBoundary>
+  )
+}
 
 export default App;

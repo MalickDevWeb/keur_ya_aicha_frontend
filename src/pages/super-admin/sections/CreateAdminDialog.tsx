@@ -144,64 +144,78 @@ export function CreateAdminDialog({
             </div>
           ) : (
             <>
-              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Nom complet</label>
-                  <Input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Nom et prénom"
-                  />
+              <form
+                className="space-y-4 sm:space-y-5"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  onCreate()
+                }}
+              >
+                <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Nom complet</label>
+                    <Input
+                      autoComplete="name"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Nom et prénom"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Email (optionnel)</label>
+                    <Input
+                      autoComplete="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="email@exemple.com"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Entreprise (optionnel)</label>
+                    <Input
+                      autoComplete="organization"
+                      value={newEntreprise}
+                      onChange={(e) => setNewEntreprise(e.target.value)}
+                      placeholder="Nom de l’entreprise"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Téléphone WhatsApp</label>
+                    <Input
+                      autoComplete="tel"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      placeholder="+221 77 123 45 67"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Mot de passe</label>
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Laisser vide pour admin123"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Email (optionnel)</label>
-                  <Input
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="email@exemple.com"
-                  />
+                {createError && <p className="text-sm text-destructive">{createError}</p>}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      onOpenChange(false)
+                      setCreatedAdmin(null)
+                    }}
+                  >
+                    Fermer
+                  </Button>
+                  <Button type="submit" disabled={creating}>
+                    {creating ? 'Création...' : 'Créer le compte'}
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Entreprise (optionnel)</label>
-                  <Input
-                    value={newEntreprise}
-                    onChange={(e) => setNewEntreprise(e.target.value)}
-                    placeholder="Nom de l’entreprise"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Téléphone WhatsApp</label>
-                  <Input
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    placeholder="+221 77 123 45 67"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Mot de passe</label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Laisser vide pour admin123"
-                  />
-                </div>
-              </div>
-              {createError && <p className="text-sm text-destructive">{createError}</p>}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    onOpenChange(false)
-                    setCreatedAdmin(null)
-                  }}
-                >
-                  Fermer
-                </Button>
-                <Button onClick={onCreate} disabled={creating}>
-                  {creating ? 'Création...' : 'Créer le compte'}
-                </Button>
-              </div>
+              </form>
             </>
           )}
         </div>
