@@ -7,8 +7,50 @@ import { useNavigate } from 'react-router-dom'
 import { AdminsListSection } from './sections/AdminsListSection'
 import { AdminsStatsSection } from './sections/AdminsStatsSection'
 import type { AdminRow, ViewMode } from './types'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/contexts/ToastContext'
+import {
+  ADMIN_FEATURE_LABELS,
+  ADMIN_FEATURE_PERMISSION_DEFAULTS,
+  normalizeAdminFeaturePermissions,
+} from '@/services/adminPermissions'
+
+type AdminSubscriptionMode = 'monthly' | 'premium' | 'annual'
+
+type SubscriptionDraft = {
+  mode: AdminSubscriptionMode
+  monthlyAmount: string
+  annualAmount: string
+  allowCustomAmount: boolean
+  permissions: typeof ADMIN_FEATURE_PERMISSION_DEFAULTS
+}
+
+const FEATURE_KEYS = Object.keys(ADMIN_FEATURE_PERMISSION_DEFAULTS) as Array<
+  keyof typeof ADMIN_FEATURE_PERMISSION_DEFAULTS
+>
+
+const DEFAULT_MONTHLY_AMOUNT = 5000
+const DEFAULT_ANNUAL_AMOUNT = 60000
+
+function buildSubscriptionDraft(admin: AdminDTO): SubscriptionDraft {
+  const mode = String(admin.subscriptionMode || 'monthly').toLowerCase()
+  const resolvedMode: AdminSubscriptionMode =
+    mode === 'annual' || mode === 'premium' ? mode : 'monthly'
+  const monthlyAmount = Number(admin.subscriptionMonthlyAmount || DEFAULT_MONTHLY_AMOUNT)
+  const annualAmount = Number(admin.subscriptionAnnualAmount || DEFAULT_ANNUAL_AMOUNT)
+  return {
+    mode: resolvedMode,
+    monthlyAmount: String(Number.isFinite(monthlyAmount) && monthlyAmount > 0 ? Math.round(monthlyAmount) : DEFAULT_MONTHLY_AMOUNT),
+    annualAmount: String(Number.isFinite(annualAmount) && annualAmount > 0 ? Math.round(annualAmount) : DEFAULT_ANNUAL_AMOUNT),
+    allowCustomAmount: Boolean(admin.subscriptionAllowCustomAmount),
+    permissions: normalizeAdminFeaturePermissions(admin.permissions),
+  }
+}
 
 export function AdminsDashboard() {
+  const { addToast } = useToast()
   const navigate = useNavigate()
   const [admins, setAdmins] = useState<AdminDTO[]>([])
   const [entreprises, setEntreprises] = useState<EntrepriseDTO[]>([])
@@ -16,6 +58,15 @@ export function AdminsDashboard() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [subscriptionTarget, setSubscriptionTarget] = useState<AdminDTO | null>(null)
+  const [subscriptionDraft, setSubscriptionDraft] = useState<SubscriptionDraft>({
+    mode: 'monthly',
+    monthlyAmount: String(DEFAULT_MONTHLY_AMOUNT),
+    annualAmount: String(DEFAULT_ANNUAL_AMOUNT),
+    allowCustomAmount: false,
+    permissions: { ...ADMIN_FEATURE_PERMISSION_DEFAULTS },
+  })
+  const [savingSubscription, setSavingSubscription] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -84,6 +135,63 @@ export function AdminsDashboard() {
     }
   }
 
+  const openSubscriptionDialog = (admin: AdminDTO) => {
+    setSubscriptionTarget(admin)
+    setSubscriptionDraft(buildSubscriptionDraft(admin))
+  }
+
+  const closeSubscriptionDialog = () => {
+    if (savingSubscription) return
+    setSubscriptionTarget(null)
+  }
+
+  const saveSubscriptionConfig = async () => {
+    if (!subscriptionTarget) return
+
+    const monthlyAmount = Number(subscriptionDraft.monthlyAmount)
+    const annualAmount = Number(subscriptionDraft.annualAmount)
+    if (!Number.isFinite(monthlyAmount) || monthlyAmount <= 0) {
+      addToast({
+        type: 'error',
+        title: 'Montant invalide',
+        message: 'Le montant mensuel doit être supérieur à 0.',
+      })
+      return
+    }
+    if (!Number.isFinite(annualAmount) || annualAmount <= 0) {
+      addToast({
+        type: 'error',
+        title: 'Montant invalide',
+        message: 'Le montant annuel doit être supérieur à 0.',
+      })
+      return
+    }
+
+    setSavingSubscription(true)
+    try {
+      const updated = await updateAdmin(subscriptionTarget.id, {
+        subscriptionMode: subscriptionDraft.mode,
+        subscriptionMonthlyAmount: Math.round(monthlyAmount),
+        subscriptionAnnualAmount: Math.round(annualAmount),
+        subscriptionAllowCustomAmount: subscriptionDraft.allowCustomAmount,
+        permissions: subscriptionDraft.permissions,
+      })
+      setAdmins((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
+      setSubscriptionTarget(updated)
+      setSubscriptionDraft(buildSubscriptionDraft(updated))
+      addToast({
+        type: 'success',
+        title: 'Abonnement mis à jour',
+        message: `Configuration enregistrée pour ${updated.name || updated.username}.`,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d'enregistrer la configuration d'abonnement."
+      addToast({ type: 'error', title: 'Erreur', message })
+    } finally {
+      setSavingSubscription(false)
+    }
+  }
+
   return (
     <main className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6 animate-fade-in">
       <SectionWrapper>
@@ -121,8 +229,160 @@ export function AdminsDashboard() {
           onViewModeChange={setViewMode}
           busyId={busyId}
           onSetStatus={setStatus}
+          onConfigureSubscription={openSubscriptionDialog}
         />
       </SectionWrapper>
+
+      <Dialog open={Boolean(subscriptionTarget)} onOpenChange={(open) => !open && closeSubscriptionDialog()}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>Configurer abonnement et autorisations</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[#121B53]/15 bg-[#F7F9FF] p-3 text-sm text-[#121B53]">
+              <p className="font-semibold">{subscriptionTarget?.name || subscriptionTarget?.username || 'Admin'}</p>
+              <p className="text-xs text-[#121B53]/70">Le montant sera prérempli côté admin selon ce plan.</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-[#121B53]">Mode d’abonnement</label>
+              <select
+                value={subscriptionDraft.mode}
+                onChange={(event) =>
+                  setSubscriptionDraft((prev) => ({
+                    ...prev,
+                    mode: event.target.value as AdminSubscriptionMode,
+                  }))
+                }
+                className="h-10 w-full rounded-md border border-[#121B53]/20 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#121B53]/20"
+              >
+                <option value="monthly">Mensuel</option>
+                <option value="premium">Premium</option>
+                <option value="annual">Annuel (total année)</option>
+              </select>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#121B53]">Montant mensuel (FCFA)</label>
+                <Input
+                  value={subscriptionDraft.monthlyAmount}
+                  onChange={(event) =>
+                    setSubscriptionDraft((prev) => ({
+                      ...prev,
+                      monthlyAmount: event.target.value.replace(/[^\d]/g, ''),
+                    }))
+                  }
+                  placeholder="Ex: 5000"
+                  className="border-[#121B53]/20"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#121B53]">Montant annuel (FCFA)</label>
+                <Input
+                  value={subscriptionDraft.annualAmount}
+                  onChange={(event) =>
+                    setSubscriptionDraft((prev) => ({
+                      ...prev,
+                      annualAmount: event.target.value.replace(/[^\d]/g, ''),
+                    }))
+                  }
+                  placeholder="Ex: 60000"
+                  className="border-[#121B53]/20"
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-[#121B53]">
+              <input
+                type="checkbox"
+                checked={subscriptionDraft.allowCustomAmount}
+                onChange={(event) =>
+                  setSubscriptionDraft((prev) => ({
+                    ...prev,
+                    allowCustomAmount: event.target.checked,
+                  }))
+                }
+              />
+              Autoriser cet admin à saisir manuellement un montant différent
+            </label>
+
+            <div className="space-y-2 rounded-xl border border-[#121B53]/15 bg-white p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium text-[#121B53]">Fonctionnalités autorisées</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSubscriptionDraft((prev) => ({
+                        ...prev,
+                        permissions: { ...ADMIN_FEATURE_PERMISSION_DEFAULTS },
+                      }))
+                    }
+                  >
+                    Tout autoriser
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSubscriptionDraft((prev) => ({
+                        ...prev,
+                        permissions: FEATURE_KEYS.reduce((acc, key) => {
+                          acc[key] = false
+                          return acc
+                        }, { ...prev.permissions }),
+                      }))
+                    }
+                  >
+                    Tout bloquer
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {FEATURE_KEYS.map((featureKey) => (
+                  <label key={featureKey} className="flex items-center gap-2 rounded-md border border-[#121B53]/10 px-2 py-1.5 text-sm text-[#121B53]">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(subscriptionDraft.permissions[featureKey])}
+                      onChange={(event) =>
+                        setSubscriptionDraft((prev) => ({
+                          ...prev,
+                          permissions: {
+                            ...prev.permissions,
+                            [featureKey]: event.target.checked,
+                          },
+                        }))
+                      }
+                    />
+                    {ADMIN_FEATURE_LABELS[featureKey]}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-[#121B53]/65">
+                Le Super Admin peut activer/désactiver chaque module: notifications, imports, export PDF, etc.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeSubscriptionDialog} disabled={savingSubscription}>
+              Fermer
+            </Button>
+            <Button
+              onClick={saveSubscriptionConfig}
+              disabled={savingSubscription}
+              className="bg-[#121B53] text-white hover:bg-[#0B153D]"
+            >
+              {savingSubscription ? 'Enregistrement...' : 'Enregistrer la configuration'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }

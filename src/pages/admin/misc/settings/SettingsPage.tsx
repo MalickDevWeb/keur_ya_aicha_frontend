@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useActionLogger } from '@/lib/actionLogger'
 import { CLIENT_IMPORT_FIELDS, DEFAULT_IMPORT_ALIASES, DEFAULT_REQUIRED_FIELDS, type ClientImportMapping } from '@/lib/importClients'
 import { getSetting, setSetting } from '@/services/api'
+import { uploadToCloudinary } from '@/services/api/uploads.api'
 import { deleteAuditLogs, listAuditLogs } from '@/services/api/auditLogs.api'
 import {
   PlatformConfig,
@@ -23,12 +24,20 @@ import {
   validateRuntimeSignUrl,
 } from '@/services/runtimeConfig'
 import { SettingsHeaderSection } from './sections/SettingsHeaderSection'
+import { SettingsAdminBrandingSection } from './sections/SettingsAdminBrandingSection'
 import { SettingsGovernanceSection } from './sections/SettingsGovernanceSection'
 import { SettingsImportAliasesSection } from './sections/SettingsImportAliasesSection'
 import { SettingsRequiredFieldsSection } from './sections/SettingsRequiredFieldsSection'
 import { SettingsReportSection } from './sections/SettingsReportSection'
 import { SettingsRuntimeApiSection } from './sections/SettingsRuntimeApiSection'
 import { safeJsonParse } from './utils'
+import {
+  appendAdminLogoToLibrary,
+  fetchAdminBrandingOverrides,
+  fetchAdminLogoLibrary,
+  saveAdminAppNameOverride,
+  saveAdminLogoOverride,
+} from '@/services/adminBranding'
 
 const REQUIRED_FIELDS_KEY = 'import_clients_required_fields'
 const URL_PROTOCOLS = new Set(['http:', 'https:'])
@@ -51,7 +60,7 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, impersonation } = useAuth()
   const { toast } = useToast()
   const { isElectron, openRuntimeConfigFolder } = useElectronAPI()
   const logAction = useActionLogger('settings')
@@ -74,11 +83,25 @@ export default function SettingsPage() {
   const [platformConfigDraft, setPlatformConfigDraft] = useState<PlatformConfig>(getPlatformConfigSnapshot())
   const [platformConfigLoading, setPlatformConfigLoading] = useState(false)
   const [platformConfigSaving, setPlatformConfigSaving] = useState(false)
+  const [adminAppName, setAdminAppName] = useState('')
+  const [adminNameSaving, setAdminNameSaving] = useState(false)
+  const [adminLogoUrl, setAdminLogoUrl] = useState('')
+  const [adminLogoLibrary, setAdminLogoLibrary] = useState<string[]>([])
+  const [adminLogoLoading, setAdminLogoLoading] = useState(false)
+  const [adminLogoSaving, setAdminLogoSaving] = useState(false)
+  const [adminLogoUploading, setAdminLogoUploading] = useState(false)
 
   const role = String(user?.role || '').toUpperCase()
   const canEdit = user && (role === 'ADMIN' || role === 'SUPER_ADMIN')
   const canEditRequired = role === 'SUPER_ADMIN'
-  const userScopedKey = (key: string) => (user?.id ? `${key}:${user.id}` : key)
+  const canEditAdminBranding = role === 'ADMIN' || !!impersonation?.adminId
+  const activeAdminId = String(
+    impersonation?.adminId || (role === 'ADMIN' ? user?.id || '' : '')
+  ).trim()
+  const adminScopeLabel = String(
+    impersonation?.adminName || (role === 'ADMIN' ? user?.name || user?.username || '' : 'Espace admin')
+  ).trim()
+  const userScopedKey = useCallback((key: string) => (user?.id ? `${key}:${user.id}` : key), [user?.id])
 
   const loadRuntimeConfig = useCallback(async () => {
     if (!canEditRequired) return
@@ -120,7 +143,7 @@ export default function SettingsPage() {
       }
     }
     loadImportAliases()
-  }, [user?.id])
+  }, [userScopedKey])
 
   useEffect(() => {
     async function loadReportFormat() {
@@ -136,7 +159,7 @@ export default function SettingsPage() {
       }
     }
     loadReportFormat()
-  }, [user?.id])
+  }, [userScopedKey])
 
   useEffect(() => {
     let mounted = true
@@ -176,6 +199,63 @@ export default function SettingsPage() {
     if (!canEditRequired) return
     void loadPlatformConfig()
   }, [canEditRequired, loadPlatformConfig])
+
+  useEffect(() => {
+    let mounted = true
+    const loadAdminBranding = async () => {
+      if (!activeAdminId) {
+        if (mounted) {
+          setAdminAppName('')
+          setAdminLogoUrl('')
+          setAdminLogoLibrary([])
+        }
+        return
+      }
+      setAdminLogoLoading(true)
+      try {
+        const [branding, library] = await Promise.all([
+          fetchAdminBrandingOverrides(activeAdminId),
+          fetchAdminLogoLibrary(activeAdminId),
+        ])
+        if (!mounted) return
+        setAdminAppName(branding.appName)
+        setAdminLogoUrl(branding.logoUrl)
+        setAdminLogoLibrary(library)
+      } finally {
+        if (mounted) setAdminLogoLoading(false)
+      }
+    }
+
+    void loadAdminBranding()
+    return () => {
+      mounted = false
+    }
+  }, [activeAdminId])
+
+  const saveAdminAppName = async () => {
+    if (!activeAdminId) return
+    const normalized = String(adminAppName || '').trim()
+    setAdminAppName(normalized)
+    try {
+      setAdminNameSaving(true)
+      await saveAdminAppNameOverride(activeAdminId, normalized)
+      toast({
+        title: 'Nom enregistré',
+        description: normalized
+          ? "Le nom d'entreprise de cet admin est appliqué."
+          : 'Le nom global sera utilisé.',
+      })
+      void logAction('settings.adminBranding.appName.save.success', {
+        adminId: activeAdminId,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d'enregistrer le nom d'entreprise."
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.adminBranding.appName.save.error', { message })
+    } finally {
+      setAdminNameSaving(false)
+    }
+  }
 
   const saveImportAliases = async () => {
     void logAction('settings.importAliases.save.start')
@@ -455,6 +535,70 @@ export default function SettingsPage() {
     }
   }
 
+  const useGlobalLogo = async () => {
+    setAdminLogoUrl('')
+    if (!activeAdminId) return
+    try {
+      setAdminLogoSaving(true)
+      await saveAdminLogoOverride(activeAdminId, '')
+      toast({ title: 'Réinitialisé', description: 'Le logo global sera utilisé.' })
+      void logAction('settings.adminBranding.logo.reset.success', { adminId: activeAdminId })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Impossible de réinitialiser le logo admin.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.adminBranding.logo.reset.error', { message })
+    } finally {
+      setAdminLogoSaving(false)
+    }
+  }
+
+  const selectLogoFromLibrary = async (logoUrl: string) => {
+    const normalized = String(logoUrl || '').trim()
+    if (!normalized || !activeAdminId) return
+    setAdminLogoUrl(normalized)
+    try {
+      setAdminLogoSaving(true)
+      await saveAdminLogoOverride(activeAdminId, normalized)
+      const nextLibrary = await appendAdminLogoToLibrary(activeAdminId, normalized)
+      setAdminLogoLibrary(nextLibrary)
+      toast({ title: 'Logo appliqué', description: 'Le logo sélectionné est maintenant actif.' })
+      void logAction('settings.adminBranding.logo.select.success', { adminId: activeAdminId })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Impossible de sélectionner ce logo.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.adminBranding.logo.select.error', { message })
+    } finally {
+      setAdminLogoSaving(false)
+    }
+  }
+
+  const uploadAdminLogoFile = async (file: File) => {
+    if (!activeAdminId) {
+      toast({ title: 'Erreur', description: 'Admin introuvable.', variant: 'destructive' })
+      return
+    }
+
+    try {
+      setAdminLogoUploading(true)
+      const uploadedUrl = await uploadToCloudinary(file)
+      await saveAdminLogoOverride(activeAdminId, uploadedUrl)
+      const nextLibrary = await appendAdminLogoToLibrary(activeAdminId, uploadedUrl)
+      setAdminLogoLibrary(nextLibrary)
+      setAdminLogoUrl(uploadedUrl)
+      toast({ title: 'Logo uploadé', description: 'Logo enregistré sur Cloudinary et appliqué.' })
+      void logAction('settings.adminBranding.logo.upload.success', {
+        adminId: activeAdminId,
+        fileName: file.name,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Échec upload logo Cloudinary.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.adminBranding.logo.upload.error', { message })
+    } finally {
+      setAdminLogoUploading(false)
+    }
+  }
+
   if (!canEdit) {
     return (
       <div className="p-6">
@@ -467,6 +611,26 @@ export default function SettingsPage() {
   return (
     <div className="p-6">
       <SettingsHeaderSection title="Paramètres" />
+
+      {canEditAdminBranding ? (
+        <SettingsAdminBrandingSection
+          appName={adminAppName}
+          logoUrl={adminLogoUrl}
+          onAppNameChange={setAdminAppName}
+          onSaveAppName={saveAdminAppName}
+          onUseGlobalLogo={useGlobalLogo}
+          onSelectLogo={selectLogoFromLibrary}
+          onUploadLogoFile={uploadAdminLogoFile}
+          isLoading={adminLogoLoading}
+          isSaving={adminLogoSaving}
+          isUploading={adminLogoUploading}
+          isSavingName={adminNameSaving}
+          globalAppName={platformConfigDraft.branding.appName}
+          globalLogoUrl={platformConfigDraft.branding.logoUrl}
+          adminScopeLabel={adminScopeLabel || 'Mon espace admin'}
+          logoLibrary={adminLogoLibrary}
+        />
+      ) : null}
 
       <SettingsRequiredFieldsSection
         requiredFields={requiredFields}

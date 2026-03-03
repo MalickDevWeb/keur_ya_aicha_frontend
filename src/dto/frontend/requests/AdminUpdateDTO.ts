@@ -1,4 +1,4 @@
-import { AdminStatus } from '../responses/AdminDTO'
+import { AdminFeaturePermissions, AdminStatus } from '../responses/AdminDTO'
 
 export interface AdminUpdateDTO {
   status?: AdminStatus
@@ -6,4 +6,9 @@ export interface AdminUpdateDTO {
   name?: string
   email?: string
   entrepriseId?: string
+  subscriptionMode?: 'monthly' | 'premium' | 'annual'
+  subscriptionMonthlyAmount?: number
+  subscriptionAnnualAmount?: number
+  subscriptionAllowCustomAmount?: boolean
+  permissions?: Partial<AdminFeaturePermissions>
 }

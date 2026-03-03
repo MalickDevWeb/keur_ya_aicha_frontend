@@ -33,7 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchImportRuns } from '@/services/api';
 import {
   DEFAULT_PLATFORM_CONFIG,
@@ -42,6 +42,13 @@ import {
   subscribePlatformConfigUpdates,
 } from '@/services/platformConfig';
 import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets';
+import {
+  fetchAdminBrandingOverrides,
+  readCachedAdminAppNameOverride,
+  readCachedAdminLogoOverride,
+  subscribeAdminBrandingUpdates,
+} from '@/services/adminBranding';
+import { normalizeAdminFeaturePermissions } from '@/services/adminPermissions';
 import { t, MENU } from '@/messages';
 
 type ImportRunSidebar = {
@@ -64,6 +71,12 @@ export function AppSidebar() {
   const impersonationActive = !!impersonation;
   const showAdminMenus = !isSuperAdmin || impersonationActive;
   const activeAdminId = impersonation?.adminId || (isSuperAdmin ? null : user?.id || null);
+  const adminPermissions = useMemo(
+    () => normalizeAdminFeaturePermissions(user?.permissions),
+    [user?.permissions]
+  );
+  const canAccessFeature = (feature: keyof typeof adminPermissions) => Boolean(adminPermissions[feature]);
+  const canUseImports = canAccessFeature('imports');
   const displayName = user?.name || (isSuperAdmin ? 'Super Admin' : 'Utilisateur');
   const [importErrorCount, setImportErrorCount] = useState(0);
   const [importSuccessCount, setImportSuccessCount] = useState(0);
@@ -77,9 +90,18 @@ export function AppSidebar() {
     const config = getPlatformConfigSnapshot()
     return config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl
   })
+  const [adminLogoOverride, setAdminLogoOverride] = useState(() =>
+    readCachedAdminLogoOverride(activeAdminId)
+  )
+  const [adminAppNameOverride, setAdminAppNameOverride] = useState(() =>
+    readCachedAdminAppNameOverride(activeAdminId)
+  )
   const [brandLogoBroken, setBrandLogoBroken] = useState(false)
+  const resolvedBrandName = adminAppNameOverride || brandName
   const fallbackLogoUrl = resolveAssetUrl(DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH)
-  const resolvedBrandLogoUrl = resolveAssetUrl(brandLogoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH)
+  const resolvedBrandLogoUrl = resolveAssetUrl(
+    adminLogoOverride || brandLogoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl || DEFAULT_LOGO_ASSET_PATH
+  )
 
   useEffect(() => {
     let active = true
@@ -104,7 +126,51 @@ export function AppSidebar() {
   }, [])
 
   useEffect(() => {
-    if (!showAdminMenus) return;
+    let active = true
+    const syncAdminBranding = async () => {
+      if (!activeAdminId) {
+        if (!active) return
+        setAdminLogoOverride('')
+        setAdminAppNameOverride('')
+        setBrandLogoBroken(false)
+        return
+      }
+      const next = await fetchAdminBrandingOverrides(activeAdminId)
+      if (!active) return
+      setAdminLogoOverride(next.logoUrl || '')
+      setAdminAppNameOverride(next.appName || '')
+      setBrandLogoBroken(false)
+    }
+
+    void syncAdminBranding()
+    const unsubscribe = subscribeAdminBrandingUpdates((payload) => {
+      if (!active) return
+      if (String(payload.adminId || '') !== String(activeAdminId || '')) return
+      if (Object.prototype.hasOwnProperty.call(payload, 'logoUrl')) {
+        setAdminLogoOverride(payload.logoUrl || '')
+      }
+      if (Object.prototype.hasOwnProperty.call(payload, 'appName')) {
+        setAdminAppNameOverride(payload.appName || '')
+      }
+      setBrandLogoBroken(false)
+    })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [activeAdminId])
+
+  useEffect(() => {
+    if (canUseImports) return
+    setImportErrorCount(0)
+    setImportSuccessCount(0)
+    setHasImportErrors(false)
+    setHasImportSuccess(false)
+  }, [canUseImports])
+
+  useEffect(() => {
+    if (!showAdminMenus || !canUseImports) return;
 
     let mounted = true;
     const refreshImportErrors = async () => {
@@ -167,7 +233,7 @@ export function AppSidebar() {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('import-runs-updated', onImportRunsUpdated);
     };
-  }, [activeAdminId, location.pathname, showAdminMenus]);
+  }, [activeAdminId, canUseImports, location.pathname, showAdminMenus]);
 
   const handleLogout = () => {
     if (isMobile) {
@@ -228,24 +294,32 @@ export function AppSidebar() {
     {
       label: t(MENU.GROUP_PRINCIPAL),
       items: [
-        { key: 'dashboard', label: t(MENU.DASHBOARD_LABEL), path: '/dashboard', icon: LayoutDashboard },
+        ...(canAccessFeature('dashboard')
+          ? [{ key: 'dashboard', label: t(MENU.DASHBOARD_LABEL), path: '/dashboard', icon: LayoutDashboard }]
+          : []),
       ],
     },
     {
       label: t(MENU.GROUP_GESTION),
       items: [
-        { key: 'clients', label: t(MENU.CLIENTS_LABEL), icon: Users, path: '/clients' },
-        { key: 'rentals', label: t(MENU.RENTALS_LABEL), icon: Home, path: '/rentals' },
-        { key: 'payments', label: t(MENU.PAYMENTS_LABEL), icon: CreditCard, path: '/payments' },
+        ...(canAccessFeature('clients') ? [{ key: 'clients', label: t(MENU.CLIENTS_LABEL), icon: Users, path: '/clients' }] : []),
+        ...(canAccessFeature('rentals') ? [{ key: 'rentals', label: t(MENU.RENTALS_LABEL), icon: Home, path: '/rentals' }] : []),
+        ...(canAccessFeature('payments')
+          ? [{ key: 'payments', label: t(MENU.PAYMENTS_LABEL), icon: CreditCard, path: '/payments' }]
+          : []),
         { key: 'subscription', label: t(MENU.ADMIN_SUBSCRIPTION_LABEL), icon: CreditCard, path: '/subscription' },
       ],
     },
     {
       label: t(MENU.GROUP_ADMINISTRATION),
       items: [
-        { key: 'documents', label: t(MENU.DOCUMENTS_LABEL), icon: FileText, path: '/documents' },
-        { key: 'archiveAdmin', label: t(MENU.ARCHIVE_ADMIN_LABEL), icon: Archive, path: '/archive/clients' },
-        ...(hasImportErrors
+        ...(canAccessFeature('documents')
+          ? [
+              { key: 'documents', label: t(MENU.DOCUMENTS_LABEL), icon: FileText, path: '/documents' },
+              { key: 'archiveAdmin', label: t(MENU.ARCHIVE_ADMIN_LABEL), icon: Archive, path: '/archive/clients' },
+            ]
+          : []),
+        ...(canUseImports && hasImportErrors
           ? [
               {
                 key: 'importErrors',
@@ -257,7 +331,7 @@ export function AppSidebar() {
               },
             ]
           : []),
-        ...(hasImportSuccess
+        ...(canUseImports && hasImportSuccess
           ? [
               {
                 key: 'importSuccess',
@@ -278,7 +352,12 @@ export function AppSidebar() {
     {
       label: 'Paramètres',
       items: [
-        { key: 'settings', label: t(MENU.SETTINGS_LABEL), icon: Settings, path: settingsPath },
+        ...(canAccessFeature('settings') ? [{ key: 'settings', label: t(MENU.SETTINGS_LABEL), icon: Settings, path: settingsPath }] : []),
+        ...(showAdminMenus
+          ? canAccessFeature('work')
+            ? [{ key: 'work', label: t(MENU.WORK), icon: Activity, path: '/work' }]
+            : []
+          : []),
       ],
     },
   ];
@@ -286,6 +365,12 @@ export function AppSidebar() {
   const menuGroups = isSuperAdmin && !impersonationActive
     ? [...superAdminMenu, ...monitoringMenu, ...additionalMenu]
     : [...adminMenu, ...additionalMenu];
+  const visibleMenuGroups = menuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(Boolean),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <Sidebar className="border-r-0">
@@ -297,7 +382,7 @@ export function AppSidebar() {
             ) : (
               <img
                 src={resolvedBrandLogoUrl}
-                alt={brandName || 'KYA'}
+                alt={resolvedBrandName || 'KYA'}
                 className="h-8 w-8 rounded-md object-contain"
                 onError={(event) => {
                   if (event.currentTarget.src !== fallbackLogoUrl) {
@@ -311,7 +396,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="font-bold text-sidebar-foreground truncate">{brandName || t(MENU.APP_TITLE)}</h1>
+              <h1 className="font-bold text-sidebar-foreground truncate">{resolvedBrandName || t(MENU.APP_TITLE)}</h1>
               <p className="text-xs text-sidebar-foreground/60 truncate">{t(MENU.APP_SUBTITLE)}</p>
             </div>
           )}
@@ -319,7 +404,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        {menuGroups.map((group) => (
+        {visibleMenuGroups.map((group) => (
           <SidebarGroup key={group.label}>
             {!collapsed && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
             <SidebarGroupContent>

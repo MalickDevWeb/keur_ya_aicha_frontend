@@ -10,6 +10,8 @@ import { AdminStatus } from '@/dto/frontend/responses';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { listAuditLogs } from '@/services/api/auditLogs.api';
+import type { AdminFeaturePermissions } from '@/dto/frontend/responses';
+import { normalizeAdminFeaturePermissions } from '@/services/adminPermissions';
 import {
   DEFAULT_PLATFORM_CONFIG,
   PlatformConfig,
@@ -24,6 +26,25 @@ type SubscriptionBlockedDetail = {
   error?: string
   overdueMonth?: string
   dueAt?: string
+}
+
+const ADMIN_ROUTE_PERMISSION_RULES: Array<{ pattern: RegExp; feature: keyof AdminFeaturePermissions }> = [
+  { pattern: /^\/dashboard(?:\/|$)/, feature: 'dashboard' },
+  { pattern: /^\/clients(?:\/|$)/, feature: 'clients' },
+  { pattern: /^\/rentals(?:\/|$)/, feature: 'rentals' },
+  { pattern: /^\/payments(?:\/|$)/, feature: 'payments' },
+  { pattern: /^\/documents(?:\/|$)/, feature: 'documents' },
+  { pattern: /^\/archive(?:\/|$)/, feature: 'documents' },
+  { pattern: /^\/import(?:\/|$)/, feature: 'imports' },
+  { pattern: /^\/settings(?:\/|$)/, feature: 'settings' },
+  { pattern: /^\/work(?:\/|$)/, feature: 'work' },
+];
+
+function resolveRequiredAdminFeature(pathname = ''): keyof AdminFeaturePermissions | null {
+  const safePath = String(pathname || '').trim();
+  if (!safePath || safePath === '/subscription') return null;
+  const rule = ADMIN_ROUTE_PERMISSION_RULES.find((entry) => entry.pattern.test(safePath));
+  return rule?.feature || null;
 }
 
 interface MainLayoutProps {
@@ -41,7 +62,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   const lastSubscriptionToastAtRef = useRef(0)
   const lastMaintenanceToastAtRef = useRef(0)
   const lastSessionToastAtRef = useRef(0)
+  const lastPermissionToastAtRef = useRef(0)
   const [platformConfig, setPlatformConfig] = useState<PlatformConfig>(getPlatformConfigSnapshot())
+  const adminPermissions = useMemo(
+    () => normalizeAdminFeaturePermissions(user?.permissions),
+    [user?.permissions]
+  )
 
   // Memoize isSuperAdmin check - placed before early returns to ensure consistent hooks order
   const isSuperAdmin = useMemo(() => String(user?.role || '').toUpperCase() === 'SUPER_ADMIN', [user?.role]);
@@ -165,6 +191,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       if (!location.pathname.startsWith('/subscription')) {
         navigate('/subscription', { replace: true })
       }
+      if (role === 'ADMIN' && !adminPermissions.notifications) return
       const now = Date.now()
       if (now - lastSubscriptionToastAtRef.current < 2500) return
       lastSubscriptionToastAtRef.current = now
@@ -179,6 +206,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
     const onMaintenanceBlocked = (event: Event) => {
       const detail = (event as CustomEvent<{ message?: string }>).detail || {}
+      if (String(user?.role || '').toUpperCase() === 'ADMIN' && !adminPermissions.notifications) return
       const now = Date.now()
       if (now - lastMaintenanceToastAtRef.current < 2500) return
       lastMaintenanceToastAtRef.current = now
@@ -191,6 +219,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
     const onSessionSecurityLogout = (event: Event) => {
       const detail = (event as CustomEvent<{ reason?: 'inactivity' | 'duration' }>).detail || {}
+      if (String(user?.role || '').toUpperCase() === 'ADMIN' && !adminPermissions.notifications) return
       const now = Date.now()
       if (now - lastSessionToastAtRef.current < 2500) return
       lastSessionToastAtRef.current = now
@@ -219,7 +248,46 @@ export function MainLayout({ children }: MainLayoutProps) {
       window.removeEventListener('session-security-logout', onSessionSecurityLogout)
       window.removeEventListener('auth-session-expired', onAuthSessionExpired)
     }
-  }, [location.pathname, logout, navigate, platformConfig.maintenance.message, toast, user?.role])
+  }, [adminPermissions.notifications, location.pathname, logout, navigate, platformConfig.maintenance.message, toast, user?.role])
+
+  useEffect(() => {
+    const role = String(user?.role || '').toUpperCase()
+    if (role !== 'ADMIN') return
+    if (!user?.subscriptionBlocked) return
+    if (!adminPermissions.notifications) return
+    const now = Date.now()
+    if (now - lastSubscriptionToastAtRef.current < 2500) return
+    lastSubscriptionToastAtRef.current = now
+    const overduePeriod = user.subscriptionOverdueMonth || user.subscriptionRequiredMonth || 'période en cours'
+    toast({
+      title: 'Renouvellement abonnement requis',
+      description: `Le mois ${overduePeriod} est dépassé. Renouvelez pour éviter les restrictions d'accès.`,
+      variant: 'destructive',
+    })
+  }, [adminPermissions.notifications, toast, user?.role, user?.subscriptionBlocked, user?.subscriptionOverdueMonth, user?.subscriptionRequiredMonth])
+
+  useEffect(() => {
+    const role = String(user?.role || '').toUpperCase()
+    if (role !== 'ADMIN') return
+
+    const requiredFeature = resolveRequiredAdminFeature(location.pathname)
+    if (!requiredFeature) return
+    if (adminPermissions[requiredFeature]) return
+
+    const fallbackPath = adminPermissions.dashboard ? '/dashboard' : '/subscription'
+    if (location.pathname !== fallbackPath) {
+      navigate(fallbackPath, { replace: true })
+    }
+
+    const now = Date.now()
+    if (now - lastPermissionToastAtRef.current < 2500) return
+    lastPermissionToastAtRef.current = now
+    toast({
+      title: 'Accès non autorisé',
+      description: "Ce module est désactivé pour votre compte par le Super Admin.",
+      variant: 'destructive',
+    })
+  }, [adminPermissions, location.pathname, navigate, toast, user?.role])
 
   if (isLoading) {
     return <div className="p-6 text-sm text-muted-foreground">Chargement...</div>;

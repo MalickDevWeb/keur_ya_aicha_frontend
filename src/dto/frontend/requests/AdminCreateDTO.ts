@@ -1,4 +1,4 @@
-import { AdminStatus } from '../responses/AdminDTO'
+import { AdminFeaturePermissions, AdminStatus } from '../responses/AdminDTO'
 
 export interface AdminCreateDTO {
   id: string
@@ -10,4 +10,9 @@ export interface AdminCreateDTO {
   status: AdminStatus
   entrepriseId?: string
   createdAt?: string
+  subscriptionMode?: 'monthly' | 'premium' | 'annual'
+  subscriptionMonthlyAmount?: number
+  subscriptionAnnualAmount?: number
+  subscriptionAllowCustomAmount?: boolean
+  permissions?: Partial<AdminFeaturePermissions>
 }

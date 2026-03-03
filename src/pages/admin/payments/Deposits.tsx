@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Eye, Edit, Plus, Filter, X, Download, Grid3x3, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SendDownloadModal from '@/components/SendDownloadModal';
@@ -24,11 +24,19 @@ import { calculateDepositStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
+const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+const DEPOSIT_ALERT_DAYS = 14;
+type DepositQuickFilter = '' | 'overdue' | 'unpaid';
+
 export default function Deposits() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { rentalId } = useParams<{ rentalId?: string }>();
   const clients = useStore((state) => state.clients)
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [quickFilter, setQuickFilter] = useState<DepositQuickFilter>('');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   type DepositRow = Deposit & {
@@ -51,6 +59,24 @@ export default function Deposits() {
   };
 
   const [modalDoc, setModalDoc] = useState<ReceiptDoc | null>(null);
+
+  useEffect(() => {
+    const filter = searchParams.get('filter');
+    if (filter === 'overdue' || filter === 'unpaid') {
+      setQuickFilter(filter);
+      return;
+    }
+    setQuickFilter('');
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!rentalId) return;
+
+    // Backward compatibility: old deposit URLs should open the real rental pages
+    const isEditRoute = location.pathname.endsWith('/edit');
+    const target = isEditRoute ? `/rentals/${rentalId}/edit` : `/rentals/${rentalId}`;
+    navigate(target, { replace: true });
+  }, [location.pathname, navigate, rentalId]);
 
   // Get all deposits with client info
   const allDeposits = useMemo(() => {
@@ -81,6 +107,8 @@ export default function Deposits() {
 
   // Filter deposits
   const filteredDeposits = useMemo(() => {
+    const nowTime = Date.now();
+
     return allDeposits.filter((deposit) => {
       // Search filter
       const searchLower = search.toLowerCase();
@@ -93,15 +121,35 @@ export default function Deposits() {
       const status = calculateDepositStatus(deposit);
       const matchesStatus = statusFilter === 'all' || status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const isUnpaidDeposit = Number(deposit.total || 0) > Number(deposit.paid || 0);
+      const matchesQuickFilter = (() => {
+        if (!quickFilter) return true;
+        if (quickFilter === 'unpaid') return isUnpaidDeposit;
+        if (!isUnpaidDeposit) return false;
+        const startDate = new Date(deposit.startDate);
+        if (Number.isNaN(startDate.getTime())) return false;
+        const daysLate = Math.floor((nowTime - startDate.getTime()) / MILLIS_PER_DAY);
+        return daysLate >= DEPOSIT_ALERT_DAYS;
+      })();
+
+      return matchesSearch && matchesStatus && matchesQuickFilter;
     });
-  }, [allDeposits, search, statusFilter]);
+  }, [allDeposits, search, statusFilter, quickFilter]);
+
+  const clearQuickFilterParam = () => {
+    const next = new URLSearchParams(searchParams);
+    if (!next.has('filter')) return;
+    next.delete('filter');
+    setSearchParams(next, { replace: true });
+  };
 
   const clearFilters = () => {
     setStatusFilter('all');
+    setQuickFilter('');
+    clearQuickFilterParam();
   };
 
-  const hasActiveFilters = statusFilter !== 'all';
+  const hasActiveFilters = statusFilter !== 'all' || quickFilter !== '';
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -246,6 +294,12 @@ export default function Deposits() {
             </Button>
           </div>
 
+          {quickFilter && (
+            <p className="text-xs text-muted-foreground">
+              Filtre rapide actif: {quickFilter === 'overdue' ? `cautions en retard (>= ${DEPOSIT_ALERT_DAYS} jours)` : 'cautions non soldées'}
+            </p>
+          )}
+
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -339,7 +393,7 @@ export default function Deposits() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/payments/deposit/${deposit.rentalId}`)}
+                            onClick={() => navigate(`/rentals/${deposit.rentalId}`)}
                             className="flex-1 hover:bg-muted"
                           >
                             <Eye className="w-4 h-4 mr-2" />
@@ -348,7 +402,7 @@ export default function Deposits() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/payments/deposit/${deposit.rentalId}/edit`)}
+                            onClick={() => navigate(`/rentals/${deposit.rentalId}/edit`)}
                             className="flex-1 hover:bg-muted"
                           >
                             <Edit className="w-4 h-4 mr-2" />
@@ -451,7 +505,7 @@ export default function Deposits() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => navigate(`/payments/deposit/${deposit.rentalId}`)}
+                                onClick={() => navigate(`/rentals/${deposit.rentalId}`)}
                                 title="Voir les détails"
                               >
                                 <Eye className="w-4 h-4" />
@@ -459,7 +513,7 @@ export default function Deposits() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => navigate(`/payments/deposit/${deposit.rentalId}/edit`)}
+                                onClick={() => navigate(`/rentals/${deposit.rentalId}/edit`)}
                                 title="Éditer la caution"
                               >
                                 <Edit className="w-4 h-4" />

@@ -102,14 +102,7 @@ export async function loginUser(username: string, password: string): Promise<Aut
   const user = (data as { user?: AuthUser })?.user || (data as AuthUser)
   if (!user) return null
   applyAuthCacheScope(user, null)
-  return {
-    id: user.id,
-    username: user.username,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    status: user.status,
-  }
+  return user
 }
 
 /**

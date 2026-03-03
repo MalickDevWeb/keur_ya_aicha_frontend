@@ -294,7 +294,13 @@ export default function ClientDetail() {
                 {t('clients.addRental')}
               </Button>
             </div>
-            {client.rentals.map((rental) => (
+            {client.rentals.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  Ce client n'a pas encore de location.
+                </CardContent>
+              </Card>
+            ) : client.rentals.map((rental) => (
               <Card key={rental.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

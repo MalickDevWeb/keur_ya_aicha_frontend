@@ -34,23 +34,28 @@ export default function RentalDetail() {
     paymentModalOpen,
     setPaymentModalOpen,
     quickPaymentModalOpen,
-    setQuickPaymentModalOpen,
     depositModalOpen,
-    setDepositModalOpen,
     receiptModalOpen,
     setReceiptModalOpen,
     editingDepositId,
     selectedReceipt,
     selectedPaymentForQuickPay,
+    isPaymentSubmitting,
+    isDepositSubmitting,
     paymentStats,
     depositStatus,
     depositRemaining,
+    depositMaxAmount,
+    depositModalDefaultValues,
     handleAddPayment,
     handleQuickPayPayment,
     handleQuickPayTotal,
     handleQuickPayPartial,
     handleAddDeposit,
     handleEditDeposit,
+    handleOpenAddDeposit,
+    handleDepositModalOpenChange,
+    handleQuickPaymentModalOpenChange,
     handleShowPaymentReceipt,
     handleShowDepositReceipt,
   } = useRentalDetail(rentalId);
@@ -76,6 +81,8 @@ export default function RentalDetail() {
   const startDate = new Date(rental.startDate);
   const monthlyRent = rental.monthlyRent;
   const paymentStats_remaining = paymentStats.remaining;
+  const depositPaidPercent =
+    rental.deposit.total > 0 ? Math.min(100, Math.round((rental.deposit.paid / rental.deposit.total) * 100)) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -312,9 +319,32 @@ export default function RentalDetail() {
       {/* Caution */}
       {activeTab === 'deposit' && (
         <div className="space-y-4">
+          <Card className="border-primary/15 bg-gradient-to-r from-primary/5 via-card to-emerald-50/50 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Progression Caution</p>
+                  <p className="text-2xl font-black text-foreground">{depositPaidPercent}% encaissée</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {rental.deposit.paid.toLocaleString('fr-SN')} FCFA / {rental.deposit.total.toLocaleString('fr-SN')} FCFA
+                  </p>
+                </div>
+                <BadgeStatut status={depositStatus} />
+              </div>
+              <div className="mt-4 h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    depositRemaining > 0 ? 'bg-gradient-to-r from-amber-500 to-orange-600' : 'bg-gradient-to-r from-emerald-500 to-green-600'
+                  }`}
+                  style={{ width: `${depositPaidPercent}%` }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Deposit Info */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+            <Card className="border-blue-200/60 bg-gradient-to-br from-card to-blue-50/40 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Caution Totale</CardTitle>
               </CardHeader>
@@ -323,7 +353,7 @@ export default function RentalDetail() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-emerald-200/60 bg-gradient-to-br from-card to-emerald-50/50 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Caution Payée</CardTitle>
               </CardHeader>
@@ -332,7 +362,7 @@ export default function RentalDetail() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-amber-200/60 bg-gradient-to-br from-card to-amber-50/50 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">À Percevoir</CardTitle>
               </CardHeader>
@@ -348,12 +378,22 @@ export default function RentalDetail() {
           </div>
 
           {/* Deposit Payments Table */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Historique des Paiements de Caution</CardTitle>
-              <Button size="sm" className="bg-secondary hover:bg-secondary/90">
+          <Card className="shadow-sm border-muted-foreground/15">
+            <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10">
+              <div>
+                <CardTitle>Historique des Paiements de Caution</CardTitle>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Tous les versements de caution de cette location
+                </p>
+              </div>
+              <Button
+                size="sm"
+                className="bg-secondary hover:bg-secondary/90"
+                onClick={handleOpenAddDeposit}
+                disabled={depositRemaining <= 0 || isDepositSubmitting}
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Ajouter Paiement Caution
+                {isDepositSubmitting ? 'Enregistrement...' : 'Ajouter Paiement Caution'}
               </Button>
             </CardHeader>
             <CardContent>
@@ -406,8 +446,11 @@ export default function RentalDetail() {
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Aucun paiement de caution enregistré
+                <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 py-10 text-center">
+                  <p className="text-base font-semibold text-foreground">Aucun paiement de caution enregistré</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Cliquez sur "Ajouter Paiement Caution" pour enregistrer le premier versement.
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -421,17 +464,20 @@ export default function RentalDetail() {
         onOpenChange={setPaymentModalOpen}
         onSubmit={handleAddPayment}
         maxAmount={monthlyRent}
+        isLoading={isPaymentSubmitting}
       />
 
       {/* Deposit Modal */}
       <DepositModal
         open={depositModalOpen}
-        onOpenChange={setDepositModalOpen}
+        onOpenChange={handleDepositModalOpenChange}
         onSubmit={handleAddDeposit}
-        maxAmount={depositRemaining}
+        maxAmount={depositMaxAmount}
         currentPaid={rental.deposit.paid}
         totalDeposit={rental.deposit.total}
+        defaultValues={depositModalDefaultValues}
         isEdit={!!editingDepositId}
+        isLoading={isDepositSubmitting}
       />
 
       {/* Receipt Modal */}
@@ -456,12 +502,13 @@ export default function RentalDetail() {
       {selectedPaymentForQuickPay && (
         <QuickPaymentModal
           open={quickPaymentModalOpen}
-          onOpenChange={setQuickPaymentModalOpen}
+          onOpenChange={handleQuickPaymentModalOpenChange}
           onPayTotal={handleQuickPayTotal}
           onPayPartial={handleQuickPayPartial}
           clientName={`${client.firstName} ${client.lastName}`}
           propertyName={rental.propertyName}
           amountDue={selectedPaymentForQuickPay.amount - selectedPaymentForQuickPay.paidAmount}
+          isLoading={isPaymentSubmitting}
         />
       )}
     </div>

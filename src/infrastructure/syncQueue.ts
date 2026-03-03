@@ -108,7 +108,8 @@ function buildQueueItemSummary(action: SyncAction): string {
     const name = String(action.payload?.name || '').trim()
     return `${name || 'Admin'}${username ? ` (${username})` : ''}`
   }
-  return action.type
+  const _exhaustiveCheck: never = action
+  return _exhaustiveCheck
 }
 
 async function getSyncQueueEntries(): Promise<SyncQueueEntry[]> {

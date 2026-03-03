@@ -4,14 +4,22 @@ import { ArrowLeft } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { createClient, fetchClients, fetchImportRuns, getSetting, markImportRunRead, updateImportRun } from '@/services/api'
+import { fetchClients, fetchImportRuns, getSetting, markImportRunRead, updateImportRun } from '@/services/api'
 import { ErrorsTable } from './components/ErrorsTable'
 import { ErrorsActions } from './components/ErrorsActions'
 import { PageHeader } from '@/pages/common/PageHeader'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { useToast } from '@/hooks/use-toast'
 import { useGoBack } from '@/hooks/useGoBack'
-import { CLIENT_IMPORT_FIELDS, DEFAULT_REQUIRED_FIELDS, validateRow, type ClientImportMapping } from '@/lib/importClients'
+import { useStore } from '@/stores/dataStore'
+import {
+  CLIENT_IMPORT_FIELDS,
+  DEFAULT_REQUIRED_FIELDS,
+  hasRentalData,
+  validateRow,
+  type ClientImportMapping,
+  type ClientImportRow,
+} from '@/lib/importClients'
 import { buildDuplicateLookup, buildDuplicateMessage, formatBackendError, type StoredErrors } from './utils'
 import { normalizeEmailForCompare, normalizePhoneForCompare } from '@/validators/frontend'
 
@@ -27,6 +35,7 @@ export default function ImportErrors() {
   const navigate = useNavigate()
   const goBack = useGoBack('/import/clients')
   const { toast } = useToast()
+  const addClient = useStore((state) => state.addClient)
   const [stored, setStored] = useState<StoredErrors | null>(null)
   const [allRuns, setAllRuns] = useState<StoredErrors[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -136,7 +145,7 @@ export default function ImportErrors() {
       const failures: StoredErrors['errors'] = []
 
       for (const err of rowsToImport) {
-        const parsed = err.parsed as ClientImportMapping
+        const parsed = err.parsed as ClientImportRow
         const rowErrors = validateRow(parsed, requiredFields)
         if (rowErrors.length > 0) {
           failures.push({ ...err, errors: rowErrors })
@@ -163,24 +172,30 @@ export default function ImportErrors() {
         }
 
         try {
-          const result = await createClient({
+          const shouldCreateRental = hasRentalData(parsed)
+          const result = await addClient({
             firstName: String(parsed.firstName || '').trim(),
             lastName: String(parsed.lastName || '').trim(),
             phone: String(parsed.phone || '').trim(),
             email: parsed.email ? String(parsed.email).trim() : undefined,
             cni: parsed.cni ? String(parsed.cni).trim() : undefined,
             status: parsed.status === 'archived' || parsed.status === 'blacklisted' ? parsed.status : 'active',
-            rental: {
-              propertyType: (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
-              propertyName: parsed.propertyName ? String(parsed.propertyName) : 'Non renseigné',
-              startDate: parsed.startDate ? new Date(parsed.startDate as string) : new Date(),
-              monthlyRent: Number(parsed.monthlyRent || 0),
-              deposit: {
-                total: Number(parsed.depositTotal || 0),
-                paid: Number(parsed.depositPaid || 0),
-                payments: [],
-              },
-            },
+            ...(shouldCreateRental
+              ? {
+                  rental: {
+                    propertyType:
+                      (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
+                    propertyName: String(parsed.propertyName || '').trim(),
+                    startDate: parsed.startDate ? new Date(parsed.startDate as string) : new Date(),
+                    monthlyRent: Number(parsed.monthlyRent || 0),
+                    deposit: {
+                      total: Number(parsed.depositTotal || 0),
+                      paid: Number(parsed.depositPaid || 0),
+                      payments: [],
+                    },
+                  },
+                }
+              : {}),
           })
 
           created.push({

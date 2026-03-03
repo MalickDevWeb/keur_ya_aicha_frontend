@@ -10,16 +10,16 @@ export const buildRentalRows = (clients: ClientDTO[]): RentalRow[] => {
     if (!clientName) return
 
     client.rentals.forEach((rental) => {
-      if (!rental.propertyName) return
       rows.push({
         ...rental,
+        propertyName: String(rental.propertyName || '').trim() || 'Non renseigné',
         clientName,
         clientId: client.id,
       })
     })
   })
 
-  return rows.filter((rental) => rental.clientName && rental.propertyName && rental.clientId)
+  return rows.filter((rental) => rental.clientName && rental.clientId)
 }
 
 export const filterRentalRows = (rows: RentalRow[], filters: RentalFilters) => {

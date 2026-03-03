@@ -13,6 +13,7 @@ import {
   getPlatformConfigSnapshot,
   refreshPlatformConfigFromServer,
 } from '@/services/platformConfig';
+import type { AdminFeaturePermissions } from '@/dto/frontend/responses';
 
 export type User = {
   id: string;
@@ -26,6 +27,7 @@ export type User = {
   subscriptionDueAt?: string | null;
   subscriptionRequiredMonth?: string | null;
   superAdminSecondAuthRequired?: boolean;
+  permissions?: AdminFeaturePermissions;
 };
 
 type AuthContextType = {

@@ -5,6 +5,19 @@ export type AdminStatus =
   | 'BLACKLISTE'
   | 'ARCHIVE'
 
+export type AdminFeaturePermissions = {
+  dashboard: boolean
+  clients: boolean
+  rentals: boolean
+  payments: boolean
+  documents: boolean
+  settings: boolean
+  work: boolean
+  imports: boolean
+  notifications: boolean
+  pdfExport: boolean
+}
+
 export const ADMIN_STATUS_LABELS: Record<AdminStatus, string> = {
   EN_ATTENTE: 'En attente',
   ACTIF: 'Actif',
@@ -39,6 +52,11 @@ export interface AdminDTO {
   status: AdminStatus
   entrepriseId?: string
   createdAt?: string
+  subscriptionMode?: 'monthly' | 'premium' | 'annual'
+  subscriptionMonthlyAmount?: number
+  subscriptionAnnualAmount?: number
+  subscriptionAllowCustomAmount?: boolean
+  permissions?: AdminFeaturePermissions
 }
 
 export interface AdminRequestDTO {

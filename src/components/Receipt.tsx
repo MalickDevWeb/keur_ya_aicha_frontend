@@ -1,7 +1,8 @@
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Landmark } from 'lucide-react';
+import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets';
 
 interface ReceiptProps {
   type: 'payment' | 'deposit';
@@ -14,6 +15,8 @@ interface ReceiptProps {
   periodStart?: Date;
   periodEnd?: Date;
   monthlyRent?: number;
+  brandName?: string;
+  brandLogoUrl?: string;
 }
 
 export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
@@ -29,11 +32,19 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
       periodStart,
       periodEnd,
       monthlyRent,
+      brandName = 'Keur Ya Aïcha',
+      brandLogoUrl,
     },
     ref
   ) => {
     const isPayment = type === 'payment';
     const now = new Date();
+    const [logoBroken, setLogoBroken] = useState(false);
+    const resolvedBrandLogoUrl = resolveAssetUrl(brandLogoUrl || DEFAULT_LOGO_ASSET_PATH);
+
+    useEffect(() => {
+      setLogoBroken(false);
+    }, [resolvedBrandLogoUrl]);
 
     return (
       <div
@@ -46,13 +57,22 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
           <div className="flex items-center gap-4">
             {/* Elegant Logo */}
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
-                <Landmark className="w-8 h-8 text-white" />
-              </div>
+              {logoBroken ? (
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+                  <Landmark className="w-8 h-8 text-white" />
+                </div>
+              ) : (
+                <img
+                  src={resolvedBrandLogoUrl}
+                  alt={`${brandName} logo`}
+                  className="w-16 h-16 rounded-lg object-contain bg-white border border-blue-100 shadow-lg p-1"
+                  onError={() => setLogoBroken(true)}
+                />
+              )}
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             <div>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Keur Ya Aïcha</h1>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">{brandName}</h1>
               <p className="text-sm font-semibold text-blue-600">Gestion Immobilière Professionnelle</p>
               <p className="text-xs text-gray-500 mt-1">📍 Dakar, Sénégal</p>
             </div>
@@ -165,7 +185,7 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
           <p className="text-xs text-gray-500 mt-4">
             Généré le {format(now, 'dd MMMM yyyy à HH:mm', { locale: fr })}
           </p>
-          <p className="text-xs text-gray-400 mt-2">© 2026 Keur Ya Aïcha - Tous droits réservés</p>
+          <p className="text-xs text-gray-400 mt-2">© 2026 {brandName} - Tous droits réservés</p>
         </div>
 
         {/* Print Instruction */}

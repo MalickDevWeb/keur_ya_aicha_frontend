@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320" viewBox="0 0 640 320" role="img" aria-label="Wave">
+  <defs>
+    <linearGradient id="waveBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00AEEF"/>
+      <stop offset="100%" stop-color="#0077C8"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="320" rx="28" fill="url(#waveBg)"/>
+  <circle cx="112" cy="160" r="82" fill="#ffffff" fill-opacity="0.22"/>
+  <circle cx="530" cy="70" r="64" fill="#ffffff" fill-opacity="0.16"/>
+  <text x="182" y="172" font-family="Arial, Helvetica, sans-serif" font-size="84" font-weight="700" fill="#ffffff">wave</text>
+  <text x="184" y="222" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#DDF5FF">paiement mobile</text>
+  <rect x="438" y="208" width="156" height="60" rx="30" fill="#ffffff"/>
+  <text x="516" y="248" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#0077C8" text-anchor="middle">WAVE</text>
+</svg>

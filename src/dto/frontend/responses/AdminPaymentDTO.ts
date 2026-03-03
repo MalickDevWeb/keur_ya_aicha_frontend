@@ -26,4 +26,7 @@ export interface AdminPaymentStatusDTO {
   requiredMonth: string
   currentMonth: string
   graceDays: number
+  subscriptionMode?: 'monthly' | 'premium' | 'annual'
+  expectedAmount?: number
+  allowCustomAmount?: boolean
 }

@@ -13,6 +13,7 @@ import {
   FIELD_LABELS,
   CLIENT_IMPORT_FIELDS,
   guessMapping,
+  hasRentalData,
   parseSpreadsheet,
   validateRow,
 } from '@/lib/importClients'
@@ -264,6 +265,7 @@ export default function ImportClientsPage() {
         if (rowErrors.length > 0) continue
 
         try {
+          const shouldCreateRental = hasRentalData(parsed)
           const result = await addClient({
             firstName: parsed.firstName || '',
             lastName: parsed.lastName || '',
@@ -271,17 +273,22 @@ export default function ImportClientsPage() {
             email: parsed.email ? String(parsed.email).trim() : undefined,
             cni: parsed.cni ? String(parsed.cni).trim() : undefined,
             status: parsed.status === 'archived' || parsed.status === 'blacklisted' ? parsed.status : 'active',
-            rental: {
-              propertyType: (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
-              propertyName: parsed.propertyName || 'Non renseigné',
-              startDate: parsed.startDate || new Date(),
-              monthlyRent: parsed.monthlyRent || 0,
-              deposit: {
-                total: parsed.depositTotal || 0,
-                paid: parsed.depositPaid || 0,
-                payments: [],
-              },
-            },
+            ...(shouldCreateRental
+              ? {
+                  rental: {
+                    propertyType:
+                      (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
+                    propertyName: String(parsed.propertyName || '').trim(),
+                    startDate: parsed.startDate || new Date(),
+                    monthlyRent: Number(parsed.monthlyRent || 0),
+                    deposit: {
+                      total: Number(parsed.depositTotal || 0),
+                      paid: Number(parsed.depositPaid || 0),
+                      payments: [],
+                    },
+                  },
+                }
+              : {}),
           })
 
           inserted.push({

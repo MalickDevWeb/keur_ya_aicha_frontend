@@ -54,7 +54,7 @@ export interface DataState {
   fetchStats: () => Promise<void>
   addClient: (
     client: Omit<Client, 'id' | 'createdAt' | 'rentals'> & {
-      rental: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>
+      rental?: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>
     }
   ) => Promise<Client>
   updateClient: (id: string, data: Partial<Client>) => Promise<void>
@@ -70,7 +70,11 @@ export interface DataState {
     options?: { date?: string; receiptNumber?: string; notes?: string }
   ) => Promise<void>
   editMonthlyPayment: (rentalId: string, paymentId: string, amount: number) => Promise<void>
-  addDepositPayment: (rentalId: string, amount: number) => Promise<void>
+  addDepositPayment: (
+    rentalId: string,
+    amount: number,
+    options?: { date?: string; receiptNumber?: string; notes?: string }
+  ) => Promise<void>
   addDocument: (
     clientId: string,
     rentalId: string,
@@ -167,32 +171,35 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
 
       const clientId = generateId()
-      const rentalId = generateId()
-      const startDate = clientData.rental.startDate
-      const monthlyRent = clientData.rental.monthlyRent
+      const rentals: Rental[] = []
+      if (clientData.rental) {
+        const rentalId = generateId()
+        const startDate = clientData.rental.startDate
+        const monthlyRent = clientData.rental.monthlyRent
 
-      const initialPayment: MonthlyPayment = {
-        id: generateId(),
-        rentalId,
-        periodStart: startDate,
-        periodEnd: addDays(addMonths(startDate, 1), -1),
-        dueDate: addDays(addMonths(startDate, 1), 4),
-        amount: monthlyRent,
-        paidAmount: 0,
-        status: 'unpaid',
-        payments: [],
-      }
+        const initialPayment: MonthlyPayment = {
+          id: generateId(),
+          rentalId,
+          periodStart: startDate,
+          periodEnd: addDays(addMonths(startDate, 1), -1),
+          dueDate: addDays(addMonths(startDate, 1), 4),
+          amount: monthlyRent,
+          paidAmount: 0,
+          status: 'unpaid',
+          payments: [],
+        }
 
-      const rental: Rental = {
-        id: rentalId,
-        clientId,
-        propertyType: clientData.rental.propertyType,
-        propertyName: clientData.rental.propertyName,
-        monthlyRent,
-        startDate: clientData.rental.startDate,
-        deposit: clientData.rental.deposit,
-        payments: [initialPayment],
-        documents: [],
+        rentals.push({
+          id: rentalId,
+          clientId,
+          propertyType: clientData.rental.propertyType,
+          propertyName: clientData.rental.propertyName,
+          monthlyRent,
+          startDate: clientData.rental.startDate,
+          deposit: clientData.rental.deposit,
+          payments: [initialPayment],
+          documents: [],
+        })
       }
 
       const newClient: Client = {
@@ -205,7 +212,7 @@ export const useDataStore = create<DataState>((set, get) => ({
         cni: clientData.cni,
         status: clientData.status,
         createdAt: new Date(),
-        rentals: [rental],
+        rentals,
       }
 
       const payload = serializeClientForApi({ ...newClient, createdAt: newClient.createdAt })
@@ -341,10 +348,10 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   // Add deposit payment
-  addDepositPayment: async (rentalId, amount) => {
+  addDepositPayment: async (rentalId, amount, options) => {
     try {
       set({ error: null })
-      await postDepositPayment(rentalId, amount)
+      await postDepositPayment(rentalId, amount, options)
       await get().fetchClients()
       await get().refreshStats()
     } catch (error) {

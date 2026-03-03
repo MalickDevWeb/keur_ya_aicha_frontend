@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getWorkItems, postWorkItem, updateWorkItem, deleteWorkItem } from '@/services/api'
+import { fetchImportRuns, getAdminPaymentStatus, getWorkItems, postWorkItem, updateWorkItem, deleteWorkItem } from '@/services/api'
 import { useStore } from '@/stores/dataStore'
 import { useGoBack } from '@/hooks/useGoBack'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
@@ -10,7 +10,7 @@ import { WorkAddSection } from './sections/WorkAddSection'
 import { WorkListSection } from './sections/WorkListSection'
 import { WorkEmptySection } from './sections/WorkEmptySection'
 import type { WorkItem } from './types'
-import { buildNewWorkItem, detectWorkItems, mergeWorkItems, toggleWorkStatus } from './utils'
+import { buildNewWorkItem, detectWorkItems, mergeWorkItems, sortWorkItems, toggleWorkStatus } from './utils'
 
 export default function WorkPage() {
   const navigate = useNavigate()
@@ -23,16 +23,33 @@ export default function WorkPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
     async function load() {
+      setLoading(true)
       try {
-        const savedItems = await getWorkItems()
-        const detected = detectWorkItems(clients)
-        setWorkItems(mergeWorkItems(savedItems, detected))
+        const [savedItems, importRuns] = await Promise.all([
+          getWorkItems().catch(() => []),
+          fetchImportRuns().catch(() => []),
+        ])
+        const subscriptionStatus = await getAdminPaymentStatus().catch(() => null)
+        if (!mounted) return
+        const detected = detectWorkItems(clients, { importRuns, subscriptionStatus })
+        setWorkItems(sortWorkItems(mergeWorkItems(savedItems as WorkItem[], detected)))
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     }
-    load()
+
+    const onImportRunsUpdated = () => {
+      void load()
+    }
+
+    void load()
+    window.addEventListener('import-runs-updated', onImportRunsUpdated)
+    return () => {
+      mounted = false
+      window.removeEventListener('import-runs-updated', onImportRunsUpdated)
+    }
   }, [clients])
 
   const pendingCount = workItems.filter((item) => item.status === 'pending').length
@@ -43,7 +60,7 @@ export default function WorkPage() {
 
     const newWork = buildNewWorkItem(newTitle, newDescription)
     await postWorkItem(newWork)
-    setWorkItems((prev) => [newWork, ...prev])
+    setWorkItems((prev) => sortWorkItems([newWork, ...prev]))
     setNewTitle('')
     setNewDescription('')
   }
@@ -55,10 +72,10 @@ export default function WorkPage() {
     const itemToUpdate = updated.find((item) => item.id === id)
     if (itemToUpdate && !itemToUpdate.autoDetected) {
       await updateWorkItem(itemToUpdate.id, itemToUpdate)
-      setWorkItems(updated)
+      setWorkItems(sortWorkItems(updated))
       return
     }
-    setWorkItems(updated)
+    setWorkItems(sortWorkItems(updated))
   }
 
   const handleDeleteWork = async (id: string) => {
@@ -68,7 +85,7 @@ export default function WorkPage() {
     if (!item.autoDetected) {
       await deleteWorkItem(id)
     }
-    setWorkItems(workItems.filter((workItem) => workItem.id !== id))
+    setWorkItems((prev) => sortWorkItems(prev.filter((workItem) => workItem.id !== id)))
   }
 
   const handleNavigateToFix = (item: WorkItem) => {
@@ -79,8 +96,22 @@ export default function WorkPage() {
       navigate('/documents?filter=unsigned-contracts')
     } else if (item.id.includes('invalid-clients')) {
       navigate('/clients?filter=invalid')
+    } else if (item.id.includes('critical-overdue-payments')) {
+      navigate('/payments?filter=critical-overdue')
     } else if (item.id.includes('overdue-payments')) {
       navigate('/payments?filter=overdue')
+    } else if (item.id.includes('overdue-deposits')) {
+      navigate('/payments/deposit?filter=overdue')
+    } else if (item.id.includes('unpaid-deposits')) {
+      navigate('/payments/deposit?filter=unpaid')
+    } else if (item.id.includes('incomplete-rentals')) {
+      navigate('/rentals?filter=incomplete-rentals')
+    } else if (item.id.includes('clients-without-rentals')) {
+      navigate('/clients?filter=no-rentals')
+    } else if (item.id.includes('import-errors-open')) {
+      navigate('/import/errors')
+    } else if (item.id.includes('admin-subscription-overdue')) {
+      navigate('/subscription')
     }
   }
 

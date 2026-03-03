@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { useEffect } from 'react'
 import type { AdminDTO } from '@/dto/frontend/responses'
 import type { AdminRow, ViewMode } from '../types'
+import { countEnabledAdminPermissions, normalizeAdminFeaturePermissions } from '@/services/adminPermissions'
 
 const getStatusActions = (status: AdminDTO['status']) => {
   switch (status) {
@@ -47,6 +48,38 @@ const getActionVariant = (status: AdminDTO['status'], nextStatus: AdminDTO['stat
   if (nextStatus === 'SUSPENDU') return 'outline'
   if (status === 'SUSPENDU' && nextStatus === 'ACTIF') return 'default'
   return 'outline'
+}
+
+const formatPlanAmount = (value: number) =>
+  `${Math.max(0, Math.round(Number(value) || 0)).toLocaleString('fr-SN')} FCFA`
+
+const getSubscriptionSummary = (admin: AdminDTO) => {
+  const mode = String(admin.subscriptionMode || 'monthly').toLowerCase()
+  const monthlyAmount = Number(admin.subscriptionMonthlyAmount || 5000)
+  const annualAmount = Number(admin.subscriptionAnnualAmount || 60000)
+  const allowCustom = Boolean(admin.subscriptionAllowCustomAmount)
+
+  if (mode === 'annual') {
+    return `Plan annuel • ${formatPlanAmount(annualAmount)}`
+  }
+  if (mode === 'premium') {
+    return `Plan premium • ${formatPlanAmount(monthlyAmount)}/mois`
+  }
+  return `Plan mensuel • ${formatPlanAmount(monthlyAmount)}/mois${allowCustom ? ' • montant libre' : ''}`
+}
+
+const getPermissionsSummary = (admin: AdminDTO) => {
+  const permissions = normalizeAdminFeaturePermissions(admin.permissions)
+  const enabledCount = countEnabledAdminPermissions(permissions)
+  const total = Object.keys(permissions).length
+  const blockedCritical = [
+    !permissions.notifications ? 'notifications' : '',
+    !permissions.imports ? 'imports' : '',
+    !permissions.pdfExport ? 'PDF' : '',
+  ].filter(Boolean)
+  return blockedCritical.length > 0
+    ? `Droits: ${enabledCount}/${total} • Bloqués: ${blockedCritical.join(', ')}`
+    : `Droits: ${enabledCount}/${total} • Tout essentiel actif`
 }
 
 const renderActions = (
@@ -88,6 +121,7 @@ type AdminsListSectionProps = {
   onViewModeChange: (mode: ViewMode) => void
   busyId: string | null
   onSetStatus: (admin: AdminDTO, status: AdminDTO['status']) => void
+  onConfigureSubscription: (admin: AdminDTO) => void
 }
 
 export function AdminsListSection({
@@ -99,6 +133,7 @@ export function AdminsListSection({
   onViewModeChange,
   busyId,
   onSetStatus,
+  onConfigureSubscription,
 }: AdminsListSectionProps) {
   const isMobile = useIsMobile()
   useEffect(() => {
@@ -211,8 +246,20 @@ export function AdminsListSection({
                           : entreprises.map((e) => e.name || '—').join(', ')}
                       </span>
                     </div>
+                    <p className="text-xs text-[#121B53]/70">{getSubscriptionSummary(admin)}</p>
+                    <p className="text-xs text-[#121B53]/65">{getPermissionsSummary(admin)}</p>
                     <div className="flex flex-wrap gap-2 pt-1">
                       {renderActions(admin, actionsDisabled, onSetStatus)}
+                    </div>
+                    <div className="pt-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10"
+                        onClick={() => onConfigureSubscription(admin)}
+                      >
+                        Configurer abonnement
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -234,6 +281,8 @@ export function AdminsListSection({
                           <p className="text-xs text-[#121B53]/60">
                             {entreprises.length === 0 ? '—' : entreprises.map((ent) => ent.name || '—').join(', ')}
                           </p>
+                          <p className="mt-1 text-xs text-[#121B53]/65">{getSubscriptionSummary(admin)}</p>
+                          <p className="text-xs text-[#121B53]/60">{getPermissionsSummary(admin)}</p>
                         </div>
                         <Badge
                           variant="secondary"
@@ -250,6 +299,16 @@ export function AdminsListSection({
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {renderActions(admin, actionsDisabled, onSetStatus)}
+                      </div>
+                      <div className="pt-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10"
+                          onClick={() => onConfigureSubscription(admin)}
+                        >
+                          Configurer abonnement
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -291,11 +350,23 @@ export function AdminsListSection({
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-[#121B53]/60">
-                            {entreprises.length === 0 ? '—' : entreprises.map((ent) => ent.name || '—').join(', ')}
+                            <div className="space-y-1">
+                              <p>{entreprises.length === 0 ? '—' : entreprises.map((ent) => ent.name || '—').join(', ')}</p>
+                              <p className="text-xs text-[#121B53]/60">{getSubscriptionSummary(admin)}</p>
+                              <p className="text-xs text-[#121B53]/60">{getPermissionsSummary(admin)}</p>
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 items-center">
                               {renderActions(admin, actionsDisabled, onSetStatus)}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10"
+                                onClick={() => onConfigureSubscription(admin)}
+                              >
+                                Abonnement
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>

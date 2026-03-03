@@ -53,7 +53,7 @@ export const DEFAULT_IMPORT_ALIASES: Partial<Record<keyof ClientImportMapping, s
   lastName: ['nom', 'lastname', 'last name', 'surname', 'family'],
   phone: ['telephone', 'téléphone', 'phone', 'tel', 'mobile'],
   email: ['email', 'e-mail', 'mail'],
-  cni: ['cni', 'cin', 'identite', 'identité', 'id'],
+  cni: ['cni', 'cin', 'identite', 'identité', 'numéro cni', 'numero cni'],
   propertyType: ['type', 'property type', 'type de bien'],
   propertyName: ['bien', 'property', 'adresse', 'location', 'logement'],
   startDate: ['date', 'start', 'debut', 'début'],
@@ -226,6 +226,23 @@ function toStringSafe(val: unknown): string {
   return String(val).trim()
 }
 
+function normalizePhoneInput(val: unknown): string {
+  const raw = toStringSafe(val)
+  if (!raw) return ''
+
+  const compact = raw.replace(/\s|-/g, '')
+  if (compact.startsWith('+')) {
+    return `+${compact.slice(1).replace(/\D/g, '')}`
+  }
+  return compact.replace(/\D/g, '')
+}
+
+function normalizeCniInput(val: unknown): string {
+  const raw = toStringSafe(val)
+  if (!raw) return ''
+  return raw.replace(/\D/g, '')
+}
+
 function parseNumber(val: unknown): number | undefined {
   if (val === null || val === undefined || val === '') return undefined
   if (typeof val === 'number') return val
@@ -264,9 +281,9 @@ export function buildRow(
   const parsed: ClientImportRow = {
     firstName: toStringSafe(get(mapping.firstName)),
     lastName: toStringSafe(get(mapping.lastName)),
-    phone: toStringSafe(get(mapping.phone)),
+    phone: normalizePhoneInput(get(mapping.phone)),
     email: toStringSafe(get(mapping.email)),
-    cni: toStringSafe(get(mapping.cni)),
+    cni: normalizeCniInput(get(mapping.cni)),
     propertyType: normalizePropertyType(toStringSafe(get(mapping.propertyType))),
     propertyName: toStringSafe(get(mapping.propertyName)),
     startDate: parseDate(get(mapping.startDate)),
@@ -276,6 +293,23 @@ export function buildRow(
     status: toStringSafe(get(mapping.status)),
   }
   return { ...parsed, ...(overrides || {}) }
+}
+
+function hasValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  return true
+}
+
+export function hasRentalData(row: ClientImportRow): boolean {
+  return (
+    hasValue(row.propertyType) ||
+    hasValue(row.propertyName) ||
+    hasValue(row.startDate) ||
+    hasValue(row.monthlyRent) ||
+    hasValue(row.depositTotal) ||
+    hasValue(row.depositPaid)
+  )
 }
 
 export function validateRow(
@@ -315,6 +349,10 @@ export function validateRow(
     errors.push('Caution payée manquante (obligatoire)')
   }
   if (isRequired('status') && !row.status) errors.push('Statut manquant (obligatoire)')
+
+  if (hasRentalData(row) && !row.propertyName && !isRequired('propertyName')) {
+    errors.push('Bien manquant (obligatoire pour créer une location)')
+  }
 
   return errors
 }

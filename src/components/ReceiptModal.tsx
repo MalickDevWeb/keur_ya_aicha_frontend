@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Download, Printer, X } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -11,6 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { DEFAULT_PLATFORM_CONFIG, getPlatformConfigSnapshot, subscribePlatformConfigUpdates } from '@/services/platformConfig';
+import { fetchAdminBrandingOverrides, subscribeAdminBrandingUpdates } from '@/services/adminBranding';
 
 interface ReceiptModalProps {
   open: boolean;
@@ -43,6 +46,58 @@ export function ReceiptModal({
 }: ReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user, impersonation } = useAuth();
+  const role = String(user?.role || '').toUpperCase();
+  const activeAdminId = String(impersonation?.adminId || (role === 'ADMIN' ? user?.id || '' : '')).trim();
+  const [brandName, setBrandName] = useState(
+    () => getPlatformConfigSnapshot().branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName
+  );
+  const [brandBaseLogoUrl, setBrandBaseLogoUrl] = useState(
+    () => getPlatformConfigSnapshot().branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl
+  );
+  const [brandNameOverride, setBrandNameOverride] = useState('');
+  const [brandLogoOverride, setBrandLogoOverride] = useState('');
+  const resolvedBrandName = brandNameOverride || brandName;
+  const brandLogoUrl = brandLogoOverride || brandBaseLogoUrl;
+
+  useEffect(() => {
+    let active = true;
+
+    const syncBranding = async () => {
+      const config = getPlatformConfigSnapshot();
+      const fallbackLogo = config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl;
+      const overrides = await fetchAdminBrandingOverrides(activeAdminId);
+      if (!active) return;
+      setBrandName(config.branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName);
+      setBrandBaseLogoUrl(fallbackLogo);
+      setBrandNameOverride(overrides.appName || '');
+      setBrandLogoOverride(overrides.logoUrl || '');
+    };
+
+    void syncBranding();
+    const unsubscribePlatform = subscribePlatformConfigUpdates((config) => {
+      if (!active) return;
+      setBrandName(config.branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName);
+      const fallbackLogo = config.branding.logoUrl || DEFAULT_PLATFORM_CONFIG.branding.logoUrl;
+      setBrandBaseLogoUrl(fallbackLogo);
+    });
+    const unsubscribeAdminBranding = subscribeAdminBrandingUpdates((payload) => {
+      if (!active) return;
+      if (String(payload.adminId || '') !== activeAdminId) return;
+      if (Object.prototype.hasOwnProperty.call(payload, 'appName')) {
+        setBrandNameOverride(payload.appName || '');
+      }
+      if (Object.prototype.hasOwnProperty.call(payload, 'logoUrl')) {
+        setBrandLogoOverride(payload.logoUrl || '');
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribePlatform();
+      unsubscribeAdminBranding();
+    };
+  }, [activeAdminId]);
 
   const handlePrint = () => {
     if (receiptRef.current) {
@@ -74,6 +129,8 @@ export function ReceiptModal({
           uploadedAt: Date;
           name: string;
           note?: string;
+          appName?: string;
+          brandLogoUrl?: string;
         } = {
           payerName: clientName,
           payerPhone: '',
@@ -81,6 +138,8 @@ export function ReceiptModal({
           uploadedAt: date || new Date(),
           name: `${receiptNumber}`,
           note: type === 'payment' && periodStart ? `Période: ${format(periodStart, 'dd/MM/yyyy')} - ${format(periodEnd || new Date(), 'dd/MM/yyyy')}` : undefined,
+          appName: resolvedBrandName,
+          brandLogoUrl,
         };
         const blob = await generatePdfForDocument(docForPdf);
         downloadBlob(blob, `${docForPdf.name || 'recu'}.pdf`);
@@ -130,6 +189,8 @@ export function ReceiptModal({
               periodStart={periodStart}
               periodEnd={periodEnd}
               monthlyRent={monthlyRent}
+              brandName={resolvedBrandName}
+              brandLogoUrl={brandLogoUrl}
             />
           </div>
         </div>

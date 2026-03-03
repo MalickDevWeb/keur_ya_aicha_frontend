@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { createAdminPayment, fetchAdminPayments, getAdmin, getAdminPaymentStatus, listUndoActions, rollbackUndoAction } from '@/services/api'
 import type { AdminDTO, AdminPaymentDTO, AdminPaymentStatusDTO } from '@/dto/frontend/responses'
 import { formatCurrency } from '@/lib/types'
-import { Banknote, Landmark, Loader2, RotateCcw, Smartphone } from 'lucide-react'
+import { ArrowUpRight, Banknote, Landmark, Loader2, RotateCcw, Smartphone } from 'lucide-react'
 import {
   DEFAULT_PLATFORM_CONFIG,
   getPlatformConfigSnapshot,
@@ -17,9 +17,52 @@ import {
   subscribePlatformConfigUpdates,
   type PaymentRulesConfig,
 } from '@/services/platformConfig'
+import { resolveAssetUrl } from '@/services/assets'
+import { ADMIN_FEATURE_LABELS, normalizeAdminFeaturePermissions } from '@/services/adminPermissions'
 
 const getMonthKey = (value: Date | string) => String(value).slice(0, 7)
 const UNDO_RESOURCE = 'admin_payments'
+const MIN_AMOUNT_FCFA = 100
+const MAX_AMOUNT_FCFA = 10_000_000
+const ORANGE_SIM_CODE_LENGTH = 6
+const WAVE_LOGO_PATH = '/providers/wave-logo.svg'
+const ORANGE_LOGO_PATH = '/providers/orange-money-logo.svg'
+const SUBSCRIPTION_MODE_LABELS: Record<'monthly' | 'premium' | 'annual', string> = {
+  monthly: 'Mensuel',
+  premium: 'Premium',
+  annual: 'Annuel',
+}
+
+type PaymentFieldErrors = {
+  phone?: string
+  amount?: string
+  orangeCode?: string
+}
+
+function normalizePhone(value: string): string {
+  const raw = String(value || '').trim()
+  const startsWithPlus = raw.startsWith('+')
+  const digitsOnly = raw.replace(/\D/g, '')
+  if (digitsOnly.startsWith('221') && digitsOnly.length === 12) {
+    return `+${digitsOnly}`
+  }
+  if (digitsOnly.length === 9 && digitsOnly.startsWith('7')) {
+    return `+221${digitsOnly}`
+  }
+  if (startsWithPlus && digitsOnly.length > 0) {
+    return `+${digitsOnly}`
+  }
+  return digitsOnly
+}
+
+function isValidSenegalMobileNumber(value: string): boolean {
+  const normalized = normalizePhone(value)
+  return /^\+2217\d{8}$/.test(normalized)
+}
+
+function buildOrangeSimulationCode(): string {
+  return String(Math.floor(Math.random() * 10 ** ORANGE_SIM_CODE_LENGTH)).padStart(ORANGE_SIM_CODE_LENGTH, '0')
+}
 
 type UndoEventDetail = {
   id?: string
@@ -96,6 +139,14 @@ export default function AdminSubscriptionPayments() {
   const [latestUndoId, setLatestUndoId] = useState<string | null>(null)
   const [isRollingBack, setIsRollingBack] = useState(false)
   const [paymentRules, setPaymentRules] = useState<PaymentRulesConfig>(getPlatformConfigSnapshot().paymentRules)
+  const [fieldErrors, setFieldErrors] = useState<PaymentFieldErrors>({})
+  const [orangeCode, setOrangeCode] = useState('')
+  const [orangeCodeInput, setOrangeCodeInput] = useState('')
+  const [waveQrCodeDataUrl, setWaveQrCodeDataUrl] = useState('')
+  const [waveQrLoading, setWaveQrLoading] = useState(false)
+  const [waveMarkedAsPaid, setWaveMarkedAsPaid] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
+  const overdueToastKeyRef = useRef('')
   const userRole = String(user?.role || '').toUpperCase()
   const canValidateCash = userRole === 'SUPER_ADMIN'
   const visiblePaymentMethods = useMemo(
@@ -107,6 +158,8 @@ export default function AdminSubscriptionPayments() {
   )
 
   const currentMonth = useMemo(() => getMonthKey(new Date().toISOString()), [])
+  const waveLogoUrl = useMemo(() => resolveAssetUrl(WAVE_LOGO_PATH), [])
+  const orangeLogoUrl = useMemo(() => resolveAssetUrl(ORANGE_LOGO_PATH), [])
 
   const resolveLatestUndoId = async () => {
     const actions = await listUndoActions(20)
@@ -193,7 +246,6 @@ export default function AdminSubscriptionPayments() {
   }, [])
 
   const requiredMonth = subscriptionStatus?.requiredMonth || currentMonth
-  const paidRequiredMonth = payments.some((payment) => payment.month === requiredMonth)
   const blockedBySystem = Boolean(subscriptionStatus?.blocked)
   const lastPayment = payments[0]
   const dueDateLabel = subscriptionStatus?.dueAt ? new Date(subscriptionStatus.dueAt).toLocaleDateString('fr-FR') : null
@@ -206,6 +258,95 @@ export default function AdminSubscriptionPayments() {
       ? Number(paymentRules.latePenaltyPercent)
       : DEFAULT_PLATFORM_CONFIG.paymentRules.latePenaltyPercent
   const overdueByRules = Boolean(subscriptionStatus?.dueAt) && Date.now() > new Date(subscriptionStatus.dueAt || '').getTime()
+  const subscriptionMode = (() => {
+    const raw = String(subscriptionStatus?.subscriptionMode || admin?.subscriptionMode || 'monthly').toLowerCase()
+    if (raw === 'annual' || raw === 'premium') return raw
+    return 'monthly'
+  })() as 'monthly' | 'premium' | 'annual'
+  const expectedPlanAmount = (() => {
+    const statusAmount = Number(subscriptionStatus?.expectedAmount || 0)
+    if (Number.isFinite(statusAmount) && statusAmount > 0) return Math.round(statusAmount)
+    if (subscriptionMode === 'annual') {
+      const adminAnnual = Number(admin?.subscriptionAnnualAmount || 0)
+      return Number.isFinite(adminAnnual) && adminAnnual > 0 ? Math.round(adminAnnual) : 60000
+    }
+    const adminMonthly = Number(admin?.subscriptionMonthlyAmount || 0)
+    return Number.isFinite(adminMonthly) && adminMonthly > 0 ? Math.round(adminMonthly) : 5000
+  })()
+  const allowCustomAmount = Boolean(subscriptionStatus?.allowCustomAmount ?? admin?.subscriptionAllowCustomAmount)
+  const getPeriodKeyForPayment = (payment: AdminPaymentDTO): string => {
+    const rawMonth = String(payment.month || '').trim()
+    if (subscriptionMode === 'annual') {
+      if (/^\d{4}$/.test(rawMonth)) return rawMonth
+      if (/^\d{4}-\d{2}$/.test(rawMonth)) return rawMonth.slice(0, 4)
+      return String(new Date(payment.paidAt || payment.createdAt || Date.now()).getFullYear())
+    }
+    if (/^\d{4}-\d{2}$/.test(rawMonth)) return rawMonth
+    return String(payment.paidAt || payment.createdAt || new Date().toISOString()).slice(0, 7)
+  }
+  const getPeriodLabelForPayment = (payment: AdminPaymentDTO): string => {
+    if (subscriptionMode === 'annual') {
+      return `${getPeriodKeyForPayment(payment)} (annuel)`
+    }
+    return getPeriodKeyForPayment(payment)
+  }
+  const paidRequiredMonth = payments.some((payment) => getPeriodKeyForPayment(payment) === requiredMonth)
+  const settledPayments = payments.filter((payment) => {
+    const status = String(payment.status || 'paid').toLowerCase()
+    return status === 'paid' || status === 'success' || status === 'succeeded'
+  })
+  const paidPeriods = Array.from(new Set(settledPayments.map((payment) => getPeriodKeyForPayment(payment)))).sort((a, b) =>
+    b.localeCompare(a)
+  )
+  const planRights = (() => {
+    const effectivePermissions = normalizeAdminFeaturePermissions(
+      (user?.permissions || admin?.permissions) as Record<string, boolean> | undefined
+    )
+    const allowedFeatures = (Object.keys(effectivePermissions) as Array<keyof typeof effectivePermissions>)
+      .filter((feature) => effectivePermissions[feature])
+      .map((feature) => ADMIN_FEATURE_LABELS[feature])
+    const blockedFeatures = (Object.keys(effectivePermissions) as Array<keyof typeof effectivePermissions>)
+      .filter((feature) => !effectivePermissions[feature])
+      .map((feature) => ADMIN_FEATURE_LABELS[feature])
+
+    if (blockedBySystem) {
+      return ['Accès limité à la page abonnement jusqu’au paiement de la période en retard.']
+    }
+    const rights = [
+      'Accès aux modules Clients, Locations, Paiements et Documents.',
+      'Création, modification et suivi des opérations de gestion.',
+      allowCustomAmount ? 'Montant libre autorisé pour les paiements d’abonnement.' : 'Montant verrouillé par le Super Admin.',
+      allowedFeatures.length > 0 ? `Fonctions actives: ${allowedFeatures.join(', ')}.` : 'Aucune fonction active.',
+    ]
+    if (blockedFeatures.length > 0) {
+      rights.push(`Fonctions bloquées: ${blockedFeatures.join(', ')}.`)
+    }
+    if (subscriptionMode === 'premium') {
+      rights.push('Mode Premium actif: accès administratif complet.')
+    } else if (subscriptionMode === 'annual') {
+      rights.push('Mode Annuel actif: renouvellement global par année.')
+    } else {
+      rights.push('Mode Mensuel actif: renouvellement chaque mois.')
+    }
+    return rights
+  })()
+  const normalizedPhone = normalizePhone(payerPhone)
+  const numericAmount = allowCustomAmount ? Number(amount) : expectedPlanAmount
+  const hasValidRawAmount =
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0 &&
+    (!allowCustomAmount || (numericAmount >= MIN_AMOUNT_FCFA && numericAmount <= MAX_AMOUNT_FCFA))
+  const waveCheckoutLink = useMemo(() => {
+    if (paymentMethod !== 'wave') return ''
+    if (!hasValidRawAmount || !isValidSenegalMobileNumber(payerPhone)) return ''
+    const params = new URLSearchParams({
+      amount: String(Math.round(numericAmount)),
+      currency: 'XOF',
+      phone: normalizedPhone,
+      reason: `Abonnement ${requiredMonth}`,
+    })
+    return `wave://pay?${params.toString()}`
+  }, [hasValidRawAmount, normalizedPhone, numericAmount, payerPhone, paymentMethod, requiredMonth])
 
   useEffect(() => {
     if (!blockedBySystem) return
@@ -218,6 +359,19 @@ export default function AdminSubscriptionPayments() {
   }, [blockedBySystem, requiredMonth, subscriptionStatus?.dueAt, subscriptionStatus?.overdueMonth, user?.id])
 
   useEffect(() => {
+    if (!blockedBySystem) return
+    const overduePeriod = subscriptionStatus?.overdueMonth || requiredMonth
+    const toastKey = `${overduePeriod}|${subscriptionStatus?.dueAt || ''}`
+    if (overdueToastKeyRef.current === toastKey) return
+    overdueToastKeyRef.current = toastKey
+    addToast({
+      type: 'error',
+      title: 'Renouvellement requis',
+      message: `Le mois ${overduePeriod} est dépassé. Renouvelez maintenant pour éviter les restrictions d'accès.`,
+    })
+  }, [addToast, blockedBySystem, requiredMonth, subscriptionStatus?.dueAt, subscriptionStatus?.overdueMonth])
+
+  useEffect(() => {
     if (canValidateCash && paymentMethod !== 'cash') {
       setPaymentMethod('cash')
       return
@@ -227,16 +381,119 @@ export default function AdminSubscriptionPayments() {
     }
   }, [canValidateCash, paymentMethod])
 
-  const handlePay = async () => {
-    if (!user?.id) return
-    const numericAmount = Number(amount)
-    if (!numericAmount || Number.isNaN(numericAmount) || numericAmount <= 0) {
+  useEffect(() => {
+    if (allowCustomAmount) return
+    if (!Number.isFinite(expectedPlanAmount) || expectedPlanAmount <= 0) return
+    setAmount(String(expectedPlanAmount))
+  }, [allowCustomAmount, expectedPlanAmount])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mediaQuery = window.matchMedia('(max-width: 900px)')
+    const update = () => {
+      const mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent)
+      setIsMobileViewport(mediaQuery.matches || mobileUa)
+    }
+    update()
+    mediaQuery.addEventListener('change', update)
+    return () => {
+      mediaQuery.removeEventListener('change', update)
+    }
+  }, [])
+
+  useEffect(() => {
+    setFieldErrors({})
+    setWaveMarkedAsPaid(false)
+    if (paymentMethod !== 'orange_money') {
+      setOrangeCode('')
+      setOrangeCodeInput('')
+    }
+  }, [paymentMethod])
+
+  useEffect(() => {
+    if (paymentMethod !== 'orange_money') return
+    setOrangeCode('')
+    setOrangeCodeInput('')
+  }, [payerPhone, amount, paymentMethod])
+
+  useEffect(() => {
+    if (paymentMethod !== 'wave') return
+    setWaveMarkedAsPaid(false)
+  }, [payerPhone, amount, paymentMethod])
+
+  useEffect(() => {
+    let active = true
+    const buildWaveQr = async () => {
+      if (!waveCheckoutLink) {
+        if (active) {
+          setWaveQrCodeDataUrl('')
+          setWaveQrLoading(false)
+        }
+        return
+      }
+      setWaveQrLoading(true)
+      try {
+        const qrcodeModule = (await import('qrcode')) as {
+          toDataURL?: (text: string, options?: Record<string, unknown>) => Promise<string>
+          default?: { toDataURL?: (text: string, options?: Record<string, unknown>) => Promise<string> }
+        }
+        const toDataURL = qrcodeModule.toDataURL || qrcodeModule.default?.toDataURL
+        if (!toDataURL) {
+          throw new Error('QR module unavailable')
+        }
+        const dataUrl = await toDataURL(waveCheckoutLink, {
+          width: 260,
+          margin: 1,
+          color: {
+            dark: '#003A63',
+            light: '#FFFFFF',
+          },
+        })
+        if (!active) return
+        setWaveQrCodeDataUrl(dataUrl)
+      } catch {
+        if (!active) return
+        setWaveQrCodeDataUrl('')
+      } finally {
+        if (active) setWaveQrLoading(false)
+      }
+    }
+
+    void buildWaveQr()
+    return () => {
+      active = false
+    }
+  }, [waveCheckoutLink])
+
+  const openWaveCheckoutOnMobile = () => {
+    if (!waveCheckoutLink) {
       addToast({
         type: 'error',
-        title: 'Montant invalide',
-        message: 'Veuillez saisir un montant correct.',
+        title: 'Wave indisponible',
+        message: 'Renseignez un numéro valide et un montant valide pour générer le lien Wave.',
       })
       return
+    }
+    if (!isMobileViewport) {
+      addToast({
+        type: 'info',
+        title: 'Utilisation mobile recommandée',
+        message: 'Scannez le QR code avec un téléphone connecté à Wave.',
+      })
+      return
+    }
+    window.location.href = waveCheckoutLink
+  }
+
+  const handlePay = async () => {
+    if (!user?.id) return
+    const nextErrors: PaymentFieldErrors = {}
+    if (!allowCustomAmount) {
+      if (!Number.isFinite(expectedPlanAmount) || expectedPlanAmount <= 0) {
+        nextErrors.amount = "Montant d'abonnement non configuré par le Super Admin."
+      }
+    } else if (!numericAmount || Number.isNaN(numericAmount) || numericAmount < MIN_AMOUNT_FCFA || numericAmount > MAX_AMOUNT_FCFA) {
+      nextErrors.amount = `Montant invalide. Valeur attendue entre ${formatCurrency(MIN_AMOUNT_FCFA)} et ${formatCurrency(MAX_AMOUNT_FCFA)} FCFA.`
     }
     if (paymentMethod === 'cash' && !canValidateCash) {
       addToast({
@@ -246,19 +503,63 @@ export default function AdminSubscriptionPayments() {
       })
       return
     }
-    if (paymentMethod !== 'cash' && !payerPhone.trim()) {
+    if (paymentMethod !== 'cash') {
+      if (!payerPhone.trim()) {
+        nextErrors.phone = 'Saisissez le numéro lié à Wave ou Orange Money.'
+      } else if (!isValidSenegalMobileNumber(payerPhone)) {
+        nextErrors.phone = 'Téléphone invalide (format attendu: +221771234567 ou 771234567).'
+      }
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors)
       addToast({
         type: 'error',
-        title: 'Numéro requis',
-        message: 'Saisissez le numéro lié à Wave ou Orange Money.',
+        title: 'Validation requise',
+        message: nextErrors.phone || nextErrors.amount || 'Complétez correctement les informations de paiement.',
       })
       return
     }
+
+    if (paymentMethod === 'orange_money') {
+      if (!orangeCode) {
+        const generatedCode = buildOrangeSimulationCode()
+        setOrangeCode(generatedCode)
+        setOrangeCodeInput('')
+        setFieldErrors({})
+        addToast({
+          type: 'info',
+          title: 'Code Orange Money envoyé',
+          message: `Simulation: entrez le code ${generatedCode} pour confirmer le paiement.`,
+        })
+        return
+      }
+      if (orangeCodeInput.trim() !== orangeCode) {
+        setFieldErrors({ orangeCode: 'Code de validation Orange Money invalide.' })
+        addToast({
+          type: 'error',
+          title: 'Code invalide',
+          message: 'Le code de validation Orange Money est incorrect.',
+        })
+        return
+      }
+    }
+
+    if (paymentMethod === 'wave' && !waveMarkedAsPaid) {
+      addToast({
+        type: 'info',
+        title: 'Confirmation Wave requise',
+        message: 'Scannez le QR ou ouvrez Wave sur mobile, puis cliquez sur "J’ai validé sur Wave".',
+      })
+      return
+    }
+
     setPaying(true)
     try {
       const paidAt = new Date().toISOString()
+      const baseAmount = allowCustomAmount ? numericAmount : expectedPlanAmount
       const penaltyMultiplier = overdueByRules ? 1 + latePenaltyPercent / 100 : 1
-      const effectiveAmount = Number((numericAmount * penaltyMultiplier).toFixed(0))
+      const effectiveAmount = Number((baseAmount * penaltyMultiplier).toFixed(0))
       const provider =
         paymentMethod === 'wave'
           ? 'wave'
@@ -272,8 +573,13 @@ export default function AdminSubscriptionPayments() {
         amount: effectiveAmount,
         method: paymentMethod,
         provider,
-        payerPhone: payerPhone.trim(),
-        transactionRef: '',
+        payerPhone: paymentMethod === 'cash' ? '' : normalizedPhone,
+        transactionRef:
+          paymentMethod === 'orange_money'
+            ? `OM-SIM-${Date.now()}`
+            : paymentMethod === 'wave'
+            ? `WAVE-SIM-${Date.now()}`
+            : '',
         note: note.trim(),
         paidAt,
         month: requiredMonth,
@@ -284,6 +590,10 @@ export default function AdminSubscriptionPayments() {
       setSubscriptionStatus(freshStatus)
       await refreshUndoAvailability()
       setNote('')
+      setFieldErrors({})
+      setOrangeCode('')
+      setOrangeCodeInput('')
+      setWaveMarkedAsPaid(false)
       if (payment?.status === 'pending' && payment?.checkoutUrl) {
         window.open(payment.checkoutUrl, '_blank', 'noopener,noreferrer')
       }
@@ -297,7 +607,7 @@ export default function AdminSubscriptionPayments() {
             ? 'Paiement espèces enregistré. Accès mis à jour.'
             : `Paiement ${paymentMethod === 'wave' ? 'Wave' : 'Orange Money'} confirmé.`,
       })
-      if (effectiveAmount > numericAmount) {
+      if (effectiveAmount > (allowCustomAmount ? numericAmount : expectedPlanAmount)) {
         addToast({
           type: 'info',
           title: 'Pénalité appliquée',
@@ -360,9 +670,17 @@ export default function AdminSubscriptionPayments() {
       <Card className="h-full border-[#121B53]/15 bg-white/90 shadow-[0_18px_45px_rgba(12,18,60,0.12)]">
         <CardHeader className="space-y-0.5 pb-3">
           <p className="text-xs uppercase tracking-[0.3em] text-[#121B53]/60">Abonnement Admin</p>
-          <CardTitle className="text-2xl text-[#121B53]">Paiement mensuel</CardTitle>
+          <CardTitle className="text-2xl text-[#121B53]">Paiement abonnement</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Paiement avant la fin du mois + {effectiveGraceDays} jours. Passé ce délai, l’accès est limité à cet écran.
+            {subscriptionMode === 'annual'
+              ? `Paiement annuel requis avec une grâce de ${effectiveGraceDays} jours.`
+              : `Paiement avant la fin du mois + ${effectiveGraceDays} jours.`}{' '}
+            Passé ce délai, l’accès est limité à cet écran.
+          </p>
+          <p className="text-xs text-[#121B53]/70">
+            Mode: <span className="font-semibold">{SUBSCRIPTION_MODE_LABELS[subscriptionMode]}</span> •
+            Montant attendu: <span className="font-semibold">{formatCurrency(expectedPlanAmount)} FCFA</span>
+            {allowCustomAmount ? ' • Montant libre autorisé' : ' • Montant verrouillé par Super Admin'}
           </p>
         </CardHeader>
         <CardContent className="h-full space-y-3 overflow-hidden pb-3">
@@ -390,7 +708,9 @@ export default function AdminSubscriptionPayments() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#121B53]/50">Statut du mois</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#121B53]/50">
+                {subscriptionMode === 'annual' ? "Statut de l'année" : 'Statut du mois'}
+              </p>
               <div className="mt-2 flex items-center gap-2">
                 <Badge className={paidRequiredMonth ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'}>
                   {paidRequiredMonth ? 'Payé' : 'Non payé'}
@@ -408,6 +728,37 @@ export default function AdminSubscriptionPayments() {
                   ? `${formatCurrency(lastPayment.amount)} FCFA • ${lastPayment.method === 'wave' ? 'Wave' : lastPayment.method === 'orange_money' ? 'Orange Money' : 'Espèces'}`
                   : 'Aucun paiement enregistré'}
               </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="rounded-2xl border border-[#121B53]/10 bg-white p-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-[#121B53]/50">Vos droits actuels</p>
+              <ul className="mt-2 space-y-2 text-sm text-[#121B53]">
+                {planRights.map((right) => (
+                  <li key={right} className="flex items-start gap-2">
+                    <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-[#121B53]/70" />
+                    <span>{right}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#121B53]/50">Périodes déjà payées</p>
+                <Badge className="bg-[#121B53] text-white">{paidPeriods.length}</Badge>
+              </div>
+              {paidPeriods.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">Aucune période validée pour le moment.</p>
+              ) : (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {paidPeriods.slice(0, 12).map((period) => (
+                    <Badge key={period} variant="secondary" className="bg-white border border-[#121B53]/15 text-[#121B53]">
+                      {subscriptionMode === 'annual' ? `${period} (annuel)` : period}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -450,14 +801,111 @@ export default function AdminSubscriptionPayments() {
           </div>
 
           {paymentMethod !== 'cash' ? (
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-[#121B53]">Numéro Mobile Money</label>
-              <Input
-                value={payerPhone}
-                onChange={(e) => setPayerPhone(e.target.value)}
-                placeholder="Ex: +221771234567"
-                className="border-[#121B53]/20"
-              />
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#121B53]">Numéro Mobile Money</label>
+                <Input
+                  value={payerPhone}
+                  onChange={(event) => {
+                    setPayerPhone(event.target.value)
+                    setFieldErrors((prev) => ({ ...prev, phone: undefined }))
+                  }}
+                  placeholder="Ex: +221771234567 ou 771234567"
+                  className={fieldErrors.phone ? 'border-rose-300 focus-visible:ring-rose-300' : 'border-[#121B53]/20'}
+                />
+                {fieldErrors.phone ? <p className="text-xs text-rose-600">{fieldErrors.phone}</p> : null}
+              </div>
+
+              {paymentMethod === 'wave' ? (
+                <div className="rounded-2xl border border-[#00AEEF]/30 bg-gradient-to-r from-[#ECFAFF] via-[#E3F8FF] to-[#D6F3FF] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <img src={waveLogoUrl} alt="Wave" className="h-10 rounded-lg border border-[#00AEEF]/20 bg-white p-1" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#006E9A]">Simulation Wave</p>
+                        <p className="text-xs text-[#2B7A9B]">Scannez le QR ou ouvrez Wave sur mobile</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-[#00AEEF] text-white">WAVE</Badge>
+                  </div>
+
+                  <div className="mt-3 grid gap-3 md:grid-cols-[auto_1fr]">
+                    <div className="flex h-[170px] w-[170px] items-center justify-center rounded-xl border border-[#00AEEF]/25 bg-white p-2">
+                      {waveQrLoading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-[#00AEEF]" />
+                      ) : waveQrCodeDataUrl ? (
+                        <img src={waveQrCodeDataUrl} alt="QR Wave" className="h-full w-full object-contain" />
+                      ) : (
+                        <p className="px-2 text-center text-[11px] text-[#2B7A9B]">
+                          Entrez numéro + montant valides pour générer le QR.
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2 text-xs text-[#256885]">
+                      <p>1. Vérifiez le numéro et le montant.</p>
+                      <p>2. Scannez le QR code depuis l’application Wave.</p>
+                      <p>3. Revenez ici puis confirmez la simulation.</p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-[#00AEEF]/40 text-[#006E9A]"
+                          onClick={openWaveCheckoutOnMobile}
+                        >
+                          <ArrowUpRight className="mr-2 h-4 w-4" />
+                          Ouvrir Wave sur mobile
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={waveMarkedAsPaid ? 'default' : 'secondary'}
+                          className={waveMarkedAsPaid ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
+                          onClick={() => setWaveMarkedAsPaid((prev) => !prev)}
+                        >
+                          {waveMarkedAsPaid ? 'Wave validé' : 'J’ai validé sur Wave'}
+                        </Button>
+                      </div>
+                      {isMobileViewport ? (
+                        <p className="text-[11px] text-[#256885]">Mobile détecté: le bouton peut ouvrir directement l’app Wave.</p>
+                      ) : (
+                        <p className="text-[11px] text-[#256885]">Desktop détecté: utilisez le QR code avec votre téléphone.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-[#FF7900]/25 bg-gradient-to-r from-[#FFF5EC] via-[#FFF0E0] to-[#FFE7D1] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <img src={orangeLogoUrl} alt="Orange Money" className="h-10 rounded-lg border border-[#FF7900]/20 bg-white p-1" />
+                      <div>
+                        <p className="text-sm font-semibold text-[#B85600]">Simulation Orange Money</p>
+                        <p className="text-xs text-[#B56A2C]">Validation par code après saisie du numéro et du montant</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-[#FF7900] text-black">OM</Badge>
+                  </div>
+                  <div className="mt-3 space-y-1">
+                    <label className="text-xs font-medium text-[#B85600]">Code de validation OM</label>
+                    <Input
+                      value={orangeCodeInput}
+                      onChange={(event) => {
+                        setOrangeCodeInput(event.target.value.replace(/[^\d]/g, '').slice(0, ORANGE_SIM_CODE_LENGTH))
+                        setFieldErrors((prev) => ({ ...prev, orangeCode: undefined }))
+                      }}
+                      placeholder={`Code à ${ORANGE_SIM_CODE_LENGTH} chiffres`}
+                      className={fieldErrors.orangeCode ? 'border-rose-300 focus-visible:ring-rose-300' : 'border-[#FF7900]/30 bg-white'}
+                    />
+                    {fieldErrors.orangeCode ? <p className="text-xs text-rose-600">{fieldErrors.orangeCode}</p> : null}
+                    {orangeCode ? (
+                      <p className="text-xs text-[#8C490D]">
+                        Code simulation envoyé: <span className="font-semibold tracking-widest">{orangeCode}</span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-[#8C490D]">Cliquez sur "Recevoir code OM" pour générer un code de validation.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -478,18 +926,41 @@ export default function AdminSubscriptionPayments() {
 
           <div className="grid gap-3 sm:grid-cols-[1fr_auto] items-end">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-[#121B53]">Montant mensuel (FCFA)</label>
+              <label className="text-sm font-medium text-[#121B53]">
+                {subscriptionMode === 'annual' ? 'Montant annuel (FCFA)' : 'Montant abonnement (FCFA)'}
+              </label>
               <Input
                 value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ''))}
+                onChange={(event) => {
+                  if (!allowCustomAmount) return
+                  setAmount(event.target.value.replace(/[^\d]/g, ''))
+                  setFieldErrors((prev) => ({ ...prev, amount: undefined }))
+                }}
                 placeholder="Ex: 5000"
-                className="border-[#121B53]/20"
+                className={fieldErrors.amount ? 'border-rose-300 focus-visible:ring-rose-300' : 'border-[#121B53]/20'}
+                disabled={!allowCustomAmount}
               />
+              {fieldErrors.amount ? (
+                <p className="text-xs text-rose-600">{fieldErrors.amount}</p>
+              ) : !allowCustomAmount ? (
+                <p className="text-xs text-[#121B53]/60">
+                  Montant prérempli par le Super Admin: {formatCurrency(expectedPlanAmount)} FCFA
+                </p>
+              ) : (
+                <p className="text-xs text-[#121B53]/60">
+                  Minimum {formatCurrency(MIN_AMOUNT_FCFA)} FCFA • Maximum {formatCurrency(MAX_AMOUNT_FCFA)} FCFA
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={handlePay}
-                disabled={paying || paidRequiredMonth || (paymentMethod === 'cash' && !canValidateCash)}
+                disabled={
+                  paying ||
+                  paidRequiredMonth ||
+                  (paymentMethod === 'cash' && !canValidateCash) ||
+                  (!allowCustomAmount && expectedPlanAmount <= 0)
+                }
                 className="h-11 bg-[#121B53] text-white hover:bg-[#0B153D]"
               >
                 {paidRequiredMonth
@@ -497,9 +968,11 @@ export default function AdminSubscriptionPayments() {
                   : paying
                   ? 'Traitement...'
                   : paymentMethod === 'wave'
-                  ? 'Payer via Wave'
+                  ? 'Confirmer paiement Wave'
                   : paymentMethod === 'orange_money'
-                  ? 'Payer via Orange Money'
+                  ? orangeCode
+                    ? 'Confirmer code OM'
+                    : 'Recevoir code OM'
                   : 'Valider paiement espèces'}
               </Button>
               {(paidRequiredMonth || !!latestUndoId || isRollingBack) && (
@@ -536,7 +1009,7 @@ export default function AdminSubscriptionPayments() {
                     className="flex items-center justify-between rounded-xl border border-[#121B53]/10 bg-[#F7F9FF] px-3 py-2"
                   >
                     <span className="text-[#121B53]">
-                      {payment.month} • {payment.method === 'wave' ? 'Wave' : payment.method === 'orange_money' ? 'Orange Money' : 'Espèces'}
+                      {getPeriodLabelForPayment(payment)} • {payment.method === 'wave' ? 'Wave' : payment.method === 'orange_money' ? 'Orange Money' : 'Espèces'}
                       {payment.status === 'pending' ? ' • En attente' : ''}
                     </span>
                     <span className="font-semibold text-[#121B53]">{formatCurrency(payment.amount)} FCFA</span>

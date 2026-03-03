@@ -1,4 +1,8 @@
 import { DEFAULT_LOGO_ASSET_PATH, resolveAssetUrl } from '@/services/assets'
+import { resolveCurrentAdminBranding } from '@/services/adminBranding'
+import { normalizeAdminFeaturePermissions } from '@/services/adminPermissions'
+
+const AUTH_CONTEXT_SNAPSHOT_KEY = 'kya_auth_context_snapshot'
 
 type PdfDocumentInput = {
   payerName?: string
@@ -9,6 +13,8 @@ type PdfDocumentInput = {
   value?: number
   uploadedAt?: string | number | Date
   note?: string
+  appName?: string
+  brandLogoUrl?: string
 }
 
 type Html2Canvas = (element: HTMLElement, options?: { scale?: number }) => Promise<HTMLCanvasElement>
@@ -27,8 +33,32 @@ type JsPdfInstance = {
 
 type JsPdfConstructor = new (options: { unit: string; format: string }) => JsPdfInstance
 
+function isPdfExportAllowedForCurrentSession(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    const raw = localStorage.getItem(AUTH_CONTEXT_SNAPSHOT_KEY)
+    if (!raw) return true
+    const parsed = JSON.parse(raw) as {
+      user?: {
+        role?: string
+        permissions?: Record<string, boolean>
+      } | null
+    }
+    const role = String(parsed?.user?.role || '').toUpperCase()
+    if (role !== 'ADMIN') return true
+    const permissions = normalizeAdminFeaturePermissions(parsed?.user?.permissions)
+    return Boolean(permissions.pdfExport)
+  } catch {
+    return true
+  }
+}
+
 // Utility to generate a styled PDF from a document object and offer download + share
 export async function generatePdfForDocument(doc: PdfDocumentInput) {
+  if (!isPdfExportAllowedForCurrentSession()) {
+    throw new Error('Export PDF désactivé pour ce compte par le Super Admin.')
+  }
+
   // dynamic imports so the app still builds if deps are not installed yet
   let html2canvasModule: unknown
   let jspdfModule: unknown
@@ -42,6 +72,9 @@ export async function generatePdfForDocument(doc: PdfDocumentInput) {
   const html2canvas = (html2canvasModule as { default?: Html2Canvas }).default
     ?? (html2canvasModule as Html2Canvas)
   const { jsPDF } = jspdfModule as { jsPDF: JsPdfConstructor }
+  const currentBranding = await resolveCurrentAdminBranding()
+  const resolvedAppName = String(doc.appName || currentBranding.appName || 'Keur Ya Aicha')
+  const resolvedLogoUrl = String(doc.brandLogoUrl || currentBranding.logoUrl || '').trim()
 
   // Build a small HTML receipt element
   const wrapper = document.createElement('div')
@@ -58,13 +91,14 @@ export async function generatePdfForDocument(doc: PdfDocumentInput) {
   header.style.alignItems = 'center'
   header.style.gap = '12px'
 
-  // try to use public/logo.png if present, otherwise fall back to inline SVG brand block
+  // try the provided brand logo first, then fallback to public/logo.png
   const tryLoadLogo = () =>
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image()
       img.onload = () => resolve(img)
       img.onerror = () => reject(new Error('logo not found'))
-      img.src = resolveAssetUrl(DEFAULT_LOGO_ASSET_PATH)
+      const logoCandidate = resolvedLogoUrl || DEFAULT_LOGO_ASSET_PATH
+      img.src = logoCandidate.startsWith('/') ? resolveAssetUrl(logoCandidate) : logoCandidate
     })
 
   try {
@@ -105,7 +139,7 @@ export async function generatePdfForDocument(doc: PdfDocumentInput) {
 
   const title = document.createElement('div')
   const appName = document.createElement('div')
-  appName.textContent = 'KeurYaAicha'
+  appName.textContent = resolvedAppName
   appName.style.fontSize = '20px'
   appName.style.fontWeight = '700'
   appName.style.color = '#0ea5a4'
