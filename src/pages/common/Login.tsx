@@ -5,7 +5,7 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { User, Lock, Volume2, VolumeX, Eye, EyeOff, ArrowRight, Loader } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { getAuthContext } from "@/services/api";
+import { checkPendingAdminApproval, getAuthContext } from "@/services/api";
 import {
   DEFAULT_PLATFORM_CONFIG,
   applyBrandingToDocument,
@@ -17,7 +17,6 @@ import {
   subscribePlatformConfigUpdates,
 } from "@/services/platformConfig";
 import { DEFAULT_LOGO_ASSET_PATH, DEFAULT_VIDEO_ASSET_PATH, resolveAssetUrl } from "@/services/assets";
-import { ensureRuntimeConfigLoaded, getApiBaseUrl } from "@/services/runtimeConfig";
 import { useToast } from "@/contexts/ToastContext";
 import { connexionSchema, ConnexionFormData } from "@/validators/frontend";
 
@@ -250,6 +249,17 @@ export default function LoginPage() {
     }
   };
 
+  const openPendingApprovalModalIfNeeded = async (
+    identifier: string,
+    password: string
+  ): Promise<boolean> => {
+    const isPending = await checkPendingAdminApproval(identifier, password);
+    if (!isPending) return false;
+    setPendingModalOpen(true);
+    setLoginFieldError("");
+    return true;
+  };
+
   const onSubmit = async (data: ConnexionFormData) => {
     if (!LOGIN_BLOCK_TEMP_DISABLED) {
       const lockStatus = getLoginLockStatus();
@@ -317,23 +327,8 @@ export default function LoginPage() {
           navigate("/dashboard", { replace: true });
         }
       } else {
-        try {
-          await ensureRuntimeConfigLoaded();
-          const apiBaseUrl = getApiBaseUrl();
-          const res = await fetch(`${apiBaseUrl}/auth/pending-check`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: data.telephone, password: data.motDePasse }),
-          });
-          const pendingData = await res.json();
-          if (pendingData?.pending) {
-            setPendingModalOpen(true);
-            setLoginFieldError("");
-            return;
-          }
-        } catch {
-          // ignore
+        if (await openPendingApprovalModalIfNeeded(data.telephone, data.motDePasse)) {
+          return;
         }
         if (!LOGIN_BLOCK_TEMP_DISABLED) {
           const failedStatus = recordFailedLoginAttempt();
@@ -389,6 +384,9 @@ export default function LoginPage() {
         normalized.includes('csrf invalid');
       if (isCsrfError) {
         setLoginFieldError("Jeton CSRF invalide. Recharge la page puis réessaie.");
+        return;
+      }
+      if (await openPendingApprovalModalIfNeeded(data.telephone, data.motDePasse)) {
         return;
       }
       if (!LOGIN_BLOCK_TEMP_DISABLED) {
@@ -1074,7 +1072,8 @@ export default function LoginPage() {
               <div style={{ fontWeight: 700, color: "#121B53" }}>Compte en attente</div>
             </div>
             <p style={{ fontSize: 14, color: "#334155", lineHeight: 1.5 }}>
-              Vous n’êtes pas encore approuvé. Veuillez patienter quelques heures.
+              Votre demande est en attente d'approbation du super admin. Vous pourrez vous
+              connecter dès validation.
             </p>
             <button
               type="button"

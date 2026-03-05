@@ -364,3 +364,40 @@ export async function clearImpersonation(): Promise<void> {
   await apiFetch<void>('/authContext/clear-impersonation', { method: 'POST' })
   setCacheScopeImpersonationAdminId(null)
 }
+
+/**
+ * Vérifie si une demande de compte admin correspondante est en attente d'approbation.
+ * Utilisé comme fallback UX sur écran de connexion quand le login échoue.
+ */
+export async function checkPendingAdminApproval(
+  identifier: string,
+  password: string
+): Promise<boolean> {
+  const safeIdentifier = String(identifier || '').trim()
+  const safePassword = String(password || '').trim()
+  if (!safeIdentifier || !safePassword) return false
+
+  try {
+    await ensureRuntimeConfigLoaded()
+    const apiBase = getApiBaseUrl()
+    const response = await fetch(`${apiBase}/auth/pending-check`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifiant: safeIdentifier,
+        username: safeIdentifier,
+        telephone: safeIdentifier,
+        email: safeIdentifier,
+        motDePasse: safePassword,
+        password: safePassword,
+      }),
+    })
+
+    if (!response.ok) return false
+    const payload = (await response.json().catch(() => ({}))) as { pending?: unknown }
+    return Boolean(payload?.pending)
+  } catch {
+    return false
+  }
+}

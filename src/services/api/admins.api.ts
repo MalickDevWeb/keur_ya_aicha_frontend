@@ -6,7 +6,6 @@ import type {
   AdminUpdateDTO,
 } from '@/dto/frontend/requests'
 import { enqueueCreateAdminAction } from '@/infrastructure/syncQueue'
-import { ensureRuntimeConfigLoaded, getApiBaseUrl } from '@/services/runtimeConfig'
 import { createCrudEndpoint } from './endpoint.factory'
 
 /**
@@ -25,68 +24,6 @@ const adminRequestApi = createCrudEndpoint<
   AdminRequestCreateDTO,
   AdminRequestUpdateDTO
 >('/admin_requests', "Demandes d'administrateur")
-
-const CSRF_COOKIE_NAME = 'kya_csrf_token'
-const csrfBootstrapCandidates: ReadonlyArray<{ path: string; method: 'GET' | 'POST' }> = [
-  { path: '/authContext/csrf', method: 'GET' },
-  { path: '/auth/csrf', method: 'GET' },
-  { path: '/csrf', method: 'GET' },
-  { path: '/authContext', method: 'GET' },
-  { path: '/authContext/csrf', method: 'POST' },
-]
-
-let csrfBootstrapPromise: Promise<void> | null = null
-
-function readBrowserCookie(name: string): string {
-  if (typeof document === 'undefined') return ''
-  const cookie = `; ${document.cookie}`
-  const parts = cookie.split(`; ${name}=`)
-  if (parts.length < 2) return ''
-  return decodeURIComponent(parts.pop()?.split(';').shift() || '')
-}
-
-function hasCsrfCookie(): boolean {
-  return Boolean(readBrowserCookie(CSRF_COOKIE_NAME))
-}
-
-function isCsrfError(error: unknown): boolean {
-  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
-  return message.includes('csrf')
-}
-
-async function bootstrapAnonymousCsrfToken(force = false): Promise<void> {
-  if (typeof window === 'undefined') return
-  if (!force && hasCsrfCookie()) return
-  if (csrfBootstrapPromise) return csrfBootstrapPromise
-
-  csrfBootstrapPromise = (async () => {
-    await ensureRuntimeConfigLoaded()
-    const apiBase = getApiBaseUrl()
-    for (const candidate of csrfBootstrapCandidates) {
-      try {
-        const headers: HeadersInit = candidate.method === 'POST'
-          ? { 'Content-Type': 'application/json' }
-          : {}
-
-        await fetch(`${apiBase}${candidate.path}`, {
-          method: candidate.method,
-          credentials: 'include',
-          cache: 'no-store',
-          headers,
-          body: candidate.method === 'POST' ? '{}' : undefined,
-        })
-      } catch {
-        // ignore bootstrap probe failures
-      }
-
-      if (hasCsrfCookie()) return
-    }
-  })().finally(() => {
-    csrfBootstrapPromise = null
-  })
-
-  return csrfBootstrapPromise
-}
 
 function isLikelyNetworkError(error: unknown): boolean {
   if (error instanceof TypeError) return true
@@ -169,14 +106,7 @@ export async function getAdminRequest(id: string): Promise<AdminRequestDTO> {
  * @returns Demande créée
  */
 export async function createAdminRequest(data: AdminRequestCreateDTO): Promise<AdminRequestDTO> {
-  await bootstrapAnonymousCsrfToken()
-  try {
-    return await adminRequestApi.create(data)
-  } catch (error) {
-    if (!isCsrfError(error)) throw error
-    await bootstrapAnonymousCsrfToken(true)
-    return adminRequestApi.create(data)
-  }
+  return adminRequestApi.create(data)
 }
 
 /**
