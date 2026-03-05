@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
 import {
   clearImpersonation as clearImpersonationApi,
   getAuthContext,
@@ -64,6 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [impersonation, setImpersonationState] = useState<ImpersonationState>(null);
+  const secondAuthProbeInFlightRef = useRef(false);
   const SESSION_LOGIN_AT_KEY = 'kya_session_login_at';
   const SESSION_LAST_ACTIVITY_KEY = 'kya_session_last_activity';
   const LAST_LOGIN_USERNAME_KEY = 'kya_last_login_username';
@@ -186,7 +187,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    const onSecondAuthRequired = () => {
+    const applySecondAuthRequiredFallback = () => {
       setUser((prev) => {
         if (!prev) return prev;
         if (String(prev.role || '').toUpperCase() !== 'SUPER_ADMIN') return prev;
@@ -196,6 +197,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
           superAdminSecondAuthRequired: true,
         };
       });
+    };
+
+    const onSecondAuthRequired = () => {
+      if (secondAuthProbeInFlightRef.current) return;
+      secondAuthProbeInFlightRef.current = true;
+
+      void (async () => {
+        try {
+          const ctx = await getAuthContext();
+          const backendUser = (ctx?.user || null) as User | null;
+          const backendRole = String(backendUser?.role || '').toUpperCase();
+
+          if (backendUser && backendRole === 'SUPER_ADMIN') {
+            setUser(backendUser);
+            setImpersonationState(ctx.impersonation || null);
+            if (backendUser.superAdminSecondAuthRequired === false) {
+              return;
+            }
+            return;
+          }
+
+          applySecondAuthRequiredFallback();
+        } catch {
+          applySecondAuthRequiredFallback();
+        } finally {
+          secondAuthProbeInFlightRef.current = false;
+        }
+      })();
     };
 
     window.addEventListener('super-admin-second-auth-required', onSecondAuthRequired);
