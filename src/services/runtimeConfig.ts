@@ -58,6 +58,23 @@ function isLocalHost(hostname: string): boolean {
   return isPrivateIpv4Host(safeHostname)
 }
 
+function isPublicWebContext(): boolean {
+  if (typeof window === 'undefined') return false
+  const currentHost = String(window.location?.hostname || '').trim().toLowerCase()
+  return Boolean(currentHost) && !isLocalHost(currentHost)
+}
+
+function shouldRejectLocalRuntimeUrl(value: string): boolean {
+  const raw = String(value || '').trim()
+  if (!raw || !isPublicWebContext()) return false
+  try {
+    const parsed = new URL(raw)
+    return isLocalHost(parsed.hostname)
+  } catch {
+    return false
+  }
+}
+
 function normalizeRuntimeUrl(value: string, label: string, stripTrailingSlash = false): string {
   const raw = String(value || '').trim()
   if (!raw) return ''
@@ -161,6 +178,10 @@ const readLocalStorageKey = (
   try {
     const rawValue = String(localStorage.getItem(key) || '').trim()
     if (!rawValue) return ''
+    if (shouldRejectLocalRuntimeUrl(rawValue)) {
+      localStorage.removeItem(key)
+      return ''
+    }
     try {
       return normalize(rawValue)
     } catch {
