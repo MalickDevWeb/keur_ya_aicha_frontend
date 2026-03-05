@@ -42,10 +42,16 @@ export type SyncQueueListItem = {
   summary: string
 }
 
-const OFFLINE_SYNC_ENABLED =
-  String(import.meta.env.VITE_OFFLINE_SYNC_ENABLED ?? 'true').trim().toLowerCase() === 'true'
+function isElectronDesktopRuntime(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /electron/i.test(String(navigator.userAgent || ''))
+}
 
-function isOfflineSyncEnabled(): boolean {
+const OFFLINE_SYNC_ENABLED =
+  String(import.meta.env.VITE_OFFLINE_SYNC_ENABLED ?? 'true').trim().toLowerCase() === 'true' &&
+  isElectronDesktopRuntime()
+
+export function isOfflineSyncEnabled(): boolean {
   return OFFLINE_SYNC_ENABLED
 }
 

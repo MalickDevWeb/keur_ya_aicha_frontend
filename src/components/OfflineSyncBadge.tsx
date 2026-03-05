@@ -10,6 +10,7 @@ import {
   OFFLINE_SYNC_STARTED_EVENT,
   clearSyncQueue,
   getPendingSyncCount,
+  isOfflineSyncEnabled,
   listPendingSyncEntries,
   type SyncQueueListItem,
   syncQueuedActions,
@@ -40,6 +41,8 @@ function getActionLabel(type?: string): string {
 }
 
 export function OfflineSyncBadge() {
+  if (!isOfflineSyncEnabled()) return null
+
   const { addToast } = useToast()
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator === 'undefined' ? true : navigator.onLine !== false)
   const [isSyncing, setIsSyncing] = useState(false)
