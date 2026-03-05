@@ -18,8 +18,11 @@ import type { CreatedAdmin } from './types'
 import { buildCredentialsMessage, createEntityId, formatPhoneForWhatsapp, normalize, normalizePhone } from './utils'
 
 export function useSuperAdminDashboard() {
-  const { user } = useAuth()
+  const { user, impersonation } = useAuth()
   const role = String(user?.role || '').toUpperCase()
+  const isSuperAdmin = role === 'SUPER_ADMIN'
+  const hasImpersonation = Boolean(impersonation?.adminId)
+  const canReadAdminScopedData = !isSuperAdmin || hasImpersonation
   const requiresSecondAuth = role === 'SUPER_ADMIN' && user?.superAdminSecondAuthRequired !== false
   const [state, setState] = useState({
     isCreateOpen: false,
@@ -59,6 +62,27 @@ export function useSuperAdminDashboard() {
     }
     setState((prev) => ({ ...prev, loading: true }))
     try {
+      if (!canReadAdminScopedData) {
+        const [admins, requests, entreprises, users] = await Promise.all([
+          fetchAdmins(),
+          fetchAdminRequests(),
+          fetchEntreprises(),
+          fetchUsers(),
+        ])
+        setState((prev) => ({
+          ...prev,
+          admins,
+          requests,
+          entreprises,
+          users,
+          auditLogs: [],
+          adminPayments: [],
+          paymentStats: { paid: 0, unpaid: 0, partial: 0 },
+          loading: false,
+        }))
+        return
+      }
+
       const [admins, requests, entreprises, users, clients, logs, adminPayments] = await Promise.all([
         fetchAdmins(),
         fetchAdminRequests(),
@@ -102,7 +126,7 @@ export function useSuperAdminDashboard() {
 
   useEffect(() => {
     void refresh()
-  }, [requiresSecondAuth])
+  }, [canReadAdminScopedData, requiresSecondAuth])
 
   const handleCreateAdmin = async () => {
     const { newAdmin } = state

@@ -316,7 +316,14 @@ function writeStoredLanguage(language: Language): void {
 
 function isPublicAuthRoute(pathname: string): boolean {
   const safePath = String(pathname || '').trim()
-  return safePath === '/login' || safePath === '/admin/signup'
+  return (
+    safePath === '/login' ||
+    safePath === '/login/' ||
+    safePath === '/admin/signup' ||
+    safePath === '/admin/signup/' ||
+    safePath === '/signup' ||
+    safePath === '/signup/'
+  )
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);

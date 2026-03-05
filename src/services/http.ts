@@ -16,7 +16,9 @@ const SLOW_REQUEST_MS = 1500
 const AUDIT_BUFFER_KEY = 'audit_buffer'
 const UNDO_EVENT_NAME = 'api-undo-available'
 const NETWORK_RETRY_BACKOFF_MS = 10_000
+const AUDIT_FORBIDDEN_BACKOFF_MS = 5 * 60 * 1000
 let networkUnavailableUntil = 0
+let auditUnavailableUntil = 0
 
 const resolveApiBase = async (): Promise<string> => {
   await ensureRuntimeConfigLoaded()
@@ -36,18 +38,27 @@ function queueAuditLog(entry: Record<string, unknown>) {
 
 async function flushAuditBuffer() {
   try {
+    if (Date.now() < auditUnavailableUntil || isBrowserOffline()) return
     const apiBase = await resolveApiBase()
     const raw = localStorage.getItem(AUDIT_BUFFER_KEY)
     if (!raw) return
     const list = JSON.parse(raw) as Record<string, unknown>[]
     if (!Array.isArray(list) || list.length === 0) return
     for (const entry of list) {
-      await fetch(`${apiBase}/audit_logs`, {
+      const response = await fetch(`${apiBase}/audit_logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
       })
+      if (response.status === 401 || response.status === 403) {
+        auditUnavailableUntil = Date.now() + AUDIT_FORBIDDEN_BACKOFF_MS
+        return
+      }
+      if (!response.ok) {
+        return
+      }
     }
+    auditUnavailableUntil = 0
     localStorage.removeItem(AUDIT_BUFFER_KEY)
   } catch {
     // ignore
@@ -56,12 +67,22 @@ async function flushAuditBuffer() {
 
 async function sendAuditLog(entry: Record<string, unknown>) {
   try {
+    if (Date.now() < auditUnavailableUntil || isBrowserOffline()) return
     const apiBase = await resolveApiBase()
-    await fetch(`${apiBase}/audit_logs`, {
+    const response = await fetch(`${apiBase}/audit_logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
     })
+    if (response.status === 401 || response.status === 403) {
+      auditUnavailableUntil = Date.now() + AUDIT_FORBIDDEN_BACKOFF_MS
+      return
+    }
+    if (!response.ok) {
+      queueAuditLog(entry)
+      return
+    }
+    auditUnavailableUntil = 0
   } catch {
     queueAuditLog(entry)
   }

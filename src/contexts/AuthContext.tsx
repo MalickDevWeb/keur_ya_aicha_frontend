@@ -48,6 +48,18 @@ type AuthProviderProps = {
   children: ReactNode;
 }
 
+function isPublicAuthRoute(pathname: string): boolean {
+  const safePath = String(pathname || '').trim();
+  return (
+    safePath === '/login' ||
+    safePath === '/login/' ||
+    safePath === '/admin/signup' ||
+    safePath === '/admin/signup/' ||
+    safePath === '/signup' ||
+    safePath === '/signup/'
+  );
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +83,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setImpersonationState(null);
         sessionStorage.removeItem(SESSION_LOGIN_AT_KEY);
         sessionStorage.removeItem(SESSION_LAST_ACTIVITY_KEY);
+        setIsLoading(false);
+        return;
+      }
+
+      if (typeof window !== 'undefined' && isPublicAuthRoute(window.location.pathname)) {
+        if (!mounted) return;
+        setUser(null);
+        setImpersonationState(null);
         setIsLoading(false);
         return;
       }
@@ -190,7 +210,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let active = true;
     const role = String(user.role || '').toUpperCase();
     const requiresSecondAuth = role === 'SUPER_ADMIN' && user.superAdminSecondAuthRequired !== false;
-    if (!requiresSecondAuth) {
+    const hasImpersonation = Boolean(impersonation?.adminId);
+    if (!requiresSecondAuth && (role !== 'SUPER_ADMIN' || hasImpersonation)) {
       void refreshPlatformConfigFromServer();
     }
 
@@ -237,7 +258,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       events.forEach((eventName) => window.removeEventListener(eventName, markActivity));
       window.clearInterval(interval);
     };
-  }, [logout, user?.id, user?.role, user?.superAdminSecondAuthRequired]);
+  }, [logout, impersonation?.adminId, user?.id, user?.role, user?.superAdminSecondAuthRequired]);
 
   return (
     <AuthContext.Provider
