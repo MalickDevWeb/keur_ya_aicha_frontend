@@ -416,12 +416,6 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Google Font */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
-
       {/* Hidden SVG clipPath for wavy border */}
       <svg width="0" height="0" style={{ position: "absolute" }}>
         <defs>

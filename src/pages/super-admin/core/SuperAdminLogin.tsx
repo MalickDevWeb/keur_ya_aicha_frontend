@@ -263,11 +263,6 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
 
   return (
     <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap"
-        rel="stylesheet"
-      />
-
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes record {
           0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, .7); }
