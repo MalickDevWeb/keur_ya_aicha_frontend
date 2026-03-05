@@ -13,7 +13,9 @@ import type { EntrepriseRow, ViewMode } from './types'
 export function EntreprisesDashboard() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { setImpersonation } = useAuth()
+  const { user, impersonation, setImpersonation } = useAuth()
+  const role = String(user?.role || '').toUpperCase()
+  const canReadAdminScopedData = role !== 'SUPER_ADMIN' || Boolean(impersonation?.adminId)
   const [entreprises, setEntreprises] = useState<EntrepriseDTO[]>([])
   const [admins, setAdmins] = useState<AdminDTO[]>([])
   const [requests, setRequests] = useState<AdminRequestDTO[]>([])
@@ -29,26 +31,36 @@ export function EntreprisesDashboard() {
     const load = async () => {
       setLoading(true)
       try {
-        const [entreprisesData, adminsData, requestsData, adminPaymentsData] = await Promise.all([
+        const [entreprisesResult, adminsResult, requestsResult] = await Promise.allSettled([
           fetchEntreprises(),
           fetchAdmins(),
           fetchAdminRequests(),
-          fetchAdminPayments(),
         ])
+        const adminPaymentsResult = canReadAdminScopedData
+          ? await Promise.allSettled([fetchAdminPayments()])
+          : null
         if (!active) return
-        setEntreprises(entreprisesData)
-        setAdmins(adminsData)
-        setRequests(requestsData)
-        setAdminPayments(adminPaymentsData)
+        setEntreprises(entreprisesResult.status === 'fulfilled' ? entreprisesResult.value : [])
+        setAdmins(adminsResult.status === 'fulfilled' ? adminsResult.value : [])
+        setRequests(requestsResult.status === 'fulfilled' ? requestsResult.value : [])
+        setAdminPayments(
+          adminPaymentsResult?.[0]?.status === 'fulfilled' ? adminPaymentsResult[0].value : []
+        )
+      } catch {
+        if (!active) return
+        setEntreprises([])
+        setAdmins([])
+        setRequests([])
+        setAdminPayments([])
       } finally {
         if (active) setLoading(false)
       }
     }
-    load()
+    void load()
     return () => {
       active = false
     }
-  }, [])
+  }, [canReadAdminScopedData])
 
   const adminsById = useMemo(() => {
     const map = new Map<string, AdminDTO>()

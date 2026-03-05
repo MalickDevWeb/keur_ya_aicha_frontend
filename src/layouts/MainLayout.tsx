@@ -119,6 +119,8 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   useEffect(() => {
     if (String(user?.role || '').toUpperCase() !== 'SUPER_ADMIN') return
+    if (user?.superAdminSecondAuthRequired !== false) return
+    if (!impersonation?.adminId) return
     if (!platformConfig.auditCompliance.autoExportEnabled) return
 
     const intervalMs = Math.max(1, platformConfig.auditCompliance.autoExportIntervalHours) * 60 * 60 * 1000
@@ -177,10 +179,12 @@ export function MainLayout({ children }: MainLayoutProps) {
       window.clearInterval(timer)
     }
   }, [
+    impersonation?.adminId,
     platformConfig.auditCompliance.autoExportEnabled,
     platformConfig.auditCompliance.autoExportFormat,
     platformConfig.auditCompliance.autoExportIntervalHours,
     user?.role,
+    user?.superAdminSecondAuthRequired,
   ])
 
   useEffect(() => {

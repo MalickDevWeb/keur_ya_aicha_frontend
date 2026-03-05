@@ -77,6 +77,10 @@ export function AdminsDashboard() {
         if (!active) return
         setAdmins(adminsData)
         setEntreprises(entreprisesData)
+      } catch {
+        if (!active) return
+        setAdmins([])
+        setEntreprises([])
       } finally {
         if (active) setLoading(false)
       }

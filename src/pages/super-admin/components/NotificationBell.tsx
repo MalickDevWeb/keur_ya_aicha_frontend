@@ -33,8 +33,11 @@ function isPermissionError(error: unknown): boolean {
 
 export function NotificationBell() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, impersonation } = useAuth()
   const role = String(user?.role || '').toUpperCase()
+  const requiresSecondAuth = role === 'SUPER_ADMIN' && user?.superAdminSecondAuthRequired !== false
+  const canReadAdminScopedData = role !== 'SUPER_ADMIN' || Boolean(impersonation?.adminId)
+  const canReadNotifications = Boolean(user?.id) && !requiresSecondAuth && canReadAdminScopedData
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
@@ -49,7 +52,7 @@ export function NotificationBell() {
   )
 
   const refresh = useCallback(async () => {
-    if (!user?.id || !isOnline || permissionDenied) return
+    if (!canReadNotifications || !isOnline || permissionDenied) return
     setLoading(true)
     try {
       let data = role === 'SUPER_ADMIN' ? await listAllNotifications() : await listNotifications(user.id)
@@ -73,7 +76,7 @@ export function NotificationBell() {
     } finally {
       setLoading(false)
     }
-  }, [isOnline, permissionDenied, role, user?.id])
+  }, [canReadNotifications, isOnline, permissionDenied, role, user?.id])
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true)
@@ -87,6 +90,14 @@ export function NotificationBell() {
   }, [])
 
   useEffect(() => {
+    if (!canReadNotifications) {
+      setNotifications([])
+      setPermissionDenied(false)
+      setLoading(false)
+      setOpen(false)
+      return
+    }
+
     let mounted = true
     const run = async () => {
       if (!mounted) return
@@ -100,12 +111,16 @@ export function NotificationBell() {
       mounted = false
       clearInterval(interval)
     }
-  }, [refresh])
+  }, [canReadNotifications, refresh])
 
   useEffect(() => {
     if (!open) return
     void refresh()
   }, [open, refresh])
+
+  if (!canReadNotifications) {
+    return null
+  }
 
   const handleMarkRead = async (notif: NotificationItem) => {
     if (notif.is_read) return

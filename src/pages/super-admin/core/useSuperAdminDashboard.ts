@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
+  createAdmin,
   createAdminRequest,
+  createEntreprise,
   fetchAdminRequests,
   fetchAdmins,
   fetchAuditLogs,
@@ -12,10 +14,55 @@ import {
   updateAdminRequest,
 } from '@/services/api'
 import type {
+  AdminDTO,
   AdminRequestDTO,
 } from '@/dto/frontend/responses'
 import type { CreatedAdmin } from './types'
 import { buildCredentialsMessage, createEntityId, formatPhoneForWhatsapp, normalize, normalizePhone } from './utils'
+
+function isSecondAuthRequiredError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return message.includes('seconde authentification super admin requise')
+}
+
+function isConflictLikeError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return message.includes('conflit') || message.includes('already exists') || message.includes('deja')
+}
+
+function getFulfilledValue<T>(result: PromiseSettledResult<T>): T | null {
+  if (result.status !== 'fulfilled') return null
+  return result.value
+}
+
+function resolveSafeAdminEmail(username: string, email?: string): string {
+  const normalized = String(email || '').trim()
+  if (normalized) return normalized
+  const base = String(username || '').trim() || 'admin'
+  return `${base}@kya.local`
+}
+
+function normalizeAdminStatus(status?: string): 'ACTIF' | 'SUSPENDU' | 'ARCHIVE' {
+  const value = String(status || '').toUpperCase()
+  if (value === 'SUSPENDU' || value === 'BLACKLISTE') return 'SUSPENDU'
+  if (value === 'ARCHIVE') return 'ARCHIVE'
+  return 'ACTIF'
+}
+
+function findAdminMatch(
+  admins: AdminDTO[],
+  username: string,
+  email?: string
+): AdminDTO | null {
+  const normalizedUsername = normalize(username)
+  const normalizedEmail = normalize(email)
+  const item = admins.find((admin) => {
+    if (normalize(admin.username) === normalizedUsername) return true
+    if (normalizedEmail && normalize(admin.email) === normalizedEmail) return true
+    return false
+  })
+  return item || null
+}
 
 export function useSuperAdminDashboard() {
   const { user, impersonation } = useAuth()
@@ -55,58 +102,82 @@ export function useSuperAdminDashboard() {
     paymentStats: { paid: 0, unpaid: 0, partial: 0 },
   })
 
+  const markSecondAuthRequired = () => {
+    window.dispatchEvent(new CustomEvent('super-admin-second-auth-required'))
+  }
+
   const refresh = async () => {
     if (requiresSecondAuth) {
       setState((prev) => ({ ...prev, loading: false }))
       return
     }
-    setState((prev) => ({ ...prev, loading: true }))
-    try {
-      if (!canReadAdminScopedData) {
-        const [admins, requests, entreprises, users] = await Promise.all([
-          fetchAdmins(),
-          fetchAdminRequests(),
-          fetchEntreprises(),
-          fetchUsers(),
-        ])
-        setState((prev) => ({
-          ...prev,
-          admins,
-          requests,
-          entreprises,
-          users,
-          auditLogs: [],
-          adminPayments: [],
-          paymentStats: { paid: 0, unpaid: 0, partial: 0 },
-          loading: false,
-        }))
-        return
-      }
 
-      const [admins, requests, entreprises, users, clients, logs, adminPayments] = await Promise.all([
-        fetchAdmins(),
-        fetchAdminRequests(),
-        fetchEntreprises(),
-        fetchUsers(),
-        fetchClients(),
-        fetchAuditLogs(),
-        fetchAdminPayments(),
-      ])
-      const paymentStats = calculatePaymentStats(clients)
+    setState((prev) => ({ ...prev, loading: true }))
+    const coreResults = await Promise.allSettled([
+      fetchAdmins(),
+      fetchAdminRequests(),
+      fetchEntreprises(),
+      fetchUsers(),
+    ])
+
+    const coreFailures = coreResults
+      .filter((result) => result.status === 'rejected')
+      .map((result) => (result as PromiseRejectedResult).reason)
+
+    if (coreFailures.some((error) => isSecondAuthRequiredError(error))) {
+      markSecondAuthRequired()
+    }
+
+    const admins = getFulfilledValue(coreResults[0])
+    const requests = getFulfilledValue(coreResults[1])
+    const entreprises = getFulfilledValue(coreResults[2])
+    const users = getFulfilledValue(coreResults[3])
+
+    if (!canReadAdminScopedData) {
       setState((prev) => ({
         ...prev,
-        admins,
-        requests,
-        entreprises,
-        users,
-        auditLogs: logs,
-        adminPayments,
-        paymentStats,
+        admins: admins ?? prev.admins,
+        requests: requests ?? prev.requests,
+        entreprises: entreprises ?? prev.entreprises,
+        users: users ?? prev.users,
+        auditLogs: [],
+        adminPayments: [],
+        paymentStats: { paid: 0, unpaid: 0, partial: 0 },
         loading: false,
       }))
-    } catch {
-      setState((prev) => ({ ...prev, loading: false }))
+      return
     }
+
+    const scopedResults = await Promise.allSettled([
+      fetchClients(),
+      fetchAuditLogs(),
+      fetchAdminPayments(),
+    ])
+
+    const scopedFailures = scopedResults
+      .filter((result) => result.status === 'rejected')
+      .map((result) => (result as PromiseRejectedResult).reason)
+
+    if (scopedFailures.some((error) => isSecondAuthRequiredError(error))) {
+      markSecondAuthRequired()
+    }
+
+    const clients = getFulfilledValue(scopedResults[0]) || []
+    const logs = getFulfilledValue(scopedResults[1]) || []
+    const adminPayments = getFulfilledValue(scopedResults[2]) || []
+    const paymentStats = calculatePaymentStats(clients)
+
+    setState((prev) => ({
+      ...prev,
+      admins: admins ?? prev.admins,
+      requests: requests ?? prev.requests,
+      entreprises: entreprises ?? prev.entreprises,
+      users: users ?? prev.users,
+      auditLogs: logs,
+      adminPayments,
+      paymentStats,
+      loading: false,
+    }))
   }
 
   const calculatePaymentStats = (clients) => {
@@ -127,6 +198,83 @@ export function useSuperAdminDashboard() {
   useEffect(() => {
     void refresh()
   }, [canReadAdminScopedData, requiresSecondAuth])
+
+  const ensureEntrepriseForAdmin = async (
+    admin: AdminDTO,
+    entrepriseName?: string,
+    requestId?: string
+  ): Promise<void> => {
+    const trimmedName = String(entrepriseName || '').trim()
+    if (!trimmedName) return
+
+    const alreadyLinked = state.entreprises.some((entreprise) => {
+      if (String(entreprise.adminId || '') !== String(admin.id || '')) return false
+      return normalize(entreprise.name) === normalize(trimmedName)
+    })
+    if (alreadyLinked) return
+
+    try {
+      await createEntreprise({
+        id: `${admin.id}-entreprise`,
+        name: trimmedName,
+        adminId: admin.id,
+        adminRequestId: requestId,
+        createdAt: new Date().toISOString(),
+      })
+    } catch (error) {
+      if (isSecondAuthRequiredError(error)) {
+        markSecondAuthRequired()
+        throw error
+      }
+      if (!isConflictLikeError(error)) {
+        throw error
+      }
+    }
+  }
+
+  const provisionApprovedRequestAccount = async (
+    req: AdminRequestDTO,
+    username: string,
+    password: string
+  ): Promise<AdminDTO | null> => {
+    const email = resolveSafeAdminEmail(username, req.email)
+    const existingLocalAdmin = findAdminMatch(state.admins as AdminDTO[], username, email)
+    if (existingLocalAdmin) {
+      await ensureEntrepriseForAdmin(existingLocalAdmin, req.entrepriseName, req.id)
+      return existingLocalAdmin
+    }
+
+    try {
+      const createdAdmin = await createAdmin({
+        id: String(req.id || createEntityId('admin')),
+        userId: String(req.id || createEntityId('user')),
+        adminRequestId: req.id,
+        username,
+        name: String(req.name || username),
+        email,
+        phone: req.phone || undefined,
+        password,
+        status: normalizeAdminStatus(req.status),
+        createdAt: req.createdAt || new Date().toISOString(),
+      })
+      await ensureEntrepriseForAdmin(createdAdmin, req.entrepriseName, req.id)
+      return createdAdmin
+    } catch (error) {
+      if (isSecondAuthRequiredError(error)) {
+        markSecondAuthRequired()
+        throw error
+      }
+
+      const fallbackAdmins = await fetchAdmins().catch(() => [] as AdminDTO[])
+      const existingRemoteAdmin = findAdminMatch(fallbackAdmins, username, email)
+      if (!existingRemoteAdmin) {
+        throw error
+      }
+
+      await ensureEntrepriseForAdmin(existingRemoteAdmin, req.entrepriseName, req.id)
+      return existingRemoteAdmin
+    }
+  }
 
   const handleCreateAdmin = async () => {
     const { newAdmin } = state
@@ -172,6 +320,21 @@ export function useSuperAdminDashboard() {
         paid: true,
         paidAt: createdAt,
       })
+      await provisionApprovedRequestAccount(
+        {
+          ...createdRequest,
+          status: 'ACTIF',
+          username: generatedUsername,
+          password: safePassword,
+          email: newAdmin.email || undefined,
+          phone: normalizedPhone,
+          entrepriseName: newAdmin.entreprise || '',
+          paid: true,
+          paidAt: createdAt,
+        },
+        generatedUsername,
+        safePassword
+      )
 
       setState((prev) => ({
         ...prev,
@@ -192,7 +355,7 @@ export function useSuperAdminDashboard() {
       const message = error instanceof Error ? error.message : ''
       const normalized = String(message || '').toLowerCase()
       if (normalized.includes('seconde authentification super admin requise')) {
-        window.dispatchEvent(new CustomEvent('super-admin-second-auth-required'))
+        markSecondAuthRequired()
         setState((prev) => ({
           ...prev,
           createError:
@@ -252,9 +415,24 @@ export function useSuperAdminDashboard() {
       const updated = await updateAdminRequest(req.id, {
         status: 'ACTIF',
         username,
+        password,
+        email: req.email || undefined,
+        phone: req.phone || undefined,
+        entrepriseName: req.entrepriseName || '',
         paid: true,
         paidAt: new Date().toISOString(),
       })
+      await provisionApprovedRequestAccount(
+        {
+          ...req,
+          ...updated,
+          status: 'ACTIF',
+          username,
+          password,
+        },
+        username,
+        password
+      )
 
       const createdAdmin: CreatedAdmin = {
         name: req.name,
@@ -283,7 +461,10 @@ export function useSuperAdminDashboard() {
         }
       }
       refresh()
-    } catch {
+    } catch (error) {
+      if (isSecondAuthRequiredError(error)) {
+        markSecondAuthRequired()
+      }
       setState((prev) => ({
         ...prev,
         approveErrors: { ...prev.approveErrors, [req.id]: "Échec de validation de la demande." },

@@ -7,6 +7,9 @@ export interface AdminCreateDTO {
   username: string
   name: string
   email: string
+  phone?: string
+  password?: string
+  entreprise?: string
   status: AdminStatus
   entrepriseId?: string
   createdAt?: string

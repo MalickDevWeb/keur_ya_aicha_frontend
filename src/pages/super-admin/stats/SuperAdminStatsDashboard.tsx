@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
+import { useAuth } from '@/contexts/AuthContext'
 import { fetchAdmins, fetchAdminRequests, fetchEntreprises, fetchClients } from '@/services/api'
 import type { AdminRequestDTO } from '@/dto/frontend/responses'
 import type { ClientDTO } from '@/dto/backend/responses'
@@ -11,6 +12,9 @@ import { StatsSummarySection } from './sections/StatsSummarySection'
 import { PaymentsDistributionSection } from './sections/PaymentsDistributionSection'
 
 export function SuperAdminStatsDashboard() {
+  const { user, impersonation } = useAuth()
+  const role = String(user?.role || '').toUpperCase()
+  const canReadAdminScopedData = role !== 'SUPER_ADMIN' || Boolean(impersonation?.adminId)
   const [adminsCount, setAdminsCount] = useState(0)
   const [entreprisesCount, setEntreprisesCount] = useState(0)
   const [pendingCount, setPendingCount] = useState(0)
@@ -19,28 +23,49 @@ export function SuperAdminStatsDashboard() {
   useEffect(() => {
     let active = true
     const load = async () => {
-      const [admins, requests, entreprises, clients] = await Promise.all([
-        fetchAdmins(),
-        fetchAdminRequests(),
-        fetchEntreprises(),
-        fetchClients(),
-      ])
-      if (!active) return
-      const activeAdmins = admins.filter((admin) => admin.status === 'ACTIF')
-      const activeAdminIds = new Set(activeAdmins.map((admin) => admin.id))
-      const activeEntreprises = entreprises.filter((entreprise) =>
-        entreprise.adminId ? activeAdminIds.has(entreprise.adminId) : false
-      )
-      setAdminsCount(activeAdmins.length)
-      setEntreprisesCount(activeEntreprises.length)
-      setPendingCount((requests as AdminRequestDTO[]).filter((r) => r.status === 'EN_ATTENTE').length)
-      setPaymentStats(buildPaymentStats(clients as ClientDTO[]))
+      try {
+        const [adminsResult, requestsResult, entreprisesResult] = await Promise.allSettled([
+          fetchAdmins(),
+          fetchAdminRequests(),
+          fetchEntreprises(),
+        ])
+        const clientsResult = canReadAdminScopedData
+          ? await Promise.allSettled([fetchClients()])
+          : null
+
+        if (!active) return
+
+        const admins = adminsResult.status === 'fulfilled' ? adminsResult.value : []
+        const requests = requestsResult.status === 'fulfilled' ? requestsResult.value : []
+        const entreprises = entreprisesResult.status === 'fulfilled' ? entreprisesResult.value : []
+        const clients =
+          clientsResult?.[0]?.status === 'fulfilled'
+            ? (clientsResult[0].value as ClientDTO[])
+            : []
+
+        const activeAdmins = admins.filter((admin) => admin.status === 'ACTIF')
+        const activeAdminIds = new Set(activeAdmins.map((admin) => admin.id))
+        const activeEntreprises = entreprises.filter((entreprise) =>
+          entreprise.adminId ? activeAdminIds.has(entreprise.adminId) : false
+        )
+        setAdminsCount(activeAdmins.length)
+        setEntreprisesCount(activeEntreprises.length)
+        setPendingCount((requests as AdminRequestDTO[]).filter((r) => r.status === 'EN_ATTENTE').length)
+        setPaymentStats(buildPaymentStats(clients))
+      } catch {
+        if (!active) return
+        setAdminsCount(0)
+        setEntreprisesCount(0)
+        setPendingCount(0)
+        setPaymentStats({ paid: 0, unpaid: 0, partial: 0 })
+      }
     }
-    load()
+
+    void load()
     return () => {
       active = false
     }
-  }, [])
+  }, [canReadAdminScopedData])
 
   const totalPayments = paymentStats.paid + paymentStats.unpaid + paymentStats.partial
   const paymentDistribution = useMemo(() => buildPaymentDistribution(paymentStats), [paymentStats])

@@ -9,8 +9,11 @@ import { cn } from '@/lib/utils'
 
 export function NotificationsDashboard() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, impersonation } = useAuth()
   const role = String(user?.role || '').toUpperCase()
+  const requiresSecondAuth = role === 'SUPER_ADMIN' && user?.superAdminSecondAuthRequired !== false
+  const canReadAdminScopedData = role !== 'SUPER_ADMIN' || Boolean(impersonation?.adminId)
+  const canReadNotifications = Boolean(user?.id) && !requiresSecondAuth && canReadAdminScopedData
   const [loading, setLoading] = useState(true)
   const [notifications, setNotifications] = useState<NotificationDTO[]>([])
 
@@ -20,19 +23,29 @@ export function NotificationsDashboard() {
   )
 
   const load = async () => {
-    if (!user?.id) return
+    if (!canReadNotifications) {
+      setNotifications([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const data = role === 'SUPER_ADMIN' ? await listAllNotifications() : await listNotifications(user.id)
       setNotifications(Array.isArray(data) ? data : [])
+    } catch (error) {
+      const message = String((error as { message?: string })?.message || '').toLowerCase()
+      if (message.includes('seconde authentification super admin requise')) {
+        window.dispatchEvent(new CustomEvent('super-admin-second-auth-required'))
+      }
+      setNotifications([])
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    load()
-  }, [user?.id])
+    void load()
+  }, [canReadNotifications, role, user?.id])
 
   const handleRead = async (notif: NotificationDTO) => {
     if (notif.is_read) return
