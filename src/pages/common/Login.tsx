@@ -834,10 +834,10 @@ export default function LoginPage() {
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <InputField
-                label="Téléphone"
+                label="Email ou Téléphone"
                 name="telephone"
                 icon={<User size={18} />}
-                placeholder="+221 77 123 45 67"
+                placeholder="email@exemple.com ou +221 77 123 45 67"
                 error={errors.telephone?.message || loginFieldError}
                 watch={watchTelephone || ""}
                 register={register("telephone")}

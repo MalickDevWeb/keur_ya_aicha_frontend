@@ -47,7 +47,7 @@ describe('Login page', () => {
   it('submits credentials and navigates on success', async () => {
     render(<LoginPage />)
 
-    fireEvent.change(screen.getByPlaceholderText('+221 77 123 45 67'), { target: { value: '771234567' } })
+    fireEvent.change(screen.getByPlaceholderText('email@exemple.com ou +221 77 123 45 67'), { target: { value: '771234567' } })
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'admin123' } })
 
     fireEvent.click(screen.getByRole('button', { name: /Se connecter/i }))
@@ -60,11 +60,24 @@ describe('Login page', () => {
     login.mockResolvedValueOnce(false)
     render(<LoginPage />)
 
-    fireEvent.change(screen.getByPlaceholderText('+221 77 123 45 67'), { target: { value: '770000000' } })
+    fireEvent.change(screen.getByPlaceholderText('email@exemple.com ou +221 77 123 45 67'), { target: { value: '770000000' } })
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'badpass' } })
 
     fireEvent.click(screen.getByRole('button', { name: /Se connecter/i }))
 
     await waitFor(() => expect(screen.getAllByText(/Identifiants incorrects/i).length).toBeGreaterThan(0))
+  })
+
+  it('accepts email as login identifier', async () => {
+    render(<LoginPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('email@exemple.com ou +221 77 123 45 67'), {
+      target: { value: 'admin@example.com' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'admin123' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /Se connecter/i }))
+
+    await waitFor(() => expect(login).toHaveBeenCalledWith('admin@example.com', 'admin123'))
   })
 })
