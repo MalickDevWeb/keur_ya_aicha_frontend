@@ -51,7 +51,7 @@ export function SettingsRuntimeApiSection({
     <section className="mt-10">
       <h3 className="font-medium">Configuration API (Super Admin)</h3>
       <p className="text-sm text-muted-foreground mt-2">
-        Modifiez l&apos;API backend consommée sans rebuild. Cette configuration est prioritaire au runtime.
+        Modifiez l&apos;API backend consommée sans rebuild. Le frontend ajoute automatiquement le suffixe /api.
       </p>
 
       <div className="mt-4 space-y-3">
@@ -70,7 +70,7 @@ export function SettingsRuntimeApiSection({
           <Input
             value={cloudinarySignUrl}
             onChange={(event) => onCloudinarySignUrlChange(event.target.value)}
-            placeholder="https://api.example.com/sign"
+            placeholder="https://api.example.com/api/sign"
             autoComplete="off"
           />
         </label>

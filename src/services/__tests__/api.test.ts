@@ -89,7 +89,9 @@ const parseBody = (init?: RequestInit): unknown => {
 const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === 'string' ? input : input.toString()
   const method = (init?.method || 'GET').toUpperCase()
-  const { pathname } = new URL(url, 'http://localhost')
+  let { pathname } = new URL(url, 'http://localhost')
+  if (pathname === '/api') pathname = '/'
+  if (pathname.startsWith('/api/')) pathname = pathname.slice(4)
 
   // Clients
   if (pathname === '/clients' && method === 'GET') {
@@ -259,7 +261,7 @@ describeIf('API CRUD Operations', () => {
     })
 
     test('deleteClient - should delete client', async () => {
-      // Note: json-server requires client to exist
+      // Note: l'API backend exige un client existant
       await expect(deleteClient('non-existent-id')).rejects.toThrow()
     })
   })

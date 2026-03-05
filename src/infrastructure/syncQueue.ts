@@ -162,6 +162,9 @@ async function processCreateClientAction(entry: SyncQueueEntry): Promise<'proces
   try {
     await apiFetch('/clients', {
       method: 'POST',
+      headers: {
+        'x-idempotency-key': entry.value.idempotencyKey,
+      },
       body: JSON.stringify(payload),
     })
     await removeSyncQueueEntry(entry.key)
@@ -190,6 +193,9 @@ async function processCreateUserAction(entry: SyncQueueEntry): Promise<'processe
   try {
     await apiFetch('/users', {
       method: 'POST',
+      headers: {
+        'x-idempotency-key': entry.value.idempotencyKey,
+      },
       body: JSON.stringify(payload),
     })
     await removeSyncQueueEntry(entry.key)
@@ -218,6 +224,9 @@ async function processCreateAdminAction(entry: SyncQueueEntry): Promise<'process
   try {
     await apiFetch('/admins', {
       method: 'POST',
+      headers: {
+        'x-idempotency-key': entry.value.idempotencyKey,
+      },
       body: JSON.stringify(payload),
     })
     await removeSyncQueueEntry(entry.key)

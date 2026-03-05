@@ -1,4 +1,14 @@
-# Logs
+# Dependencies
+/node_modules/
+
+# Build outputs
+/dist/
+/dist-ssr/
+/coverage/
+.vite/
+*.tsbuildinfo
+
+# Logs and runtime
 /logs/
 *.log
 npm-debug.log*
@@ -6,36 +16,46 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.pid
+*.pid.lock
 
-node_modules
-dist
-dist-ssr
+# Environment and secrets
+.env
+.env.*
+!.env.example
 *.local
 
-# Editor directories and files
+# Editor and OS files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-releases/
-dist/
-
-# Frontend-only repo hygiene (avoid committing non-web artifacts again)
-backend/
-releases/
-docs/
-templates/
-.snapshots/
-.lovable/
-.qodo/
+# Electron / packaging artifacts
+/releases/
 *.AppImage
 *.dmg
 *.exe
 *-win-unpacked.zip
 *-macos-*-dir.zip
+
+# Local scratch / QA artifacts
+.snapshots/
+.lovable/
+.qodo/
+tmp/
+cookies*.txt
+
+# Frontend-only repo hygiene
+/backend/
+/docs/
+/templates/
+/next-backend/
+/docBack/
+/scripts/

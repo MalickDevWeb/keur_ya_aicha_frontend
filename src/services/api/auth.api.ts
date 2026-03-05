@@ -13,6 +13,14 @@ const AUTH_CONTEXT_SNAPSHOT_KEY = 'kya_auth_context_snapshot'
 let secondAuthNetworkRetryAt = 0
 const SECOND_AUTH_NETWORK_BACKOFF_MS = 10_000
 
+function lireCookieNavigateur(nom: string): string {
+  if (typeof document === 'undefined') return ''
+  const cookie = `; ${document.cookie}`
+  const parties = cookie.split(`; ${nom}=`)
+  if (parties.length < 2) return ''
+  return decodeURIComponent(parties.pop()?.split(';').shift() || '')
+}
+
 /**
  * État d'usurpation d'identité admin
  */
@@ -227,10 +235,22 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
   // If backend is older (404), fallback to standard authContext login.
   let response: Response
   try {
+    const tokenCsrf = lireCookieNavigateur('kya_csrf_token')
+    const entetes: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (tokenCsrf) {
+      entetes['x-csrf-token'] = tokenCsrf
+    }
+
     response = await fetch(`${apiBase}/authContext/super-admin/second-auth`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: safePassword }),
+      credentials: 'include',
+      headers: entetes,
+      body: JSON.stringify({
+        password: safePassword,
+        motDePasse: safePassword,
+      }),
     })
   } catch (error) {
     if (isLikelyNetworkError(error)) {

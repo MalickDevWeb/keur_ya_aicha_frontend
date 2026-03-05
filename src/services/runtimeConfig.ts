@@ -30,6 +30,7 @@ type ElectronRuntimeApi = {
 
 const URL_PROTOCOLS = new Set(['http:', 'https:'])
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
+const API_PATH_SUFFIX = '/api'
 
 const RUNTIME_API_BASE_KEY = 'kya_runtime_api_base'
 const RUNTIME_SIGN_URL_KEY = 'kya_runtime_sign_url'
@@ -86,7 +87,21 @@ function normalizeRuntimeUrl(value: string, label: string, stripTrailingSlash = 
 }
 
 export function validateRuntimeApiBaseUrl(value: string): string {
-  return normalizeRuntimeUrl(value, "L'URL de l'API backend", true)
+  const normalized = normalizeRuntimeUrl(value, "L'URL de l'API backend", true)
+  const parsed = new URL(normalized)
+
+  const normalizedPath = String(parsed.pathname || '').replace(/\/+$/, '')
+  if (!normalizedPath || normalizedPath === '/') {
+    parsed.pathname = API_PATH_SUFFIX
+  } else if (normalizedPath === API_PATH_SUFFIX) {
+    parsed.pathname = API_PATH_SUFFIX
+  } else {
+    throw new Error("L'URL de l'API backend doit pointer vers la racine du serveur ou /api.")
+  }
+
+  parsed.search = ''
+  parsed.hash = ''
+  return parsed.toString().replace(/\/+$/, '')
 }
 
 export function validateRuntimeSignUrl(value: string): string {
@@ -112,9 +127,14 @@ const normalizeSignUrlSafe = (value: string): string => {
   }
 }
 
+const FALLBACK_API_ORIGIN = 'https://bakend-next-saas-gestion-client.onrender.com'
+const ENV_API_URL = String(import.meta.env.VITE_API_URL || '').trim()
 const DEFAULT_API_BASE =
-  normalizeApiBaseUrlSafe(String(import.meta.env.VITE_API_URL || 'http://localhost:4000')) || 'http://localhost:4000'
-const DEFAULT_CLOUDINARY_SIGN_URL = normalizeSignUrlSafe(String(import.meta.env.VITE_CLOUDINARY_SIGN_URL || ''))
+  normalizeApiBaseUrlSafe(ENV_API_URL || FALLBACK_API_ORIGIN) ||
+  `${FALLBACK_API_ORIGIN}${API_PATH_SUFFIX}`
+const DEFAULT_CLOUDINARY_SIGN_URL = normalizeSignUrlSafe(
+  String(import.meta.env.VITE_CLOUDINARY_SIGN_URL || `${DEFAULT_API_BASE}/sign`)
+)
 
 const runtimeState: RuntimeConfigState = {
   apiBaseUrl: DEFAULT_API_BASE,

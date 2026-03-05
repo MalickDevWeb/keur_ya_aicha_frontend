@@ -54,9 +54,6 @@ const getFallbackSignUrls = (): string[] => {
   if (apiBaseUrl) {
     urls.push(`${String(apiBaseUrl).replace(/\/$/, '')}/sign`)
   }
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    urls.push(`${String(window.location.origin).replace(/\/$/, '')}/sign`)
-  }
   return [...new Set(urls.filter(Boolean))]
 }
 

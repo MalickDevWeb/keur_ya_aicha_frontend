@@ -100,6 +100,14 @@ function isFormDataBody(body: RequestInit['body']): body is FormData {
   return typeof FormData !== 'undefined' && body instanceof FormData
 }
 
+function lireCookieNavigateur(nom: string): string {
+  if (typeof document === 'undefined') return ''
+  const cookie = `; ${document.cookie}`
+  const parties = cookie.split(`; ${nom}=`)
+  if (parties.length < 2) return ''
+  return decodeURIComponent(parties.pop()?.split(';').shift() || '')
+}
+
 function isLikelyNetworkError(error: unknown): boolean {
   if (error instanceof TypeError) return true
   const message = String((error as { message?: string })?.message || error || '').toLowerCase()
@@ -271,6 +279,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   const method = options.method || 'GET'
   const safeMethod = String(method || 'GET').toUpperCase()
+  const estMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(safeMethod)
+  const tokenCsrf = estMutation ? lireCookieNavigateur('kya_csrf_token') : ''
+  if (estMutation && tokenCsrf && !headers.has('x-csrf-token')) {
+    headers.set('x-csrf-token', tokenCsrf)
+  }
   if (shouldBlockWriteByMaintenance(path, safeMethod)) {
     const message = buildMaintenanceBlockedMessage()
     window.dispatchEvent(
@@ -307,7 +320,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const start = Date.now()
   let res: Response
   try {
-    res = await fetch(url, { ...options, headers })
+    res = await fetch(url, { ...options, headers, credentials: 'include' })
   } catch (networkError) {
     if (shouldUseHttpCache && isLikelyNetworkError(networkError)) {
       markNetworkUnavailable()
