@@ -33,6 +33,14 @@ export function DataProvider({ children }: DataProviderProps) {
       return
     }
 
+    const isSuperAdmin = role === 'SUPER_ADMIN'
+    const isImpersonatingAdmin = Boolean(impersonation?.adminId)
+    const shouldInitializeAdminData = role === 'ADMIN' || (isSuperAdmin && isImpersonatingAdmin)
+    if (!shouldInitializeAdminData) {
+      resetData()
+      return
+    }
+
     const initializeStore = async () => {
       try {
         await Promise.all([fetchClients(), fetchStats()])

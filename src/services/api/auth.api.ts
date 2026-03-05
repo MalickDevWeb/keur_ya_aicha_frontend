@@ -10,6 +10,8 @@ import { ensureRuntimeConfigLoaded, getApiBaseUrl } from '../runtimeConfig'
 
 let superAdminSecondAuthEndpointSupport: boolean | null = null
 const AUTH_CONTEXT_SNAPSHOT_KEY = 'kya_auth_context_snapshot'
+const LAST_LOGIN_IDENTIFIER_KEY = 'kya_last_login_identifier'
+const LAST_LOGIN_USERNAME_KEY = 'kya_last_login_username'
 let secondAuthNetworkRetryAt = 0
 const SECOND_AUTH_NETWORK_BACKOFF_MS = 10_000
 
@@ -38,6 +40,29 @@ function isLikelyNetworkError(error: unknown): boolean {
     message.includes('failed to fetch') ||
     message.includes('network request failed')
   )
+}
+
+function isInvalidCredentialsError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return (
+    message.includes('identifiants invalides') ||
+    message.includes('mot de passe invalide') ||
+    message.includes('invalid credentials') ||
+    message.includes('unauthorized')
+  )
+}
+
+function readStoredLoginIdentifier(): string {
+  if (typeof localStorage === 'undefined') return ''
+  const identifier = String(localStorage.getItem(LAST_LOGIN_IDENTIFIER_KEY) || '').trim()
+  if (identifier) return identifier
+  return String(localStorage.getItem(LAST_LOGIN_USERNAME_KEY) || '').trim()
+}
+
+function buildIdentifierCandidates(primaryIdentifier?: string): string[] {
+  const fromPrimary = String(primaryIdentifier || '').trim()
+  const fromStorage = readStoredLoginIdentifier()
+  return [...new Set([fromPrimary, fromStorage].filter(Boolean))]
 }
 
 function persistAuthContextSnapshot(user: AuthUser | null, impersonation: ImpersonationState): void {
@@ -193,11 +218,16 @@ export async function loginAuthContext(
   username: string,
   password: string
 ): Promise<AuthResponseDTO> {
+  const safeIdentifier = String(username || '').trim()
+  const safePassword = String(password || '').trim()
+
   const response = await apiFetch<AuthResponseDTO & { impersonation?: ImpersonationState }>('/authContext/login', {
     method: 'POST',
     body: JSON.stringify({
-      identifiant: username,
-      motDePasse: password,
+      identifiant: safeIdentifier,
+      motDePasse: safePassword,
+      username: safeIdentifier,
+      password: safePassword,
     } as AuthRequestDTO),
   })
   applyAuthCacheScope(response?.user || null, response?.impersonation || null)
@@ -211,13 +241,28 @@ export async function loginAuthContext(
  */
 export async function verifySuperAdminSecondAuth(password: string, username?: string): Promise<AuthResponseDTO> {
   const safePassword = String(password || '')
-  const fallbackUsername = String(username || localStorage.getItem('kya_last_login_username') || '').trim()
+  const identifierCandidates = buildIdentifierCandidates(username)
+  const fallbackIdentifier = identifierCandidates[0] || ''
   const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false
   const fallbackToLegacy = async (): Promise<AuthResponseDTO> => {
-    if (!fallbackUsername) {
+    if (identifierCandidates.length === 0) {
       throw new Error('Backend non synchronisé: route seconde authentification introuvable.')
     }
-    return loginAuthContext(fallbackUsername, safePassword)
+
+    let lastError: unknown = null
+    for (const identifier of identifierCandidates) {
+      try {
+        return await loginAuthContext(identifier, safePassword)
+      } catch (error) {
+        lastError = error
+        if (!isInvalidCredentialsError(error)) {
+          throw error
+        }
+      }
+    }
+
+    if (lastError) throw lastError
+    throw new Error('Identifiants invalides')
   }
 
   if (isOffline) {
@@ -251,6 +296,8 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
       credentials: 'include',
       headers: entetes,
       body: JSON.stringify({
+        identifiant: fallbackIdentifier,
+        username: fallbackIdentifier,
         password: safePassword,
         motDePasse: safePassword,
       }),

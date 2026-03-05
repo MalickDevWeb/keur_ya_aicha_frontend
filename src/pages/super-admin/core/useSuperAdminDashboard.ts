@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   createAdmin,
   createUser,
@@ -18,6 +19,9 @@ import type { CreatedAdmin } from './types'
 import { buildCredentialsMessage, createEntityId, formatPhoneForWhatsapp, normalize, normalizePhone } from './utils'
 
 export function useSuperAdminDashboard() {
+  const { user } = useAuth()
+  const role = String(user?.role || '').toUpperCase()
+  const requiresSecondAuth = role === 'SUPER_ADMIN' && user?.superAdminSecondAuthRequired !== false
   const [state, setState] = useState({
     isCreateOpen: false,
     creating: false,
@@ -50,6 +54,10 @@ export function useSuperAdminDashboard() {
   })
 
   const refresh = async () => {
+    if (requiresSecondAuth) {
+      setState((prev) => ({ ...prev, loading: false }))
+      return
+    }
     setState((prev) => ({ ...prev, loading: true }))
     try {
       const [admins, requests, entreprises, users, clients, logs, adminPayments] = await Promise.all([
@@ -94,8 +102,8 @@ export function useSuperAdminDashboard() {
   }
 
   useEffect(() => {
-    refresh()
-  }, [])
+    void refresh()
+  }, [requiresSecondAuth])
 
   const handleCreateAdmin = async () => {
     const { newAdmin } = state
@@ -151,8 +159,19 @@ export function useSuperAdminDashboard() {
       if (typeof navigator === 'undefined' || navigator.onLine !== false) {
         refresh()
       }
-    } catch {
-      setState((prev) => ({ ...prev, createError: "Échec de la création de l'admin." }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      const normalized = String(message || '').toLowerCase()
+      if (normalized.includes('seconde authentification super admin requise')) {
+        window.dispatchEvent(new CustomEvent('super-admin-second-auth-required'))
+        setState((prev) => ({
+          ...prev,
+          createError:
+            'Seconde authentification requise. Veuillez valider la 2e authentification Super Admin puis réessayer.',
+        }))
+      } else {
+        setState((prev) => ({ ...prev, createError: message || "Échec de la création de l'admin." }))
+      }
     } finally {
       setState((prev) => ({ ...prev, creating: false }))
     }

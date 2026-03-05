@@ -26,6 +26,11 @@ function isLikelyNetworkError(error: unknown): boolean {
   )
 }
 
+function isPermissionError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return message.includes('permission manquante') || message.includes('seconde authentification super admin requise')
+}
+
 export function NotificationBell() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -36,6 +41,7 @@ export function NotificationBell() {
   const [isOnline, setIsOnline] = useState(
     typeof navigator === 'undefined' ? true : navigator.onLine !== false
   )
+  const [permissionDenied, setPermissionDenied] = useState(false)
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.is_read).length,
@@ -43,7 +49,7 @@ export function NotificationBell() {
   )
 
   const refresh = useCallback(async () => {
-    if (!user?.id || !isOnline) return
+    if (!user?.id || !isOnline || permissionDenied) return
     setLoading(true)
     try {
       let data = role === 'SUPER_ADMIN' ? await listAllNotifications() : await listNotifications(user.id)
@@ -57,11 +63,17 @@ export function NotificationBell() {
     } catch (error) {
       if (isLikelyNetworkError(error)) {
         setIsOnline((current) => (current ? false : current))
+      } else if (isPermissionError(error)) {
+        setPermissionDenied(true)
+        const normalized = String((error as { message?: string })?.message || '').toLowerCase()
+        if (normalized.includes('seconde authentification super admin requise')) {
+          window.dispatchEvent(new CustomEvent('super-admin-second-auth-required'))
+        }
       }
     } finally {
       setLoading(false)
     }
-  }, [isOnline, role, user?.id])
+  }, [isOnline, permissionDenied, role, user?.id])
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true)

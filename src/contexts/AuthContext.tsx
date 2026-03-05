@@ -55,6 +55,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const SESSION_LOGIN_AT_KEY = 'kya_session_login_at';
   const SESSION_LAST_ACTIVITY_KEY = 'kya_session_last_activity';
   const LAST_LOGIN_USERNAME_KEY = 'kya_last_login_username';
+  const LAST_LOGIN_IDENTIFIER_KEY = 'kya_last_login_identifier';
 
   // Restore user session from backend (persistent)
   useEffect(() => {
@@ -81,6 +82,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setImpersonationState(ctx.impersonation || null);
         if (ctx.user?.username) {
           localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(ctx.user.username));
+        }
+        const restoredIdentifier = String(ctx.user?.email || ctx.user?.username || '').trim();
+        if (restoredIdentifier) {
+          localStorage.setItem(LAST_LOGIN_IDENTIFIER_KEY, restoredIdentifier);
         }
         if (ctx.user?.id && !sessionStorage.getItem(SESSION_LOGIN_AT_KEY)) {
           sessionStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()));
@@ -110,7 +115,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setImpersonationState(null);
       setIsLoading(false);
       clearFailedLoginAttempts();
-      localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(userData.username || username || ''));
+      const normalizedIdentifier = String(username || '').trim();
+      const storedIdentifier = normalizedIdentifier || String(userData.email || userData.username || '').trim();
+      if (storedIdentifier) {
+        localStorage.setItem(LAST_LOGIN_IDENTIFIER_KEY, storedIdentifier);
+      }
+      localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(userData.username || storedIdentifier || ''));
       sessionStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()));
       sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
       return true;
@@ -119,17 +129,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const verifySuperAdminSecondAuth = useCallback(async (password: string): Promise<boolean> => {
-    const payload = await verifySuperAdminSecondAuthApi(password, user?.username);
+    const payload = await verifySuperAdminSecondAuthApi(password, user?.email || user?.username);
     const userData = payload?.user;
     if (userData) {
       setUser(userData as User);
       setIsLoading(false);
+      const existingIdentifier = String(localStorage.getItem(LAST_LOGIN_IDENTIFIER_KEY) || '').trim();
+      const storedIdentifier = existingIdentifier || String(userData.email || user?.email || userData.username || user?.username || '').trim();
+      if (storedIdentifier) {
+        localStorage.setItem(LAST_LOGIN_IDENTIFIER_KEY, storedIdentifier);
+      }
       localStorage.setItem(LAST_LOGIN_USERNAME_KEY, String(userData.username || user?.username || ''));
       sessionStorage.setItem(SESSION_LAST_ACTIVITY_KEY, String(Date.now()));
       return true;
     }
     return false;
-  }, [user?.username]);
+  }, [user?.email, user?.username]);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -148,6 +163,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const clearImpersonationState = useCallback(async () => {
     setImpersonationState(null);
     await clearImpersonationApi();
+  }, []);
+
+  useEffect(() => {
+    const onSecondAuthRequired = () => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        if (String(prev.role || '').toUpperCase() !== 'SUPER_ADMIN') return prev;
+        if (prev.superAdminSecondAuthRequired === true) return prev;
+        return {
+          ...prev,
+          superAdminSecondAuthRequired: true,
+        };
+      });
+    };
+
+    window.addEventListener('super-admin-second-auth-required', onSecondAuthRequired);
+    return () => {
+      window.removeEventListener('super-admin-second-auth-required', onSecondAuthRequired);
+    };
   }, []);
 
   useEffect(() => {

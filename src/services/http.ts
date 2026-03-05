@@ -118,6 +118,19 @@ function isLikelyNetworkError(error: unknown): boolean {
   )
 }
 
+function isAuthorizationLikeErrorMessage(message: string): boolean {
+  const normalized = String(message || '').toLowerCase()
+  return (
+    normalized.includes('permission manquante') ||
+    normalized.includes('accès refusé') ||
+    normalized.includes('acces refuse') ||
+    normalized.includes('jeton acces manquant') ||
+    normalized.includes('session revoquee') ||
+    normalized.includes('seconde authentification super admin requise') ||
+    normalized.includes('super_admin_second_auth_required')
+  )
+}
+
 function isBrowserOffline(): boolean {
   if (typeof navigator === 'undefined') return false
   return navigator.onLine === false
@@ -136,19 +149,20 @@ function markNetworkAvailable(): void {
 }
 
 function reportApiError(method: string, path: string, err: unknown) {
+  const errorMessage = err instanceof Error ? err.message : String(err || 'Unknown error')
   const likelyNetworkError = isLikelyNetworkError(err)
   if (likelyNetworkError) {
     logger.warn(`Réseau indisponible: ${method} ${path}`, err)
   } else {
     logger.error(`Appel API échoué: ${method} ${path}`, err)
   }
-  const shouldSkipRemoteAudit = likelyNetworkError
+  const shouldSkipRemoteAudit = likelyNetworkError || isAuthorizationLikeErrorMessage(errorMessage)
 
   if (!shouldSkipRemoteAudit) {
     void sendComplianceWebhookAlert('api_error', {
       method: String(method || 'GET').toUpperCase(),
       path,
-      error: err instanceof Error ? err.message : String(err || 'Unknown error'),
+      error: errorMessage,
     })
   }
   if (!path.startsWith('/audit_logs') && !shouldSkipRemoteAudit) {
@@ -243,6 +257,13 @@ export async function handleResponse<T>(res: Response): Promise<T> {
             path: 'server',
             message,
           },
+        })
+      )
+    }
+    if (res.status === 403 && String(errorData.code || '') === 'SUPER_ADMIN_SECOND_AUTH_REQUIRED') {
+      window.dispatchEvent(
+        new CustomEvent('super-admin-second-auth-required', {
+          detail: errorData,
         })
       )
     }
