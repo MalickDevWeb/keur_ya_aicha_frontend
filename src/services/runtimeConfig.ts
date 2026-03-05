@@ -146,9 +146,32 @@ const normalizeSignUrlSafe = (value: string): string => {
 
 const FALLBACK_API_ORIGIN = 'https://bakend-next-saas-gestion-client.onrender.com'
 const ENV_API_URL = String(import.meta.env.VITE_API_URL || '').trim()
-const DEFAULT_API_BASE =
-  normalizeApiBaseUrlSafe(ENV_API_URL || FALLBACK_API_ORIGIN) ||
-  `${FALLBACK_API_ORIGIN}${API_PATH_SUFFIX}`
+const getBrowserSameOriginApiBase = (): string => {
+  if (typeof window === 'undefined') return ''
+  const origin = String(window.location?.origin || '').trim()
+  if (!origin) return ''
+  try {
+    const parsed = new URL(origin)
+    if (!URL_PROTOCOLS.has(parsed.protocol)) return ''
+    parsed.pathname = API_PATH_SUFFIX
+    parsed.search = ''
+    parsed.hash = ''
+    return parsed.toString().replace(/\/+$/, '')
+  } catch {
+    return ''
+  }
+}
+
+const DEFAULT_API_BASE = (() => {
+  const browserSameOriginApi = getBrowserSameOriginApiBase()
+  // In browser contexts, always prefer same-origin `/api` to avoid CORS dependency.
+  if (browserSameOriginApi) return browserSameOriginApi
+
+  const normalizedEnvApi = normalizeApiBaseUrlSafe(ENV_API_URL)
+  if (normalizedEnvApi) return normalizedEnvApi
+
+  return normalizeApiBaseUrlSafe(FALLBACK_API_ORIGIN) || `${FALLBACK_API_ORIGIN}${API_PATH_SUFFIX}`
+})()
 const DEFAULT_CLOUDINARY_SIGN_URL = normalizeSignUrlSafe(
   String(import.meta.env.VITE_CLOUDINARY_SIGN_URL || `${DEFAULT_API_BASE}/sign`)
 )
