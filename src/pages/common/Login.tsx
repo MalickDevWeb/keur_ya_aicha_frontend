@@ -21,6 +21,10 @@ import { ensureRuntimeConfigLoaded, getApiBaseUrl } from "@/services/runtimeConf
 import { useToast } from "@/contexts/ToastContext";
 import { connexionSchema, ConnexionFormData } from "@/validators/frontend";
 
+// TEMPORAIRE: désactiver le blocage local des tentatives de connexion.
+// Remettre à false quand tu voudras réactiver le blocage.
+const LOGIN_BLOCK_TEMP_DISABLED = true;
+
 // ─── InputField Component ──────────────────────────────────────────────
 interface FieldProps {
   label: string;
@@ -208,6 +212,11 @@ export default function LoginPage() {
     playVideo();
   }, []);
 
+  useEffect(() => {
+    if (!LOGIN_BLOCK_TEMP_DISABLED) return;
+    clearFailedLoginAttempts();
+  }, []);
+
   // Unmute on first *trusted* pointer interaction (browser autoplay policy)
   useEffect(() => {
     const handleFirstInteraction = async (event: Event) => {
@@ -242,11 +251,13 @@ export default function LoginPage() {
   };
 
   const onSubmit = async (data: ConnexionFormData) => {
-    const lockStatus = getLoginLockStatus();
-    if (lockStatus.blocked) {
-      const remainingMinutes = Math.max(1, Math.ceil(lockStatus.remainingMs / 60000));
-      setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
-      return;
+    if (!LOGIN_BLOCK_TEMP_DISABLED) {
+      const lockStatus = getLoginLockStatus();
+      if (lockStatus.blocked) {
+        const remainingMinutes = Math.max(1, Math.ceil(lockStatus.remainingMs / 60000));
+        setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -324,17 +335,19 @@ export default function LoginPage() {
         } catch {
           // ignore
         }
-        const failedStatus = recordFailedLoginAttempt();
-        void sendComplianceWebhookAlert('security', {
-          event: 'login_failure',
-          username: data.telephone,
-          failures: failedStatus.failures,
-          blocked: failedStatus.blocked,
-        });
-        if (failedStatus.blocked) {
-          const remainingMinutes = Math.max(1, Math.ceil(failedStatus.remainingMs / 60000));
-          setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
-          return;
+        if (!LOGIN_BLOCK_TEMP_DISABLED) {
+          const failedStatus = recordFailedLoginAttempt();
+          void sendComplianceWebhookAlert('security', {
+            event: 'login_failure',
+            username: data.telephone,
+            failures: failedStatus.failures,
+            blocked: failedStatus.blocked,
+          });
+          if (failedStatus.blocked) {
+            const remainingMinutes = Math.max(1, Math.ceil(failedStatus.remainingMs / 60000));
+            setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
+            return;
+          }
         }
         setLoginFieldError("Identifiants incorrects.");
       }
@@ -378,17 +391,19 @@ export default function LoginPage() {
         setLoginFieldError("Jeton CSRF invalide. Recharge la page puis réessaie.");
         return;
       }
-      const failedStatus = recordFailedLoginAttempt();
-      void sendComplianceWebhookAlert('security', {
-        event: 'login_failure',
-        username: data.telephone,
-        failures: failedStatus.failures,
-        blocked: failedStatus.blocked,
-      });
-      if (failedStatus.blocked) {
-        const remainingMinutes = Math.max(1, Math.ceil(failedStatus.remainingMs / 60000));
-        setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
-        return;
+      if (!LOGIN_BLOCK_TEMP_DISABLED) {
+        const failedStatus = recordFailedLoginAttempt();
+        void sendComplianceWebhookAlert('security', {
+          event: 'login_failure',
+          username: data.telephone,
+          failures: failedStatus.failures,
+          blocked: failedStatus.blocked,
+        });
+        if (failedStatus.blocked) {
+          const remainingMinutes = Math.max(1, Math.ceil(failedStatus.remainingMs / 60000));
+          setLoginFieldError(`Connexion temporairement bloquée. Réessayez dans ${remainingMinutes} minute(s).`);
+          return;
+        }
       }
       setLoginFieldError("Identifiants incorrects.");
     } finally {
