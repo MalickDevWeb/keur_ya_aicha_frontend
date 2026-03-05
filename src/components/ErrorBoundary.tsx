@@ -8,6 +8,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  componentStack?: string;
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
@@ -21,8 +22,29 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    void error;
-    void errorInfo;
+    this.setState({
+      error,
+      componentStack: errorInfo?.componentStack || '',
+    });
+
+    // eslint-disable-next-line no-console
+    console.error('[ErrorBoundary] Runtime error captured', error, errorInfo);
+
+    try {
+      localStorage.setItem(
+        'kya_last_runtime_error',
+        JSON.stringify({
+          at: new Date().toISOString(),
+          message: error?.message || '',
+          name: error?.name || '',
+          stack: error?.stack || '',
+          componentStack: errorInfo?.componentStack || '',
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        })
+      );
+    } catch {
+      // ignore storage failures
+    }
   }
 
   render() {
@@ -40,7 +62,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <details className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded">
               <summary className="cursor-pointer font-medium">Détails</summary>
               <pre className="mt-2 whitespace-pre-wrap break-words text-xs">
-                {this.state.error?.message}
+                {this.state.error?.name ? `${this.state.error.name}: ` : ''}
+                {this.state.error?.message || 'Erreur inconnue'}
+                {this.state.error?.stack ? `\n\nStack:\n${this.state.error.stack}` : ''}
+                {this.state.componentStack ? `\n\nComponent stack:\n${this.state.componentStack}` : ''}
               </pre>
             </details>
             <button
