@@ -42,14 +42,14 @@ export default function FormulaireInscriptionAdmin({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="firstName" className="text-[#0F2854] text-sm font-medium">Prénom</Label>
-              <Input id="firstName" placeholder="Votre prénom" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("firstName")} />
+              <Input id="firstName" autoComplete="given-name" placeholder="Votre prénom" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("firstName")} />
               {errors.firstName && (
                 <p className="text-xs text-destructive">{errors.firstName.message}</p>
               )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="lastName" className="text-[#0F2854] text-sm font-medium">Nom</Label>
-              <Input id="lastName" placeholder="Votre nom" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("lastName")} />
+              <Input id="lastName" autoComplete="family-name" placeholder="Votre nom" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("lastName")} />
               {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
             </div>
           </div>
@@ -61,6 +61,7 @@ export default function FormulaireInscriptionAdmin({
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="Votre mot de passe"
                   className="border-slate-300 pr-12 focus:border-[#0F2854] focus:ring-[#0F2854]"
                   {...register("password")}
@@ -82,6 +83,7 @@ export default function FormulaireInscriptionAdmin({
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="Confirmez le mot de passe"
                   className="border-slate-300 pr-12 focus:border-[#0F2854] focus:ring-[#0F2854]"
                   {...register("confirmPassword")}
@@ -101,14 +103,14 @@ export default function FormulaireInscriptionAdmin({
 
           <div className="space-y-1">
             <Label htmlFor="phone" className="text-[#0F2854] text-sm font-medium">Téléphone</Label>
-            <Input id="phone" placeholder="+221 77 123 45 67" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("phone")} />
+            <Input id="phone" autoComplete="tel" placeholder="+221 77 123 45 67" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("phone")} />
             {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="email" className="text-[#0F2854] text-sm font-medium">Email <span className="text-slate-400 font-normal">(optionnel)</span></Label>
-              <Input id="email" type="email" placeholder="email@exemple.com" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("email")} />
+              <Input id="email" type="email" autoComplete="email" placeholder="email@exemple.com" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("email")} />
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-1">
