@@ -80,4 +80,20 @@ describe('Login page', () => {
 
     await waitFor(() => expect(login).toHaveBeenCalledWith('admin@example.com', 'admin123'))
   })
+
+  it("shows explicit message when backend blocks request origin", async () => {
+    login.mockRejectedValueOnce(new Error('Unauthorized origin'))
+    render(<LoginPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('email@exemple.com ou +221 77 123 45 67'), { target: { value: '771234567' } })
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'admin123' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /Se connecter/i }))
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByText(/Origine non autorisée par l'API/i).length
+      ).toBeGreaterThan(0)
+    )
+  })
 })

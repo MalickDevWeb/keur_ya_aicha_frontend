@@ -195,7 +195,10 @@ export async function loginAuthContext(
 ): Promise<AuthResponseDTO> {
   const response = await apiFetch<AuthResponseDTO & { impersonation?: ImpersonationState }>('/authContext/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password } as AuthRequestDTO),
+    body: JSON.stringify({
+      identifiant: username,
+      motDePasse: password,
+    } as AuthRequestDTO),
   })
   applyAuthCacheScope(response?.user || null, response?.impersonation || null)
   return response

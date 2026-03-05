@@ -311,6 +311,7 @@ export default function LoginPage() {
           const apiBaseUrl = getApiBaseUrl();
           const res = await fetch(`${apiBaseUrl}/auth/pending-check`, {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: data.telephone, password: data.motDePasse }),
           });
@@ -358,6 +359,23 @@ export default function LoginPage() {
       if (isApprovalBlock) {
         setLoginFieldError("");
         setPendingModalOpen(true);
+        return;
+      }
+      const isOriginBlocked =
+        normalized.includes('origine non autorisee') ||
+        normalized.includes('origine non autorisée') ||
+        normalized.includes('unauthorized origin');
+      if (isOriginBlocked) {
+        setLoginFieldError(
+          "Origine non autorisée par l'API. Ajoutez l'URL du frontend dans CORS_ORIGINES_AUTORISEES du backend."
+        );
+        return;
+      }
+      const isCsrfError =
+        normalized.includes('csrf invalide') ||
+        normalized.includes('csrf invalid');
+      if (isCsrfError) {
+        setLoginFieldError("Jeton CSRF invalide. Recharge la page puis réessaie.");
         return;
       }
       const failedStatus = recordFailedLoginAttempt();
