@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  createAdmin,
-  createUser,
+  createAdminRequest,
   fetchAdminRequests,
   fetchAdmins,
   fetchAuditLogs,
@@ -111,37 +110,43 @@ export function useSuperAdminDashboard() {
       setState((prev) => ({ ...prev, createError: 'Nom et entreprise requis.' }))
       return
     }
+    const normalizedPhone = normalizePhone(newAdmin.phone || '')
+    if (!normalizedPhone) {
+      setState((prev) => ({ ...prev, createError: 'Téléphone requis.' }))
+      return
+    }
     setState((prev) => ({ ...prev, creating: true, createError: '' }))
     try {
       const createdAt = new Date().toISOString()
-      const userId = createEntityId('user')
+      const requestId = createEntityId('admin-request')
       const generatedUsername =
         newAdmin.username?.trim() ||
-        normalizePhone(newAdmin.phone || '') ||
+        normalizedPhone ||
         normalize(newAdmin.name).replace(/\s+/g, '') ||
         createEntityId('admin')
+      const safePassword = newAdmin.password || 'admin123'
 
-      await createUser({
-        id: userId,
-        username: generatedUsername,
-        password: newAdmin.password || 'admin123',
+      const createdRequest = await createAdminRequest({
+        id: requestId,
         name: newAdmin.name,
-        email: newAdmin.email,
-        phone: newAdmin.phone,
-        role: 'ADMIN',
-        status: 'ACTIF',
+        email: newAdmin.email || undefined,
+        phone: normalizedPhone,
+        entrepriseName: newAdmin.entreprise || '',
+        username: generatedUsername,
+        password: safePassword,
+        status: 'EN_ATTENTE',
         createdAt,
       })
 
-      await createAdmin({
-        id: userId,
-        userId,
-        username: generatedUsername,
-        name: newAdmin.name,
-        email: newAdmin.email,
+      await updateAdminRequest(createdRequest.id, {
         status: 'ACTIF',
-        entrepriseId: newAdmin.entreprise || '',
-        createdAt,
+        username: generatedUsername,
+        password: safePassword,
+        email: newAdmin.email || undefined,
+        phone: normalizedPhone,
+        entrepriseName: newAdmin.entreprise || '',
+        paid: true,
+        paidAt: createdAt,
       })
 
       setState((prev) => ({

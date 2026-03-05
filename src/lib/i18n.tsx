@@ -293,6 +293,32 @@ type I18nContextType = {
   t: (key: TranslationKey) => string;
 }
 
+const LANGUAGE_STORAGE_KEY = 'kya_language_preference_v1'
+
+function readStoredLanguage(): Language {
+  if (typeof window === 'undefined') return 'fr'
+  try {
+    const raw = String(localStorage.getItem(LANGUAGE_STORAGE_KEY) || '').trim().toLowerCase()
+    return raw === 'en' ? 'en' : 'fr'
+  } catch {
+    return 'fr'
+  }
+}
+
+function writeStoredLanguage(language: Language): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function isPublicAuthRoute(pathname: string): boolean {
+  const safePath = String(pathname || '').trim()
+  return safePath === '/login' || safePath === '/admin/signup'
+}
+
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 type I18nProviderProps = {
@@ -300,21 +326,31 @@ type I18nProviderProps = {
 }
 
 export function I18nProvider({ children }: I18nProviderProps) {
-  const [language, setLanguage] = useState<Language>('fr');
+  const [language, setLanguage] = useState<Language>(() => readStoredLanguage());
   const [isLoading, setIsLoading] = useState(true);
 
   // Load language from server on mount
   useEffect(() => {
     let mounted = true;
     async function loadLanguage() {
+      const fallbackLanguage = readStoredLanguage()
+      if (mounted) {
+        setLanguage(fallbackLanguage)
+      }
+      if (typeof window !== 'undefined' && isPublicAuthRoute(window.location.pathname)) {
+        if (mounted) setIsLoading(false)
+        return
+      }
       try {
         const { getSetting } = await import('@/services/api');
         const savedLang = await getSetting('language');
         if (!mounted) return;
-        setLanguage((savedLang as Language) || 'fr');
+        const nextLanguage = (savedLang as Language) === 'en' ? 'en' : fallbackLanguage
+        setLanguage(nextLanguage);
+        writeStoredLanguage(nextLanguage);
       } catch {
         if (!mounted) return;
-        setLanguage('fr');
+        setLanguage(fallbackLanguage);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -329,7 +365,11 @@ export function I18nProvider({ children }: I18nProviderProps) {
 
   const handleSetLanguage = useCallback((lang: Language) => {
     setLanguage(lang);
+    writeStoredLanguage(lang);
     // Save to server
+    if (typeof window !== 'undefined' && isPublicAuthRoute(window.location.pathname)) {
+      return
+    }
     void (async () => {
       const { setSetting } = await import('@/services/api');
       await setSetting('language', lang);
