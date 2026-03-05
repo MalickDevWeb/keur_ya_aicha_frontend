@@ -380,10 +380,15 @@ export async function checkPendingAdminApproval(
   try {
     await ensureRuntimeConfigLoaded()
     const apiBase = getApiBaseUrl()
+    const csrfToken = lireCookieNavigateur('kya_csrf_token')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken
+    }
     const response = await fetch(`${apiBase}/auth/pending-check`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         identifiant: safeIdentifier,
         username: safeIdentifier,
