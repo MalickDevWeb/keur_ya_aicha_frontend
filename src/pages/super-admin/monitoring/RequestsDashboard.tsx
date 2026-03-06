@@ -207,7 +207,7 @@ export function RequestsDashboard() {
   const series = useMemo(() => buildSeries(requestLogs), [requestLogs])
 
   return (
-    <main className="max-w-6xl mx-auto w-full px-0 py-4 space-y-4 animate-fade-in sm:px-4 sm:py-6 sm:space-y-6 lg:px-6">
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader />
       </SectionWrapper>
@@ -272,7 +272,7 @@ export function RequestsDashboard() {
       <SectionWrapper>
         <Card className="border-[#0B153D]/20 bg-[#0B153D] text-white shadow-[0_30px_80px_rgba(10,16,48,0.45)]">
           <CardContent className="p-0">
-            <div className="border-b border-white/10 px-5 py-4">
+            <div className="border-b border-white/10 px-3 py-4 sm:px-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
@@ -290,7 +290,7 @@ export function RequestsDashboard() {
                 </div>
               </div>
             </div>
-            <div className="border-b border-white/10 px-5 py-4">
+            <div className="border-b border-white/10 px-3 py-4 sm:px-5">
               <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_auto]">
                 <input
                   value={blockIpValue}
@@ -307,7 +307,7 @@ export function RequestsDashboard() {
                 <Button
                   onClick={handleBlock}
                   disabled={blocking}
-                  className="bg-white/15 text-white hover:bg-white/25"
+                  className="w-full bg-white/15 text-white hover:bg-white/25 sm:w-auto"
                 >
                   {blocking ? 'Blocage...' : 'Bloquer'}
                 </Button>
@@ -325,7 +325,7 @@ export function RequestsDashboard() {
             ) : (
               <div className="divide-y divide-white/10">
                 {blockedIps.map((ip) => (
-                  <div key={ip.id} className="px-5 py-4">
+                  <div key={ip.id} className="px-3 py-4 sm:px-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="text-sm font-semibold text-white">{ip.ip}</div>
@@ -333,7 +333,7 @@ export function RequestsDashboard() {
                           <div className="mt-1 text-xs text-white/70">{ip.reason}</div>
                         ) : null}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                         {ip.createdAt ? (
                           <div className="text-xs text-white/60">
                             {new Date(ip.createdAt).toLocaleString()}
@@ -442,7 +442,12 @@ export function RequestsDashboard() {
 
                 {filteredRequestLogs.length > 20 ? (
                   <div className="border-t border-[#121B53]/10 px-3 py-3 sm:px-5">
-                    <Button variant="outline" size="sm" onClick={() => setShowAllLogs((prev) => !prev)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={() => setShowAllLogs((prev) => !prev)}
+                    >
                       {showAllLogs ? 'Voir moins' : 'Voir tout'}
                     </Button>
                   </div>

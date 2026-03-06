@@ -3,5 +3,5 @@ type SettingsHeaderSectionProps = {
 }
 
 export function SettingsHeaderSection({ title }: SettingsHeaderSectionProps) {
-  return <h2 className="text-2xl font-bold">{title}</h2>
+  return <h2 className="text-xl font-bold leading-tight sm:text-2xl">{title}</h2>
 }

@@ -222,7 +222,7 @@ export function PerformanceDashboard() {
   }, [series])
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-4 px-0 py-4 sm:space-y-6 sm:px-4 sm:py-6 lg:px-6 animate-fade-in">
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader />
       </SectionWrapper>
@@ -414,7 +414,7 @@ export function PerformanceDashboard() {
                     <BarChart data={topEndpoints} layout="vertical" margin={{ left: 8, right: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5EAF8" />
                       <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                      <YAxis type="category" dataKey="endpoint" width={120} tick={{ fontSize: 11 }} />
+                      <YAxis type="category" dataKey="endpoint" width={96} tick={{ fontSize: 11 }} />
                       <Tooltip />
                       <Bar dataKey="incidents" fill="#5A6ACF" radius={[0, 6, 6, 0]} />
                     </BarChart>

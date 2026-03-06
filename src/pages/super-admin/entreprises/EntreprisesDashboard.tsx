@@ -148,7 +148,7 @@ export function EntreprisesDashboard() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6 animate-fade-in">
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader />
       </SectionWrapper>

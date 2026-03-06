@@ -7,6 +7,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
+function normalizeLogValue(value?: string) {
+  return String(value || '').toLowerCase().trim()
+}
+
+function getLogType(action?: string): 'all' | 'create' | 'update' | 'delete' | 'auth' | 'error' | 'read' | 'other' {
+  const value = normalizeLogValue(action)
+  if (!value) return 'other'
+  if (value.includes('create') || value.includes('add') || value.includes('new')) return 'create'
+  if (value.includes('update') || value.includes('edit') || value.includes('modify')) return 'update'
+  if (value.includes('delete') || value.includes('remove') || value.includes('archive')) return 'delete'
+  if (value.includes('login') || value.includes('auth')) return 'auth'
+  if (value.includes('error') || value.includes('fail') || value.includes('denied') || value.includes('unauthorized')) return 'error'
+  if (value.includes('read') || value.includes('view') || value.includes('list') || value.includes('fetch')) return 'read'
+  return 'other'
+}
+
 export function LogsDashboard() {
   const [logs, setLogs] = useState<AuditLogDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,22 +47,8 @@ export function LogsDashboard() {
     }
   }, [])
 
-  const normalize = (value?: string) => String(value || '').toLowerCase().trim()
-
-  const getLogType = (action?: string) => {
-    const value = normalize(action)
-    if (!value) return 'other'
-    if (value.includes('create') || value.includes('add') || value.includes('new')) return 'create'
-    if (value.includes('update') || value.includes('edit') || value.includes('modify')) return 'update'
-    if (value.includes('delete') || value.includes('remove') || value.includes('archive')) return 'delete'
-    if (value.includes('login') || value.includes('auth')) return 'auth'
-    if (value.includes('error') || value.includes('fail') || value.includes('denied') || value.includes('unauthorized')) return 'error'
-    if (value.includes('read') || value.includes('view') || value.includes('list') || value.includes('fetch')) return 'read'
-    return 'other'
-  }
-
   const filteredLogs = useMemo(() => {
-    const needle = normalize(search)
+    const needle = normalizeLogValue(search)
     return logs.filter((log) => {
       if (filter !== 'all' && getLogType(log.action) !== filter) return false
       if (!needle) return true
@@ -58,7 +60,7 @@ export function LogsDashboard() {
         log.targetId,
         log.ipAddress,
       ]
-        .map((value) => normalize(value))
+        .map((value) => normalizeLogValue(value))
         .join(' ')
       return haystack.includes(needle)
     })
@@ -67,7 +69,7 @@ export function LogsDashboard() {
   const visibleLogs = useMemo(() => (showAll ? filteredLogs : filteredLogs.slice(0, 20)), [filteredLogs, showAll])
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-4 px-0 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader />
       </SectionWrapper>
@@ -148,7 +150,12 @@ export function LogsDashboard() {
               </div>
               {filteredLogs.length > 20 && (
                 <div className="mt-4">
-                  <Button variant="outline" size="sm" onClick={() => setShowAll((prev) => !prev)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                    onClick={() => setShowAll((prev) => !prev)}
+                  >
                     {showAll ? 'Voir moins' : 'Voir tout'}
                   </Button>
                 </div>

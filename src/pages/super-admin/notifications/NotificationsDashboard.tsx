@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
@@ -22,7 +22,7 @@ export function NotificationsDashboard() {
     [notifications]
   )
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!canReadNotifications) {
       setNotifications([])
       setLoading(false)
@@ -41,11 +41,11 @@ export function NotificationsDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [canReadNotifications, role, user?.id])
 
   useEffect(() => {
     void load()
-  }, [canReadNotifications, role, user?.id])
+  }, [load])
 
   const handleRead = async (notif: NotificationDTO) => {
     if (notif.is_read) return
@@ -68,20 +68,20 @@ export function NotificationsDashboard() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6 animate-fade-in">
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader />
       </SectionWrapper>
 
       <SectionWrapper>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-[#121B53]">Notifications</h2>
             <p className="text-sm text-muted-foreground">Alertes et activités récentes</p>
           </div>
           <Button
             variant="outline"
-            className="border-[#121B53]/20 text-[#121B53]"
+            className="w-full border-[#121B53]/20 text-[#121B53] sm:w-auto"
             onClick={markAllRead}
             disabled={unreadCount === 0}
           >
@@ -113,7 +113,7 @@ export function NotificationsDashboard() {
                     }
                   }}
                   className={cn(
-                    'w-full px-5 py-4 text-left transition',
+                    'w-full px-3 py-4 text-left transition sm:px-5',
                     notif.is_read ? 'bg-white' : 'bg-[#F5F7FF]',
                     'hover:bg-[#EEF2FF]'
                   )}

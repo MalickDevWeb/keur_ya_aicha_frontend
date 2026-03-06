@@ -158,19 +158,19 @@ export function SettingsGovernanceSection({
     }))
 
   return (
-    <section className="mt-10 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section className="mt-8 space-y-6 sm:mt-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="font-medium">Gouvernance Plateforme (Super Admin)</h3>
           <p className="text-sm text-muted-foreground">
             Paramètres globaux: maintenance, sécurité, paiements, documents, notifications, branding et conformité.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onReload} disabled={isLoading || isSaving}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button variant="outline" onClick={onReload} disabled={isLoading || isSaving} className="w-full sm:w-auto">
             Recharger
           </Button>
-          <Button onClick={onSave} disabled={isLoading || isSaving}>
+          <Button onClick={onSave} disabled={isLoading || isSaving} className="w-full sm:w-auto">
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         </div>
@@ -501,14 +501,14 @@ export function SettingsGovernanceSection({
             placeholder="secret"
           />
         </label>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={onApplyAuditRetention}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button variant="outline" onClick={onApplyAuditRetention} className="w-full sm:w-auto">
             Appliquer rétention logs
           </Button>
-          <Button variant="outline" onClick={onExportAuditNow}>
+          <Button variant="outline" onClick={onExportAuditNow} className="w-full sm:w-auto">
             Exporter logs maintenant
           </Button>
-          <Button variant="secondary" onClick={onTestWebhook}>
+          <Button variant="secondary" onClick={onTestWebhook} className="w-full sm:w-auto">
             Tester webhook
           </Button>
         </div>

@@ -44,26 +44,26 @@ export function SettingsAdminBrandingSection({
   const fallbackSource = resolveAssetUrl(globalLogoUrl || DEFAULT_LOGO_ASSET_PATH)
 
   return (
-    <section className="mt-10">
+    <section className="mt-8 sm:mt-10">
       <h3 className="font-medium">Identité de votre espace admin</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Le nom d’entreprise et le logo de <span className="font-semibold">{adminScopeLabel}</span> s’affichent dans
         les reçus/PDF et les écrans de cet admin.
       </p>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_auto]">
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
           <div className="space-y-2 rounded-lg border bg-card p-3">
             <p className="text-xs font-medium text-muted-foreground">Nom d’entreprise</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Input
                 value={appName}
                 onChange={(event) => onAppNameChange(event.target.value)}
                 placeholder={globalAppName}
-                className="min-w-[260px] flex-1"
+                className="w-full min-w-0 flex-1 sm:min-w-[260px]"
                 disabled={isLoading || isSavingName}
               />
-              <Button onClick={onSaveAppName} disabled={isLoading || isSavingName}>
+              <Button onClick={onSaveAppName} disabled={isLoading || isSavingName} className="w-full sm:w-auto">
                 {isSavingName ? 'Enregistrement...' : "Enregistrer le nom"}
               </Button>
             </div>
@@ -72,7 +72,7 @@ export function SettingsAdminBrandingSection({
           <p className="text-xs text-muted-foreground">
             Le logo doit être uploadé (Cloudinary). Le dernier upload devient automatiquement le logo actif.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <input
               ref={fileInputRef}
               type="file"
@@ -90,11 +90,12 @@ export function SettingsAdminBrandingSection({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading || isSaving || isUploading}
+              className="w-full sm:w-auto"
             >
               <Upload className="h-4 w-4 mr-2" />
               {isUploading ? 'Upload...' : 'Uploader un logo'}
             </Button>
-            <Button variant="outline" onClick={onUseGlobalLogo} disabled={isLoading || isSaving}>
+            <Button variant="outline" onClick={onUseGlobalLogo} disabled={isLoading || isSaving} className="w-full sm:w-auto">
               Utiliser le logo global
             </Button>
           </div>
@@ -132,7 +133,7 @@ export function SettingsAdminBrandingSection({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 min-w-[220px]">
+        <div className="flex w-full min-w-0 items-center gap-3 rounded-xl border bg-card px-4 py-3 xl:w-auto xl:min-w-[220px]">
           <div className="w-12 h-12 rounded-lg bg-sidebar-primary/10 flex items-center justify-center overflow-hidden">
             <img
               src={previewSource}

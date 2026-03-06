@@ -40,7 +40,7 @@ export function PendingRequestsSection({
       aria-labelledby={`${sectionId}-title`}
       className="space-y-4 bg-[var(--primary-color)] text-[var(--text-on-primary)]"
     >
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 id={`${sectionId}-title`} className="text-lg font-semibold">
             Demandes en attente
@@ -65,10 +65,11 @@ export function PendingRequestsSection({
               placeholder="Rechercher par nom, téléphone ou entreprise"
               className="border-blue-200 bg-blue-50/80"
             />
-            <div className="flex flex-nowrap items-center gap-2 sm:ml-auto">
+            <div className="grid w-full grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto">
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'outline'}
                 size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => setViewMode('cards')}
               >
                 Cartes
@@ -76,6 +77,7 @@ export function PendingRequestsSection({
               <Button
                 variant={viewMode === 'list' ? 'default' : 'outline'}
                 size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => setViewMode('list')}
               >
                 Liste
@@ -102,7 +104,7 @@ export function PendingRequestsSection({
                       <span className="text-slate-700">{req.phone || '—'}</span>
                       <span className="text-slate-700">{req.entrepriseName || '—'}</span>
                       <div className="flex gap-2">
-                        <Button size="sm" className="bg-blue-900 text-white hover:bg-blue-800" onClick={() => onApprove(req)}>
+                        <Button size="sm" className="w-full bg-blue-900 text-white hover:bg-blue-800 sm:w-auto" onClick={() => onApprove(req)}>
                           Valider
                         </Button>
                       </div>
@@ -126,7 +128,7 @@ export function PendingRequestsSection({
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-gradient-to-r from-blue-900/10 via-blue-900/20 to-blue-900/10" />
                   <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-blue-900 to-blue-800" />
                   <CardContent className="relative p-4 pt-3 space-y-3 rounded-b-3xl rounded-t-none">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 backdrop-blur">
                           <Building2 className="h-4.5 w-4.5 text-white" />
@@ -136,7 +138,7 @@ export function PendingRequestsSection({
                           <h3 className="text-sm font-semibold text-white">{req.entrepriseName || 'Entreprise'}</h3>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-1">
+                      <div className="hidden grid-cols-3 gap-1 sm:grid">
                         {Array.from({ length: 9 }).map((_, idx) => (
                           <span
                             key={idx}
@@ -176,7 +178,7 @@ export function PendingRequestsSection({
                         </div>
                       ) : null}
                       <div className="flex justify-end pt-1">
-                        <Button size="sm" className="bg-blue-900 text-white hover:bg-blue-800" onClick={() => onApprove(req)}>
+                        <Button size="sm" className="w-full bg-blue-900 text-white hover:bg-blue-800 sm:w-auto" onClick={() => onApprove(req)}>
                           Valider
                         </Button>
                       </div>
@@ -188,7 +190,7 @@ export function PendingRequestsSection({
           )}
           {pendingRequests.length > 5 && (
             <div className="mt-4">
-              <Button variant="outline" size="sm" onClick={onToggleShowAll}>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={onToggleShowAll}>
                 {showAllPending ? 'Voir moins' : 'Voir tout'}
               </Button>
             </div>

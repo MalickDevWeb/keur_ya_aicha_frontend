@@ -34,7 +34,7 @@ export function SettingsRequiredFieldsSection({
   onSave,
 }: SettingsRequiredFieldsSectionProps) {
   return (
-    <section className="mt-10">
+    <section className="mt-8 sm:mt-10">
       <h3 className="font-medium">Champs obligatoires (Import)</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Ces champs doivent être renseignés lors des imports. Le Super Admin décide, les admins appliquent.
@@ -44,25 +44,28 @@ export function SettingsRequiredFieldsSection({
         {ALL_FIELDS.map((field) => {
           const checked = requiredFields.includes(field)
           return (
-            <label key={field} className="flex items-center gap-2 rounded-lg border border-border bg-white/70 px-3 py-2">
+            <label
+              key={field}
+              className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-white/70 px-3 py-2"
+            >
               <Checkbox
                 checked={checked}
                 disabled={!canEdit}
                 onCheckedChange={() => onToggle(field)}
               />
-              <span className="text-sm text-[#121B53]">{FIELD_LABELS[field] || field}</span>
+              <span className="break-words text-sm text-[#121B53]">{FIELD_LABELS[field] || field}</span>
             </label>
           )
         })}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         {canEdit ? (
-          <Button onClick={onSave} disabled={isSaving}>
+          <Button onClick={onSave} disabled={isSaving} className="w-full sm:w-auto">
             Enregistrer
           </Button>
         ) : (
-          <Button variant="secondary" disabled>
+          <Button variant="secondary" disabled className="w-full sm:w-auto">
             Définis par Super Admin
           </Button>
         )}

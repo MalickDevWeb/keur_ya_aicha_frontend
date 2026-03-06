@@ -601,15 +601,15 @@ export default function SettingsPage() {
 
   if (!canEdit) {
     return (
-      <div className="p-6">
-      <SettingsHeaderSection title="Paramètres" />
-      <p className="mt-4 text-muted-foreground">Vous n'êtes pas autorisé à modifier ces paramètres.</p>
+      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
+        <SettingsHeaderSection title="Paramètres" />
+        <p className="mt-4 text-muted-foreground">Vous n'êtes pas autorisé à modifier ces paramètres.</p>
       </div>
     )
   }
 
   return (
-    <div className="p-6">
+    <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
       <SettingsHeaderSection title="Paramètres" />
 
       {canEditAdminBranding ? (

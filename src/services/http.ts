@@ -257,6 +257,10 @@ export async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const errorData = (await res.json().catch(() => ({}))) as Record<string, unknown>
     const message = getErrorMessage(res.status, errorData)
+    const maintenanceCode = String(errorData.code || '').trim().toUpperCase()
+    const isMaintenanceError =
+      res.status === 503 &&
+      (maintenanceCode === 'MAINTENANCE_MODE' || maintenanceCode === 'MAINTENANCE_ACTIVE')
 
     logger.error(`HTTP ${res.status}: ${message}`, errorData)
 
@@ -270,7 +274,7 @@ export async function handleResponse<T>(res: Response): Promise<T> {
         })
       )
     }
-    if (res.status === 503 && String(errorData.code || '') === 'MAINTENANCE_MODE') {
+    if (isMaintenanceError) {
       window.dispatchEvent(
         new CustomEvent('platform-maintenance-blocked', {
           detail: {

@@ -197,7 +197,7 @@ export function AdminsDashboard() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto w-full px-6 py-6 space-y-6 animate-fade-in">
+    <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
         <SuperAdminHeader
           onAddAdmin={() => {
@@ -208,9 +208,9 @@ export function AdminsDashboard() {
       </SectionWrapper>
 
       <SectionWrapper>
-        <div className="rounded-[28px] border border-[#121B53]/15 bg-gradient-to-br from-[#121B53] via-[#1A2A78] to-[#0B153D] px-6 py-5 text-white shadow-[0_28px_70px_rgba(10,16,48,0.45)]">
+        <div className="rounded-[24px] border border-[#121B53]/15 bg-gradient-to-br from-[#121B53] via-[#1A2A78] to-[#0B153D] px-4 py-4 text-white shadow-[0_28px_70px_rgba(10,16,48,0.45)] sm:rounded-[28px] sm:px-6 sm:py-5">
           <p className="text-xs uppercase tracking-[0.3em] text-white/70">Super Admin</p>
-          <h1 className="mt-2 text-2xl font-semibold">Liste des administrateurs</h1>
+          <h1 className="mt-2 text-xl font-semibold sm:text-2xl">Liste des administrateurs</h1>
           <p className="mt-1 text-sm text-white/70">Gérez les statuts, accès et entreprises associées.</p>
         </div>
       </SectionWrapper>

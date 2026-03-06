@@ -48,7 +48,7 @@ export function SettingsRuntimeApiSection({
   onOpenConfigFolder,
 }: SettingsRuntimeApiSectionProps) {
   return (
-    <section className="mt-10">
+    <section className="mt-8 sm:mt-10">
       <h3 className="font-medium">Configuration API (Super Admin)</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Modifiez l&apos;API backend consommée sans rebuild. Le frontend ajoute automatiquement le suffixe /api.
@@ -76,7 +76,7 @@ export function SettingsRuntimeApiSection({
         </label>
 
         <div className="rounded-lg border border-border bg-white/70 px-3 py-2 space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-muted-foreground">Source active</span>
             <Badge variant="secondary">{sourceLabel(source)}</Badge>
           </div>
@@ -102,15 +102,15 @@ export function SettingsRuntimeApiSection({
           )}
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={onSave} disabled={isSaving || isLoading}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button onClick={onSave} disabled={isSaving || isLoading} className="w-full sm:w-auto">
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
-          <Button variant="outline" onClick={onReload} disabled={isSaving || isLoading}>
+          <Button variant="outline" onClick={onReload} disabled={isSaving || isLoading} className="w-full sm:w-auto">
             Recharger
           </Button>
           {isElectron && (
-            <Button variant="secondary" onClick={onOpenConfigFolder}>
+            <Button variant="secondary" onClick={onOpenConfigFolder} className="w-full sm:w-auto">
               Ouvrir dossier config
             </Button>
           )}

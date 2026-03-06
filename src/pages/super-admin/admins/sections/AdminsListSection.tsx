@@ -102,7 +102,7 @@ const renderActions = (
         key={`${admin.id}-${action.nextStatus}`}
         size="sm"
         variant={variant}
-        className={className}
+        className={cn('w-full sm:w-auto', className)}
         disabled={actionsDisabled}
         onClick={() => onSetStatus(admin, action.nextStatus)}
       >
@@ -158,7 +158,7 @@ export function AdminsListSection({
               inputClassName="border-[#121B53]/20 bg-white focus-visible:ring-0"
               placeholder="Nom, email ou entreprise"
             />
-            <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1 w-full sm:w-auto justify-start">
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'ghost'}
                 size="sm"
@@ -214,7 +214,7 @@ export function AdminsListSection({
                     'bg-gradient-to-br from-white via-[#F7F9FF] to-[#EEF2FF]'
                   )}
                 >
-                  <CardContent className="p-5 space-y-4">
+                  <CardContent className="space-y-4 p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#121B53] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
@@ -248,14 +248,14 @@ export function AdminsListSection({
                     </div>
                     <p className="text-xs text-[#121B53]/70">{getSubscriptionSummary(admin)}</p>
                     <p className="text-xs text-[#121B53]/65">{getPermissionsSummary(admin)}</p>
-                    <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="grid grid-cols-1 gap-2 pt-1 sm:flex sm:flex-wrap">
                       {renderActions(admin, actionsDisabled, onSetStatus)}
                     </div>
                     <div className="pt-1">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10"
+                        className="w-full border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10 sm:w-auto"
                         onClick={() => onConfigureSubscription(admin)}
                       >
                         Configurer abonnement
@@ -297,14 +297,14 @@ export function AdminsListSection({
                           {admin.status}
                         </Badge>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
                         {renderActions(admin, actionsDisabled, onSetStatus)}
                       </div>
                       <div className="pt-1">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10"
+                          className="w-full border-[#121B53]/25 text-[#121B53] hover:bg-[#121B53]/10 sm:w-auto"
                           onClick={() => onConfigureSubscription(admin)}
                         >
                           Configurer abonnement

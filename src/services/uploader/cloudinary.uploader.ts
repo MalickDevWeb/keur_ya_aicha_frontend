@@ -45,6 +45,16 @@ type SignedUploadParams = {
   cloud_name: string
 }
 
+type SignRequestPayload = {
+  folder?: string
+  mimeType?: string
+  sizeBytes?: number
+}
+
+type SignedUploadError = Error & {
+  code?: string
+}
+
 const buildSignUrlFromApiBase = (apiBaseUrl: string): string => {
   const safeBase = String(apiBaseUrl || '').trim().replace(/\/+$/, '')
   if (!safeBase) return ''
@@ -108,7 +118,7 @@ export class CloudinaryUploader implements FileUploader {
     return this.isUnsignedConfigured() || this.isSignedConfigured()
   }
 
-  private async getSignedUploadParams(folder?: string): Promise<SignedUploadParams> {
+  private async getSignedUploadParams(params: SignRequestPayload = {}): Promise<SignedUploadParams> {
     const signUrls = getFallbackSignUrls()
     if (signUrls.length === 0) {
       throw new Error('Cloudinary sign URL is not configured')
@@ -121,23 +131,36 @@ export class CloudinaryUploader implements FileUploader {
         const response = await fetch(signUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(folder ? { folder } : {}),
+          body: JSON.stringify(params || {}),
         })
 
         if (!response.ok) {
           const responseText = await response.text().catch(() => '')
           let details = ''
+          let code = ''
           try {
-            const payload = JSON.parse(responseText) as { error?: string; message?: string }
+            const payload = JSON.parse(responseText) as {
+              error?: string
+              message?: string
+              code?: string
+              details?: { code?: string }
+            }
             details = String(payload?.error || payload?.message || '').trim()
+            code = String(payload?.code || payload?.details?.code || '')
+              .trim()
+              .toUpperCase()
           } catch {
             details = String(responseText || '').trim()
           }
-          throw new Error(
+          const erreur = new Error(
             details
               ? `Signature request failed (${response.status}): ${details}`
               : `Signature request failed (${response.status})`
-          )
+          ) as SignedUploadError
+          if (code) {
+            erreur.code = code
+          }
+          throw erreur
         }
 
         const payload = (await response.json()) as
@@ -223,7 +246,11 @@ export class CloudinaryUploader implements FileUploader {
     file: File,
     options?: { folder?: string; onProgress?: UploadProgressCallback }
   ): Promise<UploadResult> {
-    const signatureData = await this.getSignedUploadParams(options?.folder)
+    const signatureData = await this.getSignedUploadParams({
+      folder: options?.folder,
+      mimeType: String(file.type || '').trim(),
+      sizeBytes: Number(file.size || 0),
+    })
     const uploadUrl = getUploadUrl(getResourceType(file), signatureData.cloud_name)
     if (!uploadUrl) {
       throw new Error('Cloudinary cloud name is missing for signed upload.')
@@ -278,7 +305,12 @@ export class CloudinaryUploader implements FileUploader {
         return await this.uploadSigned(file, options)
       } catch (signedError) {
         signedAttemptError = signedError
-        if (!this.isUnsignedConfigured()) throw signedError
+        const code = String(
+          (signedError as SignedUploadError)?.code || ''
+        ).trim().toUpperCase()
+        if (!this.isUnsignedConfigured() || code === 'DOCUMENT_POLICY_VIOLATION') {
+          throw signedError
+        }
       }
     }
 

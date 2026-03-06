@@ -60,7 +60,7 @@ export function EntreprisesListSection({
             inputClassName="border-[#121B53]/20 bg-white focus-visible:ring-0"
             placeholder="Nom, prénom, téléphone ou CNI"
           />
-          <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center gap-2 rounded-xl border border-[#121B53]/10 bg-white/90 p-1 w-full sm:w-auto justify-start">
             <Button
               variant={viewMode === 'cards' ? 'default' : 'ghost'}
               size="sm"
@@ -98,7 +98,7 @@ export function EntreprisesListSection({
         ) : rows.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">{noResultsLabel}</div>
         ) : viewMode === 'cards' ? (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
+          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
             {rows.map(({ entreprise, admin }) => {
               const paid = isAdminPaidThisMonth(admin?.id)
               const lastPaidAt = getLastPaidAt(admin?.id)
@@ -111,12 +111,14 @@ export function EntreprisesListSection({
                   'bg-gradient-to-br from-white via-[#F7F9FF] to-[#EEF2FF]'
                 )}
               >
-                <CardContent className="p-5 space-y-3">
+                <CardContent className="space-y-3 p-4 sm:p-5">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-wide text-[#121B53]/60">Entreprise</p>
-                      <h3 className="text-lg font-semibold text-[#121B53]">{entreprise.name || '—'}</h3>
-                      <p className="mt-1 text-xs text-[#121B53]/60">Identifiant: <span className="font-mono">{entreprise.id}</span></p>
+                      <h3 className="break-words text-lg font-semibold text-[#121B53]">{entreprise.name || '—'}</h3>
+                      <p className="mt-1 text-xs text-[#121B53]/60">
+                        Identifiant: <span className="font-mono break-all">{entreprise.id}</span>
+                      </p>
                     </div>
                     <div className="rounded-2xl bg-[#121B53]/10 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
                       <Building2 className="h-5 w-5 text-[#121B53]" />
@@ -124,7 +126,7 @@ export function EntreprisesListSection({
                   </div>
                   {isSelected ? (
                     <>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs text-[#121B53]/60">Admin</span>
                         {admin ? (
                           <Badge variant="secondary">{admin.name}</Badge>
@@ -132,7 +134,7 @@ export function EntreprisesListSection({
                           <Badge variant="outline">—</Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs text-[#121B53]/60">Paiement</span>
                         <Badge className={paid ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'}>
                           {paid ? 'Payé ce mois' : 'Non payé'}
