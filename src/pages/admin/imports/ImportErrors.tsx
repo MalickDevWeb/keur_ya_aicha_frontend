@@ -12,6 +12,7 @@ import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { useToast } from '@/hooks/use-toast'
 import { useGoBack } from '@/hooks/useGoBack'
 import { useStore } from '@/stores/dataStore'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   CLIENT_IMPORT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
@@ -35,6 +36,7 @@ export default function ImportErrors() {
   const navigate = useNavigate()
   const goBack = useGoBack('/import/clients')
   const { toast } = useToast()
+  const { user, impersonation } = useAuth()
   const addClient = useStore((state) => state.addClient)
   const [stored, setStored] = useState<StoredErrors | null>(null)
   const [allRuns, setAllRuns] = useState<StoredErrors[]>([])
@@ -43,6 +45,15 @@ export default function ImportErrors() {
   const [editableErrors, setEditableErrors] = useState<StoredErrors['errors']>([])
   const [isSavingEdits, setIsSavingEdits] = useState(false)
   const [isImportingCorrected, setIsImportingCorrected] = useState(false)
+  const activeAdminId = useMemo(() => {
+    const impersonated = String(impersonation?.adminId || '').trim()
+    if (impersonated) return impersonated
+    const role = String(user?.role || '').toUpperCase()
+    if (role === 'ADMIN') {
+      return String(user?.id || '').trim()
+    }
+    return ''
+  }, [impersonation?.adminId, user?.id, user?.role])
 
   useEffect(() => {
     let mounted = true
@@ -140,7 +151,10 @@ export default function ImportErrors() {
     setIsImportingCorrected(true)
     try {
       const clients = await fetchClients()
-      const { ownerByEmail, ownerByPhone } = buildDuplicateLookup(clients)
+      const adminScopedClients = clients.filter(
+        (client) => String(client.adminId || '').trim() === activeAdminId
+      )
+      const { ownerByEmail, ownerByPhone } = buildDuplicateLookup(adminScopedClients)
       const created: StoredErrors['inserted'] = []
       const failures: StoredErrors['errors'] = []
 

@@ -149,6 +149,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       const activeAdminId =
         ctx?.impersonation?.adminId ||
         (String(ctx?.user?.role || '').toUpperCase() === 'ADMIN' ? ctx?.user?.id || undefined : undefined)
+      const scopedAdminId = String(activeAdminId || '').trim()
       const firstName = (clientData.firstName || '').trim()
       const lastName = (clientData.lastName || '').trim()
       const phone = (clientData.phone || '').trim()
@@ -159,14 +160,17 @@ export const useDataStore = create<DataState>((set, get) => ({
       if (!phone || !validateSenegalNumber(phone)) throw new Error('Numéro de téléphone invalide')
       if (email && !validateEmail(email)) throw new Error('Email invalide')
 
+      const existingClientsForAdmin = scopedAdminId
+        ? get().clients.filter((c) => String(c.adminId || '').trim() === scopedAdminId)
+        : []
       const normalizedPhone = normalizePhoneForCompare(phone)
       const normalizedEmail = email ? normalizeEmailForCompare(email) : ''
       if (normalizedPhone) {
-        const dup = get().clients.find((c) => normalizePhoneForCompare(c.phone || '') === normalizedPhone)
+        const dup = existingClientsForAdmin.find((c) => normalizePhoneForCompare(c.phone || '') === normalizedPhone)
         if (dup) throw new Error('Client existe déjà avec ce numéro.')
       }
       if (normalizedEmail) {
-        const dup = get().clients.find((c) => normalizeEmailForCompare(c.email || '') === normalizedEmail)
+        const dup = existingClientsForAdmin.find((c) => normalizeEmailForCompare(c.email || '') === normalizedEmail)
         if (dup) throw new Error('Client existe déjà avec cet email.')
       }
 
@@ -204,7 +208,7 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       const newClient: Client = {
         id: clientId,
-        adminId: activeAdminId,
+        adminId: scopedAdminId || undefined,
         firstName,
         lastName,
         phone,

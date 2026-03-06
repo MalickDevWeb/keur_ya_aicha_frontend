@@ -6,9 +6,8 @@ import {
 } from '@/services/runtimeConfig'
 import { validateUploadAgainstPolicy } from '@/services/platformConfig'
 
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+const CLOUDINARY_CLOUD_NAME = String(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '').trim()
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-const CLOUDINARY_API_KEY = import.meta.env.VITE_CLOUDINARY_API_KEY
 
 type CloudinaryResourceType = 'image' | 'video' | 'raw' | 'auto'
 
@@ -33,15 +32,31 @@ const getResourceType = (file: File): CloudinaryResourceType => {
   return 'auto'
 }
 
-const getUploadUrl = (resourceType: CloudinaryResourceType): string => {
-  if (!CLOUDINARY_CLOUD_NAME) return ''
-  return `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`
+const getUploadUrl = (resourceType: CloudinaryResourceType, cloudName = CLOUDINARY_CLOUD_NAME): string => {
+  const safeCloudName = String(cloudName || '').trim()
+  if (!safeCloudName) return ''
+  return `https://api.cloudinary.com/v1_1/${safeCloudName}/${resourceType}/upload`
 }
 
 type SignedUploadParams = {
   api_key: string
   timestamp: number
   signature: string
+  cloud_name: string
+}
+
+const buildSignUrlFromApiBase = (apiBaseUrl: string): string => {
+  const safeBase = String(apiBaseUrl || '').trim().replace(/\/+$/, '')
+  if (!safeBase) return ''
+  if (safeBase.endsWith('/api')) return `${safeBase}/sign`
+  return `${safeBase}/api/sign`
+}
+
+const getBrowserSameOriginSignUrl = (): string => {
+  if (typeof window === 'undefined') return ''
+  const origin = String(window.location?.origin || '').trim()
+  if (!origin) return ''
+  return `${origin.replace(/\/+$/, '')}/api/sign`
 }
 
 const getFallbackSignUrls = (): string[] => {
@@ -51,9 +66,15 @@ const getFallbackSignUrls = (): string[] => {
     urls.push(runtimeSignUrl)
   }
   const apiBaseUrl = getApiBaseUrl()
-  if (apiBaseUrl) {
-    urls.push(`${String(apiBaseUrl).replace(/\/$/, '')}/sign`)
-  }
+  const signUrlFromApiBase = buildSignUrlFromApiBase(apiBaseUrl)
+  if (signUrlFromApiBase) urls.push(signUrlFromApiBase)
+
+  const signUrlFromEnvApi = buildSignUrlFromApiBase(String(import.meta.env.VITE_API_URL || '').trim())
+  if (signUrlFromEnvApi) urls.push(signUrlFromEnvApi)
+
+  const browserSameOriginSignUrl = getBrowserSameOriginSignUrl()
+  if (browserSameOriginSignUrl) urls.push(browserSameOriginSignUrl)
+
   return [...new Set(urls.filter(Boolean))]
 }
 
@@ -80,7 +101,7 @@ export class CloudinaryUploader implements FileUploader {
   }
 
   private isSignedConfigured(): boolean {
-    return !!(CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && getFallbackSignUrls().length > 0)
+    return getFallbackSignUrls().length > 0
   }
 
   isConfigured(): boolean {
@@ -104,18 +125,42 @@ export class CloudinaryUploader implements FileUploader {
         })
 
         if (!response.ok) {
-          throw new Error(`Signature request failed (${response.status})`)
+          const responseText = await response.text().catch(() => '')
+          let details = ''
+          try {
+            const payload = JSON.parse(responseText) as { error?: string; message?: string }
+            details = String(payload?.error || payload?.message || '').trim()
+          } catch {
+            details = String(responseText || '').trim()
+          }
+          throw new Error(
+            details
+              ? `Signature request failed (${response.status}): ${details}`
+              : `Signature request failed (${response.status})`
+          )
         }
 
-        const payload = (await response.json()) as Partial<SignedUploadParams>
+        const payload = (await response.json()) as
+          | Partial<SignedUploadParams>
+          | { cloudName?: string; cloud_name?: string }
+        const cloudNameFromPayload = String(
+          (payload as { cloud_name?: string })?.cloud_name ||
+            (payload as { cloudName?: string })?.cloudName ||
+            ''
+        ).trim()
+        const resolvedCloudName = cloudNameFromPayload || CLOUDINARY_CLOUD_NAME
         if (!payload?.api_key || !payload?.timestamp || !payload?.signature) {
           throw new Error('Invalid signature payload received from sign server')
+        }
+        if (!resolvedCloudName) {
+          throw new Error('Invalid signature payload received from sign server: cloud_name missing')
         }
 
         return {
           api_key: payload.api_key,
           timestamp: Number(payload.timestamp),
           signature: payload.signature,
+          cloud_name: resolvedCloudName,
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'unknown error'
@@ -178,8 +223,11 @@ export class CloudinaryUploader implements FileUploader {
     file: File,
     options?: { folder?: string; onProgress?: UploadProgressCallback }
   ): Promise<UploadResult> {
-    const uploadUrl = getUploadUrl(getResourceType(file))
     const signatureData = await this.getSignedUploadParams(options?.folder)
+    const uploadUrl = getUploadUrl(getResourceType(file), signatureData.cloud_name)
+    if (!uploadUrl) {
+      throw new Error('Cloudinary cloud name is missing for signed upload.')
+    }
     const formData = new FormData()
     formData.append('file', file)
     formData.append('api_key', signatureData.api_key)
@@ -218,9 +266,9 @@ export class CloudinaryUploader implements FileUploader {
       throw new Error(policyError)
     }
 
-    if (!this.isConfigured()) {
+    if (!this.isUnsignedConfigured() && !this.isSignedConfigured()) {
       throw new Error(
-        'Cloudinary is not configured. Configure either unsigned preset or signed upload (API key + sign URL).'
+        'Cloudinary is not configured. Configure either unsigned preset or signed upload (sign URL).'
       )
     }
 

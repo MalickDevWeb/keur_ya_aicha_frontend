@@ -33,7 +33,7 @@ export default function ImportClientsPage() {
   const navigate = useNavigate()
   const goBack = useGoBack('/clients')
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, impersonation } = useAuth()
   const clients = useStore((state) => state.clients)
   const addClient = useStore((state) => state.addClient)
 
@@ -50,7 +50,25 @@ export default function ImportClientsPage() {
   >(null)
   const [requiredFields, setRequiredFields] = useState<Array<keyof ClientImportMapping>>(DEFAULT_REQUIRED_FIELDS)
 
-  const { ownerByEmail, ownerByPhone } = useMemo(() => buildDuplicateLookup(clients), [clients])
+  const activeAdminId = useMemo(() => {
+    const impersonated = String(impersonation?.adminId || '').trim()
+    if (impersonated) return impersonated
+    const role = String(user?.role || '').toUpperCase()
+    if (role === 'ADMIN') {
+      return String(user?.id || '').trim()
+    }
+    return ''
+  }, [impersonation?.adminId, user?.id, user?.role])
+
+  const adminScopedClients = useMemo(
+    () => clients.filter((client) => String(client.adminId || '').trim() === activeAdminId),
+    [clients, activeAdminId]
+  )
+
+  const { ownerByEmail, ownerByPhone } = useMemo(
+    () => buildDuplicateLookup(adminScopedClients),
+    [adminScopedClients]
+  )
   const hasData = headers.length > 0 && rows.length > 0
 
   useEffect(() => {
@@ -226,7 +244,7 @@ export default function ImportClientsPage() {
     try {
       await createImportRun({
         createdAt: new Date().toISOString(),
-        adminId: user?.id,
+        adminId: activeAdminId || undefined,
         fileName,
         totalRows: rows.length,
         inserted: [],
@@ -311,7 +329,7 @@ export default function ImportClientsPage() {
 
       await createImportRun({
         createdAt: new Date().toISOString(),
-        adminId: user?.id,
+        adminId: activeAdminId || undefined,
         fileName,
         totalRows: rows.length,
         inserted,
