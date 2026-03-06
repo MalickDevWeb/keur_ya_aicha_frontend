@@ -1,5 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
 import type { ClientImportMapping } from '@/lib/importClients'
 import { FIELD_LABELS } from '@/lib/importClients'
 
@@ -50,7 +51,7 @@ export function SettingsRequiredFieldsSection({
             >
               <Checkbox
                 checked={checked}
-                disabled={!canEdit}
+                disabled={!canEdit || isSaving}
                 onCheckedChange={() => onToggle(field)}
               />
               <span className="break-words text-sm text-[#121B53]">{FIELD_LABELS[field] || field}</span>
@@ -62,7 +63,8 @@ export function SettingsRequiredFieldsSection({
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         {canEdit ? (
           <Button onClick={onSave} disabled={isSaving} className="w-full sm:w-auto">
-            Enregistrer
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         ) : (
           <Button variant="secondary" disabled className="w-full sm:w-auto">

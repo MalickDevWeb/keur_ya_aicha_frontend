@@ -1,4 +1,5 @@
-import { Download, RotateCw, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Download, Loader2, RotateCw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ExcelJS from 'exceljs'
 import { buildReportCsv, type StoredErrors } from '@/services/importErrors'
@@ -20,15 +21,27 @@ export function ErrorsActions({
   onDelete,
   isLoading = false,
 }: ErrorsActionsProps) {
-  const handleDownloadCsv = () => {
+  const [downloadType, setDownloadType] = useState<'csv' | 'excel' | null>(null)
+  const isBusy = isLoading || downloadType !== null
+  const exportDate = new Date(storedErrors.createdAt || Date.now()).toISOString().slice(0, 10)
+  const exportFileBase = `rapport-import-${exportDate}`
+
+  const handleDownloadCsv = async () => {
+    if (isBusy) return
+    setDownloadType('csv')
     const csv = buildReportCsv(storedErrors.inserted, storedErrors.errors)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    import('@/lib/pdfUtils').then(({ downloadBlob }) => {
-      downloadBlob(blob, `import-errors-${storedErrors.id}.csv`)
-    })
+    try {
+      const { downloadBlob } = await import('@/lib/pdfUtils')
+      downloadBlob(blob, `${exportFileBase}.csv`)
+    } finally {
+      setDownloadType(null)
+    }
   }
 
   const handleDownloadExcel = async () => {
+    if (isBusy) return
+    setDownloadType('excel')
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('Import Report')
 
@@ -83,25 +96,29 @@ export function ErrorsActions({
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
-    const { downloadBlob } = await import('@/lib/pdfUtils')
-    downloadBlob(blob, `import-errors-${storedErrors.id}.xlsx`)
+    try {
+      const { downloadBlob } = await import('@/lib/pdfUtils')
+      downloadBlob(blob, `${exportFileBase}.xlsx`)
+    } finally {
+      setDownloadType(null)
+    }
   }
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-      <Button onClick={handleDownloadCsv} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
-        <Download className="w-4 h-4 mr-2" />
-        CSV
+      <Button onClick={() => { void handleDownloadCsv() }} variant="outline" disabled={isBusy} className="w-full sm:w-auto">
+        {downloadType === 'csv' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+        {downloadType === 'csv' ? 'CSV...' : 'CSV'}
       </Button>
-      <Button onClick={handleDownloadExcel} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
-        <Download className="w-4 h-4 mr-2" />
-        Excel
+      <Button onClick={() => { void handleDownloadExcel() }} variant="outline" disabled={isBusy} className="w-full sm:w-auto">
+        {downloadType === 'excel' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+        {downloadType === 'excel' ? 'Excel...' : 'Excel'}
       </Button>
-      <Button onClick={onRefresh} variant="outline" disabled={isLoading} className="w-full sm:w-auto">
+      <Button onClick={onRefresh} variant="outline" disabled={isBusy} className="w-full sm:w-auto">
         <RotateCw className="w-4 h-4 mr-2" />
         Rafraîchir
       </Button>
-      <Button onClick={onDelete} variant="destructive" disabled={isLoading} className="w-full sm:w-auto">
+      <Button onClick={onDelete} variant="destructive" disabled={isBusy} className="w-full sm:w-auto">
         <Trash2 className="w-4 h-4 mr-2" />
         Supprimer
       </Button>

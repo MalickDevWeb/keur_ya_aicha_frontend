@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, User, Upload, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Printer, User, Upload, MessageCircle, Loader2 } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,8 @@ export default function AddClient() {
   const { t } = useI18n();
   const addClient = useStore((state) => state.addClient)
   const { toast } = useToast();
+  const [isPrintingContract, setIsPrintingContract] = useState(false);
+  const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false);
   const [createdClient, setCreatedClient] = useState<{
     id: string;
     name: string;
@@ -61,6 +63,7 @@ export default function AddClient() {
   const totalDeposit = form.watch('totalDeposit');
   const paidDeposit = form.watch('paidDeposit');
   const remainingDeposit = Math.max(0, totalDeposit - paidDeposit);
+  const isSubmitting = form.formState.isSubmitting;
 
   const onSubmit = async (data: AjoutClientFormData) => {
     try {
@@ -114,6 +117,8 @@ export default function AddClient() {
   };
 
   const handlePrintContract = async () => {
+    if (isPrintingContract) return;
+    setIsPrintingContract(true);
     try {
       const { generatePdfForDocument, downloadBlob, shareBlobViaWebShare } = await import('@/lib/pdfUtils');
       const values = form.getValues();
@@ -158,22 +163,30 @@ export default function AddClient() {
         title: 'Erreur',
         description: message,
       });
+    } finally {
+      setIsPrintingContract(false);
     }
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = async () => {
     if (!createdClient) return;
+    if (isSendingWhatsapp) return;
+    setIsSendingWhatsapp(true);
 
-    // Extract first name from the full name
-    const nameParts = createdClient.name.split(' ');
-    const firstName = nameParts[0];
+    try {
+      // Extract first name from the full name
+      const nameParts = createdClient.name.split(' ');
+      const firstName = nameParts[0];
 
-    const phone = createdClient.phone.replace(/[^\d+]/g, '');
-    const message = encodeURIComponent(
-      `Bonjour ${firstName},\n\nVotre contrat de location pour ${createdClient.propertyName} est prêt !\n\nDétails :\n- Loyer mensuel : ${createdClient.monthlyRent.toLocaleString()} FCFA\n- Date de début : ${new Date(createdClient.startDate).toLocaleDateString('fr-FR')}\n\nPour toute question, contactez-nous.\n\nKeur Ya Aicha - Location Immobilier & Services`
-    );
+      const phone = createdClient.phone.replace(/[^\d+]/g, '');
+      const message = encodeURIComponent(
+        `Bonjour ${firstName},\n\nVotre contrat de location pour ${createdClient.propertyName} est prêt !\n\nDétails :\n- Loyer mensuel : ${createdClient.monthlyRent.toLocaleString()} FCFA\n- Date de début : ${new Date(createdClient.startDate).toLocaleDateString('fr-FR')}\n\nPour toute question, contactez-nous.\n\nKeur Ya Aicha - Location Immobilier & Services`
+      );
 
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener,noreferrer');
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener,noreferrer');
+    } finally {
+      setIsSendingWhatsapp(false);
+    }
   };
 
   if (createdClient) {
@@ -194,21 +207,24 @@ export default function AddClient() {
               variant="outline"
               className="w-full"
               onClick={handleSendWhatsApp}
+              disabled={isSendingWhatsapp || isPrintingContract}
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Envoyer WhatsApp
+              {isSendingWhatsapp ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-2" />}
+              {isSendingWhatsapp ? 'Ouverture...' : 'Envoyer WhatsApp'}
             </Button>
             <Button
               variant="outline"
               className="w-full"
               onClick={handlePrintContract}
+              disabled={isPrintingContract || isSendingWhatsapp}
             >
-              <Printer className="w-4 h-4 mr-2" />
-              {t('addClient.printContract')}
+              {isPrintingContract ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Printer className="w-4 h-4 mr-2" />}
+              {isPrintingContract ? 'Génération...' : t('addClient.printContract')}
             </Button>
             <Button
               className="w-full bg-secondary hover:bg-secondary/90"
               onClick={() => navigate(`/clients/${createdClient.id}`)}
+              disabled={isPrintingContract || isSendingWhatsapp}
             >
               Voir le dossier client
             </Button>
@@ -219,6 +235,7 @@ export default function AddClient() {
                 setCreatedClient(null);
                 form.reset();
               }}
+              disabled={isPrintingContract || isSendingWhatsapp}
             >
               Ajouter un autre client
             </Button>
@@ -239,7 +256,7 @@ export default function AddClient() {
         </div>
         <Button variant="outline" onClick={() => navigate('/import/clients')}>
           <Upload className="w-4 h-4 mr-2" />
-          Importer Excel
+          Importer (Excel/CSV/JSON)
         </Button>
       </div>
 
@@ -455,14 +472,17 @@ export default function AddClient() {
               variant="outline"
               className="flex-1"
               onClick={() => goBack('/clients')}
+              disabled={isSubmitting}
             >
               {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               className="flex-1 bg-secondary hover:bg-secondary/90"
+              disabled={isSubmitting}
             >
-              {t('addClient.submit')}
+              {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {isSubmitting ? 'Création...' : t('addClient.submit')}
             </Button>
           </div>
         </form>

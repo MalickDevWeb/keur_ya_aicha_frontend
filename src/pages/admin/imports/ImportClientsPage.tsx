@@ -43,7 +43,10 @@ export default function ImportClientsPage() {
   const [mapping, setMapping] = useState<ClientImportMapping>({})
   const [errors, setErrors] = useState<ClientImportError[]>([])
   const [overrides, setOverrides] = useState<RowOverrides>({})
+  const [isReadingFile, setIsReadingFile] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [isSavingErrors, setIsSavingErrors] = useState(false)
   const [showFix, setShowFix] = useState(false)
   const [importAliases, setImportAliases] = useState<
     Partial<Record<keyof ClientImportMapping, string[]>> | null
@@ -68,6 +71,17 @@ export default function ImportClientsPage() {
   const { ownerByEmail, ownerByPhone } = useMemo(
     () => buildDuplicateLookup(adminScopedClients),
     [adminScopedClients]
+  )
+  const requiredFieldLabels = useMemo(
+    () => requiredFields.map((field) => FIELD_LABELS[field] || field),
+    [requiredFields]
+  )
+  const optionalFieldLabels = useMemo(
+    () =>
+      CLIENT_IMPORT_FIELDS.filter((field) => !requiredFields.includes(field)).map(
+        (field) => FIELD_LABELS[field] || field
+      ),
+    [requiredFields]
   )
   const hasData = headers.length > 0 && rows.length > 0
 
@@ -187,7 +201,7 @@ export default function ImportClientsPage() {
     return nextErrors
   }, [rows, mapping, overrides, ownerByPhone, ownerByEmail, requiredFields, toast])
 
-  const computeErrors = useCallback((opts?: { keepFixOpen?: boolean }) => {
+  const computeErrors = useCallback(async (opts?: { keepFixOpen?: boolean }) => {
     if (!hasData) {
       toast({
         title: 'Aucune donnée',
@@ -196,15 +210,20 @@ export default function ImportClientsPage() {
       })
       return
     }
-    const nextErrors = collectErrors()
-    if (!nextErrors) return
-    setErrors(nextErrors)
-    const shouldShowFix = opts?.keepFixOpen || nextErrors.length > 0
-    setShowFix(shouldShowFix)
-    toast({
-      title: 'Analyse terminée',
-      description: nextErrors.length === 0 ? 'Aucune erreur détectée.' : `${nextErrors.length} erreur(s) détectée(s).`,
-    })
+    setIsAnalyzing(true)
+    try {
+      const nextErrors = collectErrors()
+      if (!nextErrors) return
+      setErrors(nextErrors)
+      const shouldShowFix = opts?.keepFixOpen || nextErrors.length > 0
+      setShowFix(shouldShowFix)
+      toast({
+        title: 'Analyse terminée',
+        description: nextErrors.length === 0 ? 'Aucune erreur détectée.' : `${nextErrors.length} erreur(s) détectée(s).`,
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
   }, [collectErrors, hasData, toast])
 
   const handleFile = useCallback(async (file: File) => {
@@ -221,12 +240,15 @@ export default function ImportClientsPage() {
   const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+    setIsReadingFile(true)
     try {
       await handleFile(file)
       toast({ title: 'Fichier chargé', description: file.name })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Impossible de lire le fichier'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setIsReadingFile(false)
     }
   }
 
@@ -241,6 +263,8 @@ export default function ImportClientsPage() {
   }
 
   const saveErrorsToServer = async (nextErrors: ClientImportError[]) => {
+    if (isSavingErrors) return
+    setIsSavingErrors(true)
     try {
       await createImportRun({
         createdAt: new Date().toISOString(),
@@ -261,11 +285,13 @@ export default function ImportClientsPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible d'enregistrer les erreurs"
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setIsSavingErrors(false)
     }
   }
 
   const handleImport = async () => {
-    if (!hasData) return
+    if (!hasData || isImporting) return
     setIsImporting(true)
 
     try {
@@ -351,6 +377,9 @@ export default function ImportClientsPage() {
       })
 
       navigate(nextErrors.length > 0 ? '/import/errors' : '/import/success')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Échec de l'import."
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
     } finally {
       setIsImporting(false)
     }
@@ -363,7 +392,13 @@ export default function ImportClientsPage() {
       </SectionWrapper>
 
       <SectionWrapper>
-        <FileUploadCard fileName={fileName} onFileChange={onFileChange} />
+        <FileUploadCard
+          fileName={fileName}
+          requiredFields={requiredFieldLabels}
+          optionalFields={optionalFieldLabels}
+          isReadingFile={isReadingFile}
+          onFileChange={onFileChange}
+        />
       </SectionWrapper>
 
       {hasData && (
@@ -374,8 +409,11 @@ export default function ImportClientsPage() {
               mapping={mapping}
               requiredFields={requiredFields}
               onMappingChange={setMapping}
-              onAnalyze={() => computeErrors()}
+              onAnalyze={() => {
+                void computeErrors()
+              }}
               onImport={handleImport}
+              isAnalyzing={isAnalyzing}
               isImporting={isImporting}
             />
           </SectionWrapper>
@@ -387,8 +425,12 @@ export default function ImportClientsPage() {
               onShowFix={() => setShowFix(true)}
               onSaveErrors={() => saveErrorsToServer(errors)}
               onUpdateOverride={onUpdateOverride}
-              onRevalidate={() => computeErrors({ keepFixOpen: true })}
+              onRevalidate={() => {
+                void computeErrors({ keepFixOpen: true })
+              }}
               onImport={handleImport}
+              isAnalyzing={isAnalyzing}
+              isSavingErrors={isSavingErrors}
               isImporting={isImporting}
             />
           </SectionWrapper>

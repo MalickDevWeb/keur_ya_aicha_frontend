@@ -5,6 +5,7 @@ import { useGoBack } from '@/hooks/useGoBack'
 import { useStore } from '@/stores/dataStore'
 import { useToast } from '@/hooks/use-toast'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { buildReadableDocumentName } from '@/lib/documentDisplay'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SignedContractsHeaderSection } from './signed-contracts/SignedContractsHeaderSection'
 import { SignedContractsStatsSection } from './signed-contracts/SignedContractsStatsSection'
@@ -24,24 +25,42 @@ export default function SignedContractsPage() {
   const deleteDocument = useStore((state) => state.deleteDocument)
   const [modalDoc, setModalDoc] = useState<SignedContractRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SignedContractRow | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const signedContracts = useMemo(() => buildSignedContracts(clients), [clients])
   const propertiesCount = new Set(signedContracts.map((row) => row.rentalId)).size
   const totalRevenue = signedContracts.reduce((sum, row) => sum + (row.rentalRent ?? 0), 0)
   const revenueLabel = formatSignedContractCurrency(totalRevenue)
+  const modalDocDisplayName = modalDoc
+    ? buildReadableDocumentName({
+        name: modalDoc.name,
+        type: 'contract',
+        context: modalDoc.rentalName || modalDoc.clientName,
+        uploadedAt: modalDoc.uploadedAt,
+      })
+    : ''
 
   const handleDelete = (row: SignedContractRow) => {
     setDeleteTarget(row)
   }
 
   const confirmDelete = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || isDeleting) return
+    setIsDeleting(true)
     try {
       await deleteDocument(deleteTarget.clientId, deleteTarget.rentalId, deleteTarget.id)
-      toast({ title: 'Contrat supprimé', description: `"${deleteTarget.name}" a été supprimé.` })
+      const displayName = buildReadableDocumentName({
+        name: deleteTarget.name,
+        type: 'contract',
+        context: deleteTarget.rentalName || deleteTarget.clientName,
+        uploadedAt: deleteTarget.uploadedAt,
+      })
+      toast({ title: 'Contrat supprimé', description: `"${displayName}" a été supprimé.` })
       setDeleteTarget(null)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Impossible de supprimer le contrat.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -73,10 +92,10 @@ export default function SignedContractsPage() {
           modalDoc
             ? {
                 id: modalDoc.id,
-                name: modalDoc.name,
+                name: modalDocDisplayName,
                 type: 'contract',
                 url: modalDoc.url,
-                fileName: `${modalDoc.name || 'contrat'}.pdf`,
+                fileName: `${modalDocDisplayName}.pdf`,
               }
             : null
         }
@@ -85,13 +104,26 @@ export default function SignedContractsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Supprimer le contrat ?"
-        description={deleteTarget ? `Le contrat "${deleteTarget.name}" sera supprimé.` : ''}
+        description={
+          deleteTarget
+            ? `Le contrat "${buildReadableDocumentName({
+                name: deleteTarget.name,
+                type: 'contract',
+                context: deleteTarget.rentalName || deleteTarget.clientName,
+                uploadedAt: deleteTarget.uploadedAt,
+              })}" sera supprimé.`
+            : ''
+        }
         confirmText="Supprimer"
         isDestructive
+        isLoading={isDeleting}
         onConfirm={() => {
           void confirmDelete()
         }}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          if (isDeleting) return
+          setDeleteTarget(null)
+        }}
       />
     </div>
   )

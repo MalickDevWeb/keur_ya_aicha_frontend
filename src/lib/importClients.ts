@@ -48,6 +48,8 @@ export type ClientImportResult = {
   rows: (string | number | Date | null)[][]
 }
 
+type SpreadsheetCell = string | number | Date | null
+
 export const DEFAULT_IMPORT_ALIASES: Partial<Record<keyof ClientImportMapping, string[]>> = {
   firstName: ['prenom', 'prénom', 'first name', 'firstname'],
   lastName: ['nom', 'lastname', 'last name', 'surname', 'family'],
@@ -102,8 +104,13 @@ export const DEFAULT_REQUIRED_FIELDS: Array<keyof ClientImportMapping> = [
 
 export async function parseSpreadsheet(file: File): Promise<ClientImportResult> {
   const extension = file.name.toLowerCase()
+  if (extension.endsWith('.json')) {
+    const text = await readFileAsText(file)
+    return parseJsonContent(text)
+  }
+
   if (extension.endsWith('.csv')) {
-    const text = await file.text()
+    const text = await readFileAsText(file)
     const data = parseCsv(text)
     const headers = (data[0] || []).map((h, i) => String(h || `Colonne ${i + 1}`))
     const rows = data.slice(1)
@@ -112,17 +119,21 @@ export async function parseSpreadsheet(file: File): Promise<ClientImportResult> 
 
   const buffer = await file.arrayBuffer()
   const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.load(buffer)
+  try {
+    await workbook.xlsx.load(buffer)
+  } catch {
+    throw new Error('Format non supporté. Utilisez un fichier Excel (.xlsx), CSV (.csv) ou JSON (.json).')
+  }
   const worksheet = workbook.worksheets[0]
   if (!worksheet) {
     return { headers: [], rows: [] }
   }
 
-  const rows: (string | number | Date | null)[][] = []
+  const rows: SpreadsheetCell[][] = []
   let maxCols = 0
   worksheet.eachRow({ includeEmpty: true }, (row) => {
     maxCols = Math.max(maxCols, row.cellCount)
-    const values: (string | number | Date | null)[] = []
+    const values: SpreadsheetCell[] = []
     for (let i = 1; i <= row.cellCount; i++) {
       values.push(normalizeCell(row.getCell(i).value))
     }
@@ -142,7 +153,16 @@ export async function parseSpreadsheet(file: File): Promise<ClientImportResult> 
   return { headers, rows: dataRows }
 }
 
-function normalizeCell(value: ExcelJS.CellValue): string | number | Date | null {
+async function readFileAsText(file: File): Promise<string> {
+  const maybeText = (file as File & { text?: () => Promise<string> }).text
+  if (typeof maybeText === 'function') {
+    return maybeText.call(file)
+  }
+  const buffer = await file.arrayBuffer()
+  return new TextDecoder().decode(buffer)
+}
+
+function normalizeCell(value: ExcelJS.CellValue): SpreadsheetCell {
   if (value === null || value === undefined) return ''
   if (value instanceof Date) return value
   if (typeof value === 'object') {
@@ -154,7 +174,7 @@ function normalizeCell(value: ExcelJS.CellValue): string | number | Date | null 
   return value as string | number
 }
 
-function parseCsv(text: string): (string | number | Date | null)[][] {
+function parseCsv(text: string): SpreadsheetCell[][] {
   const rows: string[][] = []
   let current: string[] = []
   let value = ''
@@ -194,6 +214,102 @@ function parseCsv(text: string): (string | number | Date | null)[][] {
     rows.push(current)
   }
   return rows
+}
+
+function parseJsonContent(text: string): ClientImportResult {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return { headers: [], rows: [] }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch {
+    throw new Error('JSON invalide. Vérifiez le format du fichier.')
+  }
+
+  const normalizedArray = normalizeJsonRoot(parsed)
+  if (normalizedArray.length === 0) {
+    return { headers: [], rows: [] }
+  }
+
+  if (normalizedArray.every((item) => isPlainObject(item))) {
+    const objectRows = normalizedArray as Array<Record<string, unknown>>
+    const headers = collectJsonHeaders(objectRows)
+    const rows = objectRows.map((row) => headers.map((header) => normalizeJsonCell(row[header])))
+    return { headers, rows }
+  }
+
+  if (normalizedArray.every(Array.isArray)) {
+    return parseJsonArrayRows(normalizedArray as unknown[][])
+  }
+
+  throw new Error(
+    'Format JSON non supporté. Utilisez un tableau d’objets, par exemple: [{"firstName":"Awa","lastName":"Diop"}].'
+  )
+}
+
+function normalizeJsonRoot(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value
+  if (!isPlainObject(value)) {
+    throw new Error(
+      'Format JSON non supporté. Utilisez un tableau d’objets, par exemple: [{"firstName":"Awa","lastName":"Diop"}].'
+    )
+  }
+
+  const knownArrayKeys = ['rows', 'data', 'clients', 'items', 'records']
+  for (const key of knownArrayKeys) {
+    const candidate = value[key]
+    if (Array.isArray(candidate)) return candidate
+  }
+
+  return [value]
+}
+
+function parseJsonArrayRows(rows: unknown[][]): ClientImportResult {
+  if (rows.length === 0) return { headers: [], rows: [] }
+
+  const maxCols = rows.reduce((max, row) => Math.max(max, row.length), 0)
+  if (maxCols === 0) return { headers: [], rows: [] }
+
+  const firstRow = rows[0] || []
+  const firstRowIsHeader = firstRow.length > 0 && firstRow.every((cell) => typeof cell === 'string')
+
+  const headers = firstRowIsHeader
+    ? firstRow.map((value, index) => String(value || `Colonne ${index + 1}`))
+    : Array.from({ length: maxCols }, (_, index) => `Colonne ${index + 1}`)
+
+  const dataRows = firstRowIsHeader ? rows.slice(1) : rows
+  const normalizedRows = dataRows.map((row) => {
+    const values = headers.map((_, index) => normalizeJsonCell(row[index]))
+    return values
+  })
+
+  return { headers, rows: normalizedRows }
+}
+
+function collectJsonHeaders(rows: Array<Record<string, unknown>>): string[] {
+  const headers: string[] = []
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (!headers.includes(key)) headers.push(key)
+    }
+  }
+  return headers
+}
+
+function normalizeJsonCell(value: unknown): SpreadsheetCell {
+  if (value === null || value === undefined) return ''
+  if (value instanceof Date) return value
+  if (typeof value === 'string' || typeof value === 'number') return value
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export function guessMapping(

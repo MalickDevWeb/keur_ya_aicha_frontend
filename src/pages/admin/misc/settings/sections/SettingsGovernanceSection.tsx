@@ -3,12 +3,17 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Loader2 } from 'lucide-react'
 import type { PlatformConfig } from '@/services/platformConfig'
 
 type SettingsGovernanceSectionProps = {
   value: PlatformConfig
   isLoading: boolean
   isSaving: boolean
+  isReloading: boolean
+  isApplyingAuditRetention: boolean
+  isExportingAudit: boolean
+  isTestingWebhook: boolean
   onChange: (updater: (prev: PlatformConfig) => PlatformConfig) => void
   onSave: () => void
   onReload: () => void
@@ -27,6 +32,10 @@ export function SettingsGovernanceSection({
   value,
   isLoading,
   isSaving,
+  isReloading,
+  isApplyingAuditRetention,
+  isExportingAudit,
+  isTestingWebhook,
   onChange,
   onSave,
   onReload,
@@ -34,6 +43,8 @@ export function SettingsGovernanceSection({
   onExportAuditNow,
   onTestWebhook,
 }: SettingsGovernanceSectionProps) {
+  const isBusy = isLoading || isSaving || isReloading || isApplyingAuditRetention || isExportingAudit || isTestingWebhook
+
   const setMaintenanceEnabled = (checked: boolean) =>
     onChange((prev) => ({
       ...prev,
@@ -167,10 +178,12 @@ export function SettingsGovernanceSection({
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Button variant="outline" onClick={onReload} disabled={isLoading || isSaving} className="w-full sm:w-auto">
-            Recharger
+          <Button variant="outline" onClick={onReload} disabled={isBusy} className="w-full sm:w-auto">
+            {isReloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isReloading ? 'Rechargement...' : 'Recharger'}
           </Button>
-          <Button onClick={onSave} disabled={isLoading || isSaving} className="w-full sm:w-auto">
+          <Button onClick={onSave} disabled={isBusy} className="w-full sm:w-auto">
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         </div>
@@ -502,14 +515,17 @@ export function SettingsGovernanceSection({
           />
         </label>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button variant="outline" onClick={onApplyAuditRetention} className="w-full sm:w-auto">
-            Appliquer rétention logs
+          <Button variant="outline" onClick={onApplyAuditRetention} disabled={isBusy} className="w-full sm:w-auto">
+            {isApplyingAuditRetention ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isApplyingAuditRetention ? 'Application...' : 'Appliquer rétention logs'}
           </Button>
-          <Button variant="outline" onClick={onExportAuditNow} className="w-full sm:w-auto">
-            Exporter logs maintenant
+          <Button variant="outline" onClick={onExportAuditNow} disabled={isBusy} className="w-full sm:w-auto">
+            {isExportingAudit ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isExportingAudit ? 'Export en cours...' : 'Exporter logs maintenant'}
           </Button>
-          <Button variant="secondary" onClick={onTestWebhook} className="w-full sm:w-auto">
-            Tester webhook
+          <Button variant="secondary" onClick={onTestWebhook} disabled={isBusy} className="w-full sm:w-auto">
+            {isTestingWebhook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isTestingWebhook ? 'Test en cours...' : 'Tester webhook'}
           </Button>
         </div>
       </div>

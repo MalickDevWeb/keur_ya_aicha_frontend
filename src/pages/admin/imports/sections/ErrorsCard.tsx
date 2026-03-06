@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,8 @@ type ErrorsCardProps = {
   onUpdateOverride: (rowIndex: number, field: 'firstName' | 'lastName' | 'phone' | 'cni', value: string) => void
   onRevalidate: () => void
   onImport: () => void
+  isAnalyzing: boolean
+  isSavingErrors: boolean
   isImporting: boolean
 }
 
@@ -27,8 +29,11 @@ export function ErrorsCard({
   onUpdateOverride,
   onRevalidate,
   onImport,
+  isAnalyzing,
+  isSavingErrors,
   isImporting,
 }: ErrorsCardProps) {
+  const isBusy = isAnalyzing || isSavingErrors || isImporting
   return (
     <Card>
       <CardHeader>
@@ -39,11 +44,22 @@ export function ErrorsCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-2 md:flex md:flex-row md:flex-wrap">
-          <Button variant="outline" onClick={onShowFix} className="w-full md:w-auto whitespace-normal text-center">
+          <Button
+            variant="outline"
+            onClick={onShowFix}
+            disabled={isBusy}
+            className="w-full md:w-auto whitespace-normal text-center"
+          >
             Corriger maintenant
           </Button>
-          <Button variant="secondary" onClick={onSaveErrors} className="w-full md:w-auto whitespace-normal text-center">
-            Envoyer vers la page erreurs
+          <Button
+            variant="secondary"
+            onClick={onSaveErrors}
+            disabled={isBusy}
+            className="w-full md:w-auto whitespace-normal text-center"
+          >
+            {isSavingErrors ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isSavingErrors ? 'Enregistrement...' : 'Envoyer vers la page erreurs'}
           </Button>
         </div>
 
@@ -108,18 +124,19 @@ export function ErrorsCard({
             )}
 
             <div className="grid grid-cols-1 gap-2 md:flex md:flex-row md:flex-wrap">
-              <Button onClick={onRevalidate} className="w-full md:w-auto whitespace-normal text-center">
-                Re‑valider
+              <Button onClick={onRevalidate} disabled={isBusy} className="w-full md:w-auto whitespace-normal text-center">
+                {isAnalyzing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                {isAnalyzing ? 'Validation...' : 'Re‑valider'}
               </Button>
               {errors.length === 0 && (
                 <Button
                   variant="secondary"
                   onClick={onImport}
-                  disabled={isImporting}
+                  disabled={isBusy}
                   className="w-full md:w-auto whitespace-normal text-center"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Importer
+                  {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                  {isImporting ? 'Import en cours...' : 'Importer'}
                 </Button>
               )}
             </div>

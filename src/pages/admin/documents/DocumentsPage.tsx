@@ -6,6 +6,7 @@ import { useStore } from '@/stores/dataStore'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { getCloudinaryOpenUrl } from '@/services/api/uploads.api'
+import { buildReadableDocumentName, toSafeFileBaseName } from '@/lib/documentDisplay'
 import type { DocumentFilter, DocumentGroup, DocumentRow } from './types'
 import {
   buildDocumentsList,
@@ -29,6 +30,14 @@ const getGroupCounts = (groups: DocumentGroup[]) =>
     return acc
   }, {} as Record<DocumentRow['type'], number>)
 
+const getDocumentDisplayName = (doc: DocumentRow | null) =>
+  buildReadableDocumentName({
+    name: doc?.name,
+    type: doc?.type,
+    context: doc?.rentalName || doc?.clientName,
+    uploadedAt: doc?.uploadedAt,
+  })
+
 export default function DocumentsPage() {
   const navigate = useNavigate()
   const goBack = useGoBack('/dashboard')
@@ -47,9 +56,10 @@ export default function DocumentsPage() {
   const [filterType, setFilterType] = useState<DocumentFilter>('')
   const [isUploading, setIsUploading] = useState(false)
   const [modalDoc, setModalDoc] = useState<DocumentRow | null>(null)
-  const [modalGenerating, setModalGenerating] = useState(false)
+  const [modalAction, setModalAction] = useState<'download' | 'whatsapp' | null>(null)
   const [modalBlobUrl, setModalBlobUrl] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const filter = (searchParams.get('filter') || '') as DocumentFilter
@@ -149,23 +159,21 @@ export default function DocumentsPage() {
   }
 
   const generateAndGetBlob = async (doc: DocumentRow) => {
-    setModalGenerating(true)
-    try {
-      const { generatePdfForDocument } = await import('@/lib/pdfUtils')
-      return await generatePdfForDocument(doc)
-    } finally {
-      setModalGenerating(false)
-    }
+    const { generatePdfForDocument } = await import('@/lib/pdfUtils')
+    return await generatePdfForDocument(doc)
   }
 
   const handleModalDownload = async () => {
     if (!modalDoc) return
+    const displayName = getDocumentDisplayName(modalDoc)
+    const safeFileName = `${toSafeFileBaseName(displayName)}.pdf`
+    setModalAction('download')
     try {
       if (modalDoc.url && modalDoc.type !== 'receipt') {
         const openUrl = await getCloudinaryOpenUrl(String(modalDoc.url))
         const link = document.createElement('a')
         link.href = openUrl
-        link.download = modalDoc.name || 'document'
+        link.download = safeFileName
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -174,17 +182,22 @@ export default function DocumentsPage() {
 
       const blob = await generateAndGetBlob(modalDoc)
       const { downloadBlob } = await import('@/lib/pdfUtils')
-      downloadBlob(blob, `${modalDoc.name || 'document'}.pdf`)
+      downloadBlob(blob, safeFileName)
       const url = URL.createObjectURL(blob)
       setModalBlobUrl(url)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Impossible de générer le PDF.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setModalAction(null)
     }
   }
 
   const handleModalSendWhatsapp = async () => {
     if (!modalDoc) return
+    const displayName = getDocumentDisplayName(modalDoc)
+    const fileName = `${toSafeFileBaseName(displayName)}.pdf`
+    setModalAction('whatsapp')
     try {
       let blob: Blob | null = null
       let shareableUrl = ''
@@ -202,12 +215,12 @@ export default function DocumentsPage() {
       if (!blob) blob = await generateAndGetBlob(modalDoc)
 
       const { shareBlobViaWebShare } = await import('@/lib/pdfUtils')
-      const shared = await shareBlobViaWebShare(blob, `${modalDoc.name || 'document'}.pdf`, modalDoc.name || 'Document')
+      const shared = await shareBlobViaWebShare(blob, fileName, displayName)
       if (shared) return
 
       const text = shareableUrl
-        ? `Voici le document ${modalDoc.name || ''} : ${shareableUrl}`
-        : `Voici le document ${modalDoc.name || ''}`
+        ? `Voici le document ${displayName} : ${shareableUrl}`
+        : `Voici le document ${displayName}`
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
 
       if (!shareableUrl) {
@@ -219,6 +232,8 @@ export default function DocumentsPage() {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Impossible d’envoyer le document.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setModalAction(null)
     }
   }
 
@@ -228,14 +243,18 @@ export default function DocumentsPage() {
   }
 
   const confirmDelete = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || isDeleting) return
+    setIsDeleting(true)
     try {
       await deleteDocument(deleteTarget.clientId, deleteTarget.rentalId, deleteTarget.id)
-      toast({ title: 'Document supprimé', description: `"${deleteTarget.name}" a été supprimé.` })
+      const displayName = getDocumentDisplayName(deleteTarget)
+      toast({ title: 'Document supprimé', description: `"${displayName}" a été supprimé.` })
       setDeleteTarget(null)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Impossible de supprimer le document.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -320,7 +339,7 @@ export default function DocumentsPage() {
       <DocumentActionDialog
         document={modalDoc}
         previewUrl={modalBlobUrl}
-        isGenerating={modalGenerating}
+        activeAction={modalAction}
         onClose={() => {
           if (modalBlobUrl) URL.revokeObjectURL(modalBlobUrl)
           setModalBlobUrl(null)
@@ -333,13 +352,19 @@ export default function DocumentsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Supprimer le document ?"
-        description={deleteTarget ? `Le document "${deleteTarget.name}" sera supprimé.` : ''}
+        description={
+          deleteTarget ? `Le document "${getDocumentDisplayName(deleteTarget)}" sera supprimé.` : ''
+        }
         confirmText="Supprimer"
         isDestructive
+        isLoading={isDeleting}
         onConfirm={() => {
           void confirmDelete()
         }}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          if (isDeleting) return
+          setDeleteTarget(null)
+        }}
       />
     </div>
   )

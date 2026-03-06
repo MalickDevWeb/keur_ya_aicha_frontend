@@ -21,6 +21,7 @@ export function RentalsCardsSection({ rows, onView, onEdit }: RentalsCardsSectio
       {rows.map((rental) => {
         const depositStatus = calculateDepositStatus(rental.deposit)
         const depositProgress = (rental.deposit.paid / rental.deposit.total) * 100
+        const remainingDeposit = Math.max(0, rental.deposit.total - rental.deposit.paid)
 
         return (
           <Card
@@ -68,8 +69,8 @@ export function RentalsCardsSection({ rows, onView, onEdit }: RentalsCardsSectio
                   </p>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <p className="text-xs text-slate-600 uppercase tracking-wider font-bold mb-1">ID</p>
-                  <p className="font-mono text-xs font-semibold text-slate-900 break-all">{rental.id}</p>
+                  <p className="text-xs text-slate-600 uppercase tracking-wider font-bold mb-1">Reste caution</p>
+                  <p className="font-semibold text-sm text-slate-900">{formatCurrency(remainingDeposit)}</p>
                 </div>
               </div>
 

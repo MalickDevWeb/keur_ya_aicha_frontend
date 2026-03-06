@@ -12,6 +12,7 @@ import { fr } from "date-fns/locale";
 import { useGoBack } from '@/hooks/useGoBack';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { buildReadableDocumentName } from '@/lib/documentDisplay';
 
 type DocumentRow = Document & {
   clientId: string;
@@ -26,6 +27,7 @@ export default function ClientDossier() {
   const clients = useStore((state) => state.clients)
   const deleteDocument = useStore((state) => state.deleteDocument)
   const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get all documents from all clients
   const allDocuments = useMemo(() => {
@@ -75,12 +77,19 @@ export default function ClientDossier() {
   const [modalDoc, setModalDoc] = useState<DocumentRow | null>(null);
 
   const confirmDelete = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
     try {
       await deleteDocument(deleteTarget.clientId, deleteTarget.rentalId, deleteTarget.id);
+      const displayName = buildReadableDocumentName({
+        name: deleteTarget.name,
+        type: deleteTarget.type,
+        context: deleteTarget.rentalName || deleteTarget.clientName,
+        uploadedAt: deleteTarget.uploadedAt,
+      });
       toast({
         title: 'Document supprimé',
-        description: `"${deleteTarget.name}" a été supprimé.`,
+        description: `"${displayName}" a été supprimé.`,
       });
       setDeleteTarget(null);
     } catch (error: unknown) {
@@ -90,6 +99,8 @@ export default function ClientDossier() {
         description: message,
         variant: 'destructive',
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -168,50 +179,59 @@ export default function ClientDossier() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allDocuments.map(doc => (
-                  <TableRow key={doc.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span>{getDocumentIcon(doc.type)}</span>
-                        <p className="font-medium truncate max-w-xs">{doc.name}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">{doc.clientName}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">{doc.rentalName}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{getDocumentLabel(doc.type)}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">{formatDate(doc.uploadedAt)}</p>
-                    </TableCell>
-                    <TableCell>
-                      {doc.signed ? (
-                        <Badge className="bg-green-600">Signé</Badge>
-                      ) : (
-                        <Badge variant="secondary">Non signé</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setModalDoc(doc)}>
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => setDeleteTarget(doc)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {allDocuments.map(doc => {
+                  const displayName = buildReadableDocumentName({
+                    name: doc.name,
+                    type: doc.type,
+                    context: doc.rentalName || doc.clientName,
+                    uploadedAt: doc.uploadedAt,
+                  });
+
+                  return (
+                    <TableRow key={doc.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{getDocumentIcon(doc.type)}</span>
+                          <p className="font-medium truncate max-w-xs">{displayName}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">{doc.clientName}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">{doc.rentalName}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{getDocumentLabel(doc.type)}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">{formatDate(doc.uploadedAt)}</p>
+                      </TableCell>
+                      <TableCell>
+                        {doc.signed ? (
+                          <Badge className="bg-green-600">Signé</Badge>
+                        ) : (
+                          <Badge variant="secondary">Non signé</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setModalDoc(doc)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => setDeleteTarget(doc)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -227,13 +247,26 @@ export default function ClientDossier() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Supprimer le document ?"
-        description={deleteTarget ? `Le document "${deleteTarget.name}" sera supprimé.` : ''}
+        description={
+          deleteTarget
+            ? `Le document "${buildReadableDocumentName({
+                name: deleteTarget.name,
+                type: deleteTarget.type,
+                context: deleteTarget.rentalName || deleteTarget.clientName,
+                uploadedAt: deleteTarget.uploadedAt,
+              })}" sera supprimé.`
+            : ''
+        }
         confirmText="Supprimer"
         isDestructive
+        isLoading={isDeleting}
         onConfirm={() => {
           void confirmDelete();
         }}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          if (isDeleting) return;
+          setDeleteTarget(null);
+        }}
       />
     </div>
   );

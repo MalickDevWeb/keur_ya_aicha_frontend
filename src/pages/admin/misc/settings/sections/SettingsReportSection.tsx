@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Loader2 } from 'lucide-react'
 
 type SettingsReportSectionProps = {
   value: 'csv' | 'xlsx' | 'json'
@@ -17,7 +18,7 @@ export function SettingsReportSection({ value, onChange, onSave, isSaving }: Set
       </p>
 
       <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <Select value={value} onValueChange={(next) => onChange(next as 'csv' | 'xlsx' | 'json')}>
+        <Select value={value} onValueChange={(next) => onChange(next as 'csv' | 'xlsx' | 'json')} disabled={isSaving}>
           <SelectTrigger className="w-full sm:w-[240px]">
             <SelectValue placeholder="Choisir un format" />
           </SelectTrigger>
@@ -29,7 +30,8 @@ export function SettingsReportSection({ value, onChange, onSave, isSaving }: Set
         </Select>
 
         <Button onClick={onSave} disabled={isSaving} className="w-full sm:w-auto">
-          Enregistrer
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {isSaving ? 'Enregistrement...' : 'Enregistrer'}
         </Button>
       </div>
     </section>

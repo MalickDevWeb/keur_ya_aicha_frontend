@@ -77,12 +77,18 @@ export default function SettingsPage() {
   const [runtimeConfigSource, setRuntimeConfigSource] = useState('default')
   const [runtimeConfigLoading, setRuntimeConfigLoading] = useState(false)
   const [runtimeConfigSaving, setRuntimeConfigSaving] = useState(false)
+  const [runtimeConfigReloading, setRuntimeConfigReloading] = useState(false)
+  const [runtimeConfigOpeningFolder, setRuntimeConfigOpeningFolder] = useState(false)
   const [runtimeConfigUserPath, setRuntimeConfigUserPath] = useState<string | null>(null)
   const [runtimeConfigPortablePath, setRuntimeConfigPortablePath] = useState<string | null>(null)
   const [runtimeConfigWrittenPath, setRuntimeConfigWrittenPath] = useState<string | null>(null)
   const [platformConfigDraft, setPlatformConfigDraft] = useState<PlatformConfig>(getPlatformConfigSnapshot())
   const [platformConfigLoading, setPlatformConfigLoading] = useState(false)
   const [platformConfigSaving, setPlatformConfigSaving] = useState(false)
+  const [platformConfigReloading, setPlatformConfigReloading] = useState(false)
+  const [auditRetentionApplying, setAuditRetentionApplying] = useState(false)
+  const [auditExporting, setAuditExporting] = useState(false)
+  const [webhookTesting, setWebhookTesting] = useState(false)
   const [adminAppName, setAdminAppName] = useState('')
   const [adminNameSaving, setAdminNameSaving] = useState(false)
   const [adminLogoUrl, setAdminLogoUrl] = useState('')
@@ -376,7 +382,9 @@ export default function SettingsPage() {
   }
 
   const reloadRuntimeConfig = async () => {
+    if (runtimeConfigReloading || runtimeConfigSaving) return
     void logAction('settings.runtimeConfig.reload.start')
+    setRuntimeConfigReloading(true)
     try {
       await loadRuntimeConfig()
       toast({ title: 'Rechargé', description: 'Configuration API relue.' })
@@ -385,15 +393,20 @@ export default function SettingsPage() {
       const message = error instanceof Error ? error.message : 'Impossible de recharger la configuration API.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
       void logAction('settings.runtimeConfig.reload.error', { message })
+    } finally {
+      setRuntimeConfigReloading(false)
     }
   }
 
   const openRuntimeConfigDirectory = async () => {
+    if (runtimeConfigOpeningFolder || runtimeConfigSaving) return
     void logAction('settings.runtimeConfig.openFolder.start')
+    setRuntimeConfigOpeningFolder(true)
     if (!openRuntimeConfigFolder) {
       const message = "Action indisponible hors application desktop."
       toast({ title: 'Information', description: message })
       void logAction('settings.runtimeConfig.openFolder.error', { message })
+      setRuntimeConfigOpeningFolder(false)
       return
     }
     try {
@@ -408,6 +421,18 @@ export default function SettingsPage() {
       const message = error instanceof Error ? error.message : "Impossible d'ouvrir le dossier de configuration."
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
       void logAction('settings.runtimeConfig.openFolder.error', { message })
+    } finally {
+      setRuntimeConfigOpeningFolder(false)
+    }
+  }
+
+  const reloadGovernanceConfig = async () => {
+    if (platformConfigReloading || platformConfigSaving) return
+    setPlatformConfigReloading(true)
+    try {
+      await loadPlatformConfig()
+    } finally {
+      setPlatformConfigReloading(false)
     }
   }
 
@@ -452,7 +477,9 @@ export default function SettingsPage() {
   }
 
   const applyAuditRetentionNow = async () => {
+    if (auditRetentionApplying) return
     void logAction('settings.governance.audit.retention.start')
+    setAuditRetentionApplying(true)
     try {
       const retentionDays = Math.max(1, Number(platformConfigDraft.auditCompliance.retentionDays || 1))
       const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000
@@ -470,11 +497,15 @@ export default function SettingsPage() {
       const message = error instanceof Error ? error.message : 'Échec application rétention.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
       void logAction('settings.governance.audit.retention.error', { message })
+    } finally {
+      setAuditRetentionApplying(false)
     }
   }
 
   const exportAuditNow = async () => {
+    if (auditExporting) return
     void logAction('settings.governance.audit.export.start')
+    setAuditExporting(true)
     try {
       const logs = await listAuditLogs()
       const format = platformConfigDraft.auditCompliance.autoExportFormat
@@ -510,11 +541,15 @@ export default function SettingsPage() {
       const message = error instanceof Error ? error.message : 'Échec export logs.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
       void logAction('settings.governance.audit.export.error', { message })
+    } finally {
+      setAuditExporting(false)
     }
   }
 
   const testAlertWebhook = async () => {
+    if (webhookTesting) return
     void logAction('settings.governance.audit.webhook.test.start')
+    setWebhookTesting(true)
     try {
       await sendComplianceWebhookAlert('security', {
         event: 'manual_test',
@@ -532,6 +567,8 @@ export default function SettingsPage() {
       const message = error instanceof Error ? error.message : 'Échec test webhook.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
       void logAction('settings.governance.audit.webhook.test.error', { message })
+    } finally {
+      setWebhookTesting(false)
     }
   }
 
@@ -671,6 +708,8 @@ export default function SettingsPage() {
           writtenPath={runtimeConfigWrittenPath}
           isLoading={runtimeConfigLoading}
           isSaving={runtimeConfigSaving}
+          isReloading={runtimeConfigReloading}
+          isOpeningConfigFolder={runtimeConfigOpeningFolder}
           onApiBaseUrlChange={setRuntimeApiBaseUrl}
           onCloudinarySignUrlChange={setRuntimeSignUrl}
           onReload={reloadRuntimeConfig}
@@ -684,10 +723,14 @@ export default function SettingsPage() {
           value={platformConfigDraft}
           isLoading={platformConfigLoading}
           isSaving={platformConfigSaving}
+          isReloading={platformConfigReloading}
+          isApplyingAuditRetention={auditRetentionApplying}
+          isExportingAudit={auditExporting}
+          isTestingWebhook={webhookTesting}
           onChange={(updater) => setPlatformConfigDraft((prev) => updater(prev))}
           onSave={saveGovernanceConfig}
           onReload={() => {
-            void loadPlatformConfig()
+            void reloadGovernanceConfig()
           }}
           onApplyAuditRetention={applyAuditRetentionNow}
           onExportAuditNow={exportAuditNow}

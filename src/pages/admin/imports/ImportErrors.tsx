@@ -45,6 +45,9 @@ export default function ImportErrors() {
   const [editableErrors, setEditableErrors] = useState<StoredErrors['errors']>([])
   const [isSavingEdits, setIsSavingEdits] = useState(false)
   const [isImportingCorrected, setIsImportingCorrected] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isDeletingRun, setIsDeletingRun] = useState(false)
+  const [isIgnoringRun, setIsIgnoringRun] = useState(false)
   const activeAdminId = useMemo(() => {
     const impersonated = String(impersonation?.adminId || '').trim()
     if (impersonated) return impersonated
@@ -125,12 +128,15 @@ export default function ImportErrors() {
   }, [stored])
 
   const handleIgnore = async () => {
-    if (!stored) return
+    if (!stored || isIgnoringRun) return
+    setIsIgnoringRun(true)
     try {
       await updateImportRun(stored.id, { ignored: true, readErrors: true })
       navigate('/import/clients')
     } catch {
       // ignore
+    } finally {
+      setIsIgnoringRun(false)
     }
   }
 
@@ -358,17 +364,22 @@ export default function ImportErrors() {
   )
 
   const handleDelete = async () => {
-    if (!stored) return
+    if (!stored || isDeletingRun) return
+    setIsDeletingRun(true)
     try {
       await updateImportRun(stored.id, { ignored: true, readErrors: true })
       setStored(null)
       setAllRuns((prev) => prev.filter((r) => r.id !== stored.id))
     } catch {
       // ignore
+    } finally {
+      setIsDeletingRun(false)
     }
   }
 
   const handleRefresh = async () => {
+    if (isRefreshing) return
+    setIsRefreshing(true)
     try {
       const runs = await fetchImportRuns()
       const latest = runs.find((r: StoredErrors) => !r.ignored)
@@ -377,6 +388,8 @@ export default function ImportErrors() {
       setEditableErrors(latest ? cloneEditableErrors(latest.errors) : [])
     } catch {
       // ignore
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -446,7 +459,7 @@ export default function ImportErrors() {
                 storedErrors={stored}
                 onRefresh={handleRefresh}
                 onDelete={handleDelete}
-                isLoading={isLoading}
+                isLoading={isLoading || isRefreshing || isDeletingRun || isIgnoringRun}
               />
             </div>
           </CardHeader>
@@ -521,14 +534,14 @@ export default function ImportErrors() {
               <div className="mt-4 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
                 <Button
                   onClick={revalidateAndSave}
-                  disabled={isSavingEdits}
+                  disabled={isSavingEdits || isImportingCorrected || isRefreshing || isDeletingRun || isIgnoringRun}
                   className="w-full md:w-auto whitespace-normal text-center"
                 >
                   {isSavingEdits ? 'Validation...' : 'Re‑valider et sauvegarder'}
                 </Button>
                 <Button
                   onClick={importCorrectedRows}
-                  disabled={isImportingCorrected || errorCount > 0}
+                  disabled={isImportingCorrected || errorCount > 0 || isSavingEdits || isRefreshing || isDeletingRun || isIgnoringRun}
                   className="w-full md:w-auto whitespace-normal text-center"
                 >
                   {isImportingCorrected ? 'Import...' : 'Importer les lignes corrigées'}
@@ -536,7 +549,7 @@ export default function ImportErrors() {
                 <Button
                   variant="outline"
                   onClick={() => setEditableErrors(cloneEditableErrors(stored.errors))}
-                  disabled={isSavingEdits}
+                  disabled={isSavingEdits || isImportingCorrected || isRefreshing || isDeletingRun || isIgnoringRun}
                   className="w-full md:w-auto whitespace-normal text-center"
                 >
                   Annuler les modifications
@@ -548,16 +561,27 @@ export default function ImportErrors() {
             </div>
 
             <div className="flex flex-col gap-2 md:flex-row">
-              <Button onClick={handleIgnore} variant="outline" className="w-full md:w-auto whitespace-normal text-center">
-                Marquer comme traité
+              <Button
+                onClick={handleIgnore}
+                variant="outline"
+                disabled={isIgnoringRun || isRefreshing || isDeletingRun}
+                className="w-full md:w-auto whitespace-normal text-center"
+              >
+                {isIgnoringRun ? 'Traitement...' : 'Marquer comme traité'}
               </Button>
-              <Button onClick={() => navigate('/import/clients')} variant="default" className="w-full md:w-auto whitespace-normal text-center">
+              <Button
+                onClick={() => navigate('/import/clients')}
+                variant="default"
+                disabled={isIgnoringRun || isRefreshing || isDeletingRun}
+                className="w-full md:w-auto whitespace-normal text-center"
+              >
                 Nouvel import
               </Button>
               {stored.inserted && stored.inserted.length > 0 && (
                 <Button
                   onClick={() => navigate('/import/success')}
                   variant="secondary"
+                  disabled={isIgnoringRun || isRefreshing || isDeletingRun}
                   className="w-full md:w-auto whitespace-normal text-center"
                 >
                   Voir les importés

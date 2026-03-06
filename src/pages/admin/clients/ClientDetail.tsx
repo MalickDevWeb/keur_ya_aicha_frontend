@@ -308,7 +308,9 @@ export default function ClientDetail() {
                         <Badge className="bg-blue-600">{t(`property.${rental.propertyType}`)}</Badge>
                         <div>
                           <h4 className="font-bold text-lg text-slate-900">{rental.propertyName}</h4>
-                          <p className="text-sm text-slate-600">ID: {rental.id}</p>
+                          <p className="text-sm text-slate-600">
+                            Début: {format(new Date(rental.startDate), 'd MMM yyyy', { locale: dateLocale })}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useElectronAPI } from '@/hooks/useElectronAPI';
 import { getCloudinaryOpenUrl } from '@/services/api/uploads.api';
 import { useToast } from '@/hooks/use-toast';
+import { buildReadableDocumentName, toSafeFileBaseName } from '@/lib/documentDisplay';
 
 // Dynamic import for os module (only available in Node.js/Electron context)
 const getHomeDir = async (): Promise<string> => {
@@ -18,6 +19,7 @@ const getHomeDir = async (): Promise<string> => {
 };
 
 interface Props {
+  open?: boolean;
   document: {
     name?: string;
     url?: string;
@@ -44,16 +46,20 @@ const buildWhatsAppUrl = (phone: string, text: string): string => {
   return `https://wa.me/${phone}?text=${encoded}`
 }
 
-export default function SendDownloadModal({ document: doc, onClose }: Props) {
-  const [generating, setGenerating] = useState(false);
+export default function SendDownloadModal({ open, document: doc, onClose }: Props) {
+  const [actionInProgress, setActionInProgress] = useState<'download' | 'whatsapp' | 'folder' | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const { isElectron, saveDocument, openFolder } = useElectronAPI();
   const { toast } = useToast();
+  const isBusy = actionInProgress !== null;
+  const isDownloading = actionInProgress === 'download';
+  const isSendingWhatsapp = actionInProgress === 'whatsapp';
+  const isOpeningFolder = actionInProgress === 'folder';
 
   useEffect(() => {
     if (!doc) {
       setBlobUrl(null);
-      setGenerating(false);
+      setActionInProgress(null);
     }
     return () => {
       if (blobUrl) {
@@ -64,29 +70,55 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
 
   if (!doc) return null;
 
+  const displayName = buildReadableDocumentName({
+    name: String(doc.name || ''),
+    type: String(doc.type || ''),
+    context: String(doc.clientName || doc.payerName || ''),
+    uploadedAt: doc.uploadedAt as string | number | Date | null | undefined,
+  });
+  const fileName = `${toSafeFileBaseName(displayName)}.pdf`;
+
+  const normalizeFolderSegment = (value: string): string =>
+    value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+  const resolveClientFolderKey = (): string => {
+    const phoneCandidate = normalizeWhatsappPhone(String(doc.clientPhone || doc.payerPhone || ''));
+    if (phoneCandidate) return phoneCandidate;
+
+    const nameCandidateRaw = doc.clientName ?? doc.payerName;
+    const nameCandidate = normalizeFolderSegment(String(nameCandidateRaw || '').trim());
+    return nameCandidate || 'client-inconnu';
+  };
+
   const handleDownload = async () => {
+    if (isBusy) return;
+    setActionInProgress('download');
     try {
       // if original file url exists and not a receipt, download it directly
       if (doc.url && doc.type !== 'receipt') {
         const openUrl = await getCloudinaryOpenUrl(String(doc.url));
         const a = document.createElement('a');
         a.href = openUrl;
-        a.download = doc.name || 'document';
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         a.remove();
         return;
       }
 
-      setGenerating(true);
       const { generatePdfForDocument, downloadBlob } = await import('@/lib/pdfUtils');
       const blob = await generatePdfForDocument(doc);
 
       // Si Electron, sauvegarder dans les dossiers organisés
       if (isElectron) {
         const docType = doc.type === 'receipt' ? 'receipt' : doc.type || 'document';
-        const clientPhone = doc.clientPhone || doc.clientId || 'unknown';
-        const result = await saveDocument(`${doc.name || 'document'}.pdf`, blob, docType, clientPhone);
+        const clientFolder = resolveClientFolderKey();
+        const result = await saveDocument(fileName, blob, docType, clientFolder);
         if (result?.success) {
           toast({
             title: 'Document sauvegardé',
@@ -95,7 +127,7 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
         }
       } else {
         // Fallback: télécharger normalement
-        await downloadBlob(blob, `${doc.name || 'document'}.pdf`);
+        await downloadBlob(blob, fileName);
       }
 
       const url = URL.createObjectURL(blob);
@@ -104,11 +136,12 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       const message = err instanceof Error ? err.message : 'Impossible de générer le PDF.';
       toast({ title: 'Erreur', description: message, variant: 'destructive' });
     } finally {
-      setGenerating(false);
+      setActionInProgress(null);
     }
   };
 
   const handleSendWhatsapp = async () => {
+    if (isBusy) return;
     // Open a blank window synchronously to avoid popup blockers, then navigate it later
     const win = window.open('', '_blank', 'noopener,noreferrer');
     if (win) {
@@ -119,12 +152,11 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       }
     }
     try {
-      setGenerating(true);
+      setActionInProgress('whatsapp');
       const { generatePdfForDocument, shareBlobViaWebShare } = await import('@/lib/pdfUtils');
       const whatsappPhone = normalizeWhatsappPhone(String(doc.clientPhone || doc.payerPhone || ''))
-      let text = `Voici le document ${doc.name || ''}`;
+      let text = `Voici le document ${displayName}`;
       let shareableUrl = '';
-      const fileName = `${doc.name || 'document'}.pdf`;
 
       let blob: Blob | null = null;
       if (doc.url && doc.type !== 'receipt') {
@@ -154,7 +186,7 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       }
 
       if (shareableUrl) {
-        text = `Voici le document ${doc.name || ''} : ${shareableUrl}`;
+        text = `Voici le document ${displayName} : ${shareableUrl}`;
       }
 
       const webUrl = buildWhatsAppUrl(whatsappPhone, text);
@@ -188,11 +220,12 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
         }
       }
     } finally {
-      setGenerating(false);
+      setActionInProgress(null);
     }
   };
 
   const handleOpenFolder = async () => {
+    if (isBusy) return;
     if (!isElectron) {
       toast({
         title: 'Information',
@@ -201,8 +234,9 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
       return;
     }
     try {
+      setActionInProgress('folder');
       const docType = doc.type === 'receipt' ? 'receipt' : doc.type || 'document';
-      const clientPhone = doc.clientPhone || doc.clientId || 'unknown';
+      const clientFolder = resolveClientFolderKey();
 
       const typeMap: Record<string, string> = {
         payment: 'Paiements',
@@ -213,7 +247,7 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
 
       const typeFolderName = typeMap[docType] || docType;
       const homeDir = await getHomeDir();
-      const folderPath = `${homeDir}/Documents/KeurYaAicha_Documents/${typeFolderName}/${clientPhone}`;
+      const folderPath = `${homeDir}/Documents/KeurYaAicha_Documents/${typeFolderName}/${clientFolder}`;
 
       await openFolder(folderPath);
     } catch (err) {
@@ -223,14 +257,16 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
         description: "Erreur lors de l'ouverture du dossier.",
         variant: 'destructive',
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   return (
-    <Dialog open={!!doc} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog open={open ?? !!doc} onOpenChange={(openState) => { if (!openState) onClose(); }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{doc?.name || 'Document'}</DialogTitle>
+          <DialogTitle>{displayName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -248,13 +284,17 @@ export default function SendDownloadModal({ document: doc, onClose }: Props) {
 
         <DialogFooter>
           <div className="flex gap-2 justify-end w-full flex-wrap">
-            <Button variant="outline" onClick={onClose}>Fermer</Button>
+            <Button variant="outline" onClick={onClose} disabled={isBusy}>Fermer</Button>
             {isElectron && (
-              <Button variant="secondary" onClick={handleOpenFolder}>📁 Ouvrir le dossier</Button>
+              <Button variant="secondary" onClick={handleOpenFolder} disabled={isBusy}>
+                {isOpeningFolder ? 'Ouverture...' : '📁 Ouvrir le dossier'}
+              </Button>
             )}
-            <Button variant="outline" onClick={handleDownload} disabled={generating}>{generating ? 'Génération...' : 'Télécharger'}</Button>
-            <Button className="bg-secondary hover:bg-secondary/90" onClick={handleSendWhatsapp} disabled={generating}>
-              Envoyer au client (WhatsApp)
+            <Button variant="outline" onClick={handleDownload} disabled={isBusy}>
+              {isDownloading ? 'Téléchargement...' : 'Télécharger'}
+            </Button>
+            <Button className="bg-secondary hover:bg-secondary/90" onClick={handleSendWhatsapp} disabled={isBusy}>
+              {isSendingWhatsapp ? 'Envoi WhatsApp...' : 'Envoyer au client (WhatsApp)'}
             </Button>
           </div>
         </DialogFooter>

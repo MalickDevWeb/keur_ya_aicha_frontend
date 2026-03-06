@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Loader2 } from 'lucide-react'
 
 type SettingsRuntimeApiSectionProps = {
   isElectron: boolean
@@ -12,6 +13,8 @@ type SettingsRuntimeApiSectionProps = {
   writtenPath: string | null
   isLoading: boolean
   isSaving: boolean
+  isReloading: boolean
+  isOpeningConfigFolder: boolean
   onApiBaseUrlChange: (value: string) => void
   onCloudinarySignUrlChange: (value: string) => void
   onReload: () => void
@@ -41,12 +44,16 @@ export function SettingsRuntimeApiSection({
   writtenPath,
   isLoading,
   isSaving,
+  isReloading,
+  isOpeningConfigFolder,
   onApiBaseUrlChange,
   onCloudinarySignUrlChange,
   onReload,
   onSave,
   onOpenConfigFolder,
 }: SettingsRuntimeApiSectionProps) {
+  const isBusy = isSaving || isLoading || isReloading || isOpeningConfigFolder
+
   return (
     <section className="mt-8 sm:mt-10">
       <h3 className="font-medium">Configuration API (Super Admin)</h3>
@@ -103,15 +110,18 @@ export function SettingsRuntimeApiSection({
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button onClick={onSave} disabled={isSaving || isLoading} className="w-full sm:w-auto">
+          <Button onClick={onSave} disabled={isBusy} className="w-full sm:w-auto">
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
-          <Button variant="outline" onClick={onReload} disabled={isSaving || isLoading} className="w-full sm:w-auto">
-            Recharger
+          <Button variant="outline" onClick={onReload} disabled={isBusy} className="w-full sm:w-auto">
+            {isReloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isReloading ? 'Rechargement...' : 'Recharger'}
           </Button>
           {isElectron && (
-            <Button variant="secondary" onClick={onOpenConfigFolder} className="w-full sm:w-auto">
-              Ouvrir dossier config
+            <Button variant="secondary" onClick={onOpenConfigFolder} disabled={isBusy} className="w-full sm:w-auto">
+              {isOpeningConfigFolder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isOpeningConfigFolder ? 'Ouverture...' : 'Ouvrir dossier config'}
             </Button>
           )}
         </div>
