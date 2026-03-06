@@ -70,34 +70,67 @@ export function FileUploadCard({
           </p>
         </div>
 
-        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 space-y-3 text-sm">
+        <div className="overflow-hidden rounded-lg border border-blue-100 bg-blue-50 p-3 space-y-3 text-sm">
           <p className="font-medium text-blue-900">Guide rapide pour l’admin</p>
-          <p className="text-blue-900/90">
+          <p className="break-words text-blue-900/90 leading-relaxed">
             Formats acceptés: Excel <strong>.xlsx</strong>, CSV <strong>.csv</strong>, JSON <strong>.json</strong>.
             L’ordre des colonnes est libre grâce au mapping.
           </p>
-          <div className="space-y-1 rounded-md bg-white/70 p-3">
-            <p className="text-blue-900/90">
-              <strong>Champs obligatoires:</strong> {requiredFields.join(', ') || 'Aucun'}
-            </p>
-            <p className="text-blue-900/90">
-              <strong>Champs optionnels:</strong> {optionalFields.join(', ') || 'Aucun'}
-            </p>
+          <div className="space-y-2 rounded-md bg-white/70 p-3">
+            <div>
+              <p className="text-blue-900/90 font-medium">Champs obligatoires</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(requiredFields.length > 0 ? requiredFields : ['Aucun']).map((field) => (
+                  <span
+                    key={`required-${field}`}
+                    className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-900"
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-blue-900/90 font-medium">Champs optionnels</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(optionalFields.length > 0 ? optionalFields : ['Aucun']).map((field) => (
+                  <span
+                    key={`optional-${field}`}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <div className="rounded-md border border-blue-200 bg-white/80 p-2">
               <p className="font-medium text-blue-900">Format des données</p>
-              <ul className="mt-1 list-disc space-y-1 pl-4 text-blue-900/90">
-                <li>Téléphone: <code>+221771234567</code> ou <code>771234567</code></li>
-                <li>CNI: 13 chiffres, exemple <code>1234567890123</code></li>
-                <li>Date: <code>YYYY-MM-DD</code> conseillé, exemple <code>2026-03-01</code></li>
-                <li>Montants: nombres simples, exemple <code>150000</code></li>
-                <li>Statut: <code>active</code>, <code>archived</code> ou <code>blacklisted</code></li>
+              <ul className="mt-1 list-disc space-y-2 pl-4 text-blue-900/90">
+                <li className="break-words">
+                  <strong>Téléphone:</strong>{' '}
+                  <code className="break-all">+221771234567</code> ou <code className="break-all">771234567</code>
+                </li>
+                <li className="break-words">
+                  <strong>CNI:</strong> 13 chiffres, exemple <code className="break-all">1234567890123</code>
+                </li>
+                <li className="break-words">
+                  <strong>Date:</strong> <code className="break-all">YYYY-MM-DD</code>, exemple{' '}
+                  <code className="break-all">2026-03-01</code>
+                </li>
+                <li className="break-words">
+                  <strong>Montants:</strong> nombres simples, exemple <code className="break-all">150000</code>
+                </li>
+                <li className="break-words">
+                  <strong>Statut:</strong> <code className="break-all">active</code>,{' '}
+                  <code className="break-all">archived</code> ou <code className="break-all">blacklisted</code>
+                </li>
               </ul>
             </div>
             <div className="rounded-md border border-blue-200 bg-white/80 p-2">
               <p className="font-medium text-blue-900">Étapes simples</p>
-              <ol className="mt-1 list-decimal space-y-1 pl-4 text-blue-900/90">
+              <ol className="mt-1 list-decimal space-y-2 pl-4 text-blue-900/90">
                 <li>Chargez le fichier Excel, CSV ou JSON.</li>
                 <li>Associez les colonnes obligatoires dans “Mapping”.</li>
                 <li>Analysez les erreurs puis importez les lignes valides.</li>
@@ -107,14 +140,14 @@ export function FileUploadCard({
 
           <details className="rounded-md border border-blue-200 bg-white/80 p-2">
             <summary className="cursor-pointer font-medium text-blue-900">Exemple CSV</summary>
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-slate-900 p-2 text-xs text-slate-100">
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded bg-slate-900 p-2 text-xs text-slate-100">
               {CSV_SAMPLE}
             </pre>
           </details>
 
           <details className="rounded-md border border-blue-200 bg-white/80 p-2">
             <summary className="cursor-pointer font-medium text-blue-900">Exemple JSON</summary>
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-slate-900 p-2 text-xs text-slate-100">
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded bg-slate-900 p-2 text-xs text-slate-100">
               {JSON_SAMPLE}
             </pre>
           </details>

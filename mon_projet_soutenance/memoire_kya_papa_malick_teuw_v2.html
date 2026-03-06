@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Memoire KYA V2 - Papa Malick Teuw</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 2.2cm 2cm 2.2cm 2.2cm;
+    }
+
+    body {
+      font-family: "Liberation Serif", "Times New Roman", serif;
+      font-size: 12pt;
+      line-height: 1.58;
+      color: #111827;
+    }
+
+    h1, h2, h3, h4 {
+      color: #102b55;
+      page-break-after: avoid;
+      margin-bottom: 0.18cm;
+    }
+
+    h1 {
+      font-size: 21pt;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 0.55cm;
+    }
+
+    h2 {
+      font-size: 16pt;
+      margin-top: 0.6cm;
+    }
+
+    h3 {
+      font-size: 13pt;
+      margin-top: 0.42cm;
+    }
+
+    p {
+      text-align: justify;
+      margin: 0 0 0.26cm 0;
+    }
+
+    ul, ol {
+      margin-top: 0.12cm;
+      margin-bottom: 0.26cm;
+    }
+
+    li {
+      margin-bottom: 0.1cm;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .cover {
+      text-align: center;
+      padding-top: 0.2cm;
+    }
+
+    .cover .head {
+      font-size: 11pt;
+      font-weight: bold;
+      letter-spacing: 0.02em;
+    }
+
+    .cover .institution {
+      margin-top: 0.45cm;
+      font-size: 16pt;
+      font-weight: bold;
+    }
+
+    .cover .program {
+      font-size: 12pt;
+      margin-top: 0.2cm;
+    }
+
+    .cover .logo {
+      margin: 0.9cm auto 0.6cm auto;
+      width: 5.6cm;
+      display: block;
+    }
+
+    .cover .memory-type {
+      margin-top: 0.4cm;
+      font-size: 15pt;
+      font-weight: bold;
+    }
+
+    .cover .theme {
+      margin: 1.2cm auto 0.9cm auto;
+      font-size: 18pt;
+      line-height: 1.4;
+      font-weight: bold;
+      color: #0f2d57;
+      max-width: 15cm;
+    }
+
+    .cover table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.7cm;
+    }
+
+    .cover td {
+      width: 50%;
+      vertical-align: top;
+      padding: 0.24cm;
+      text-align: left;
+      border: 1px solid #d0d9eb;
+      background: #f7faff;
+    }
+
+    .cover .footer {
+      margin-top: 1.5cm;
+      font-weight: bold;
+      font-size: 12pt;
+    }
+
+    .section-title {
+      text-align: center;
+      color: #0f2d57;
+      font-size: 17pt;
+      font-weight: bold;
+      margin-bottom: 0.5cm;
+    }
+
+    .toc ul {
+      list-style: none;
+      padding-left: 0;
+      margin-left: 0;
+    }
+
+    .toc li {
+      margin-bottom: 0.14cm;
+    }
+
+    table.standard {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.25cm 0 0.45cm 0;
+    }
+
+    table.standard th,
+    table.standard td {
+      border: 1px solid #69768d;
+      padding: 0.18cm;
+      vertical-align: top;
+    }
+
+    table.standard th {
+      background: #ebf1fb;
+      color: #102b55;
+      text-align: left;
+    }
+
+    .figure {
+      text-align: center;
+      margin: 0.45cm 0 0.55cm 0;
+      page-break-inside: avoid;
+    }
+
+    .figure img {
+      max-width: 100%;
+      border: 1px solid #cad4e4;
+      padding: 0.12cm;
+      background: #fff;
+    }
+
+    .figure .caption {
+      font-size: 10.5pt;
+      margin-top: 0.18cm;
+      color: #334155;
+      font-style: italic;
+    }
+
+    .info-box {
+      border: 1px solid #7b8da8;
+      background: #f8fbff;
+      padding: 0.36cm;
+      margin: 0.32cm 0;
+    }
+
+    .quote {
+      margin-top: 0.7cm;
+      font-style: italic;
+      text-align: center;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="head">REPUBLIQUE DU SENEGAL</div>
+    <div class="head">UN PEUPLE - UN BUT - UNE FOI</div>
+
+    <div class="institution">ORANGE DIGITAL CENTER</div>
+    <div class="program">Formation certifiante en Developpement Full Stack / Web / Mobile</div>
+
+    <img class="logo" src="../public/logo.png" alt="Logo KYA" />
+
+    <div class="memory-type">Memoire de fin de cycle</div>
+    <div>pour l'obtention du certificat de specialisation</div>
+
+    <div class="theme">
+      Conception et realisation d'une plateforme de gestion locative multi-roles :
+      <br />
+      cas de KYA (Keur Ya Aicha)
+    </div>
+
+    <table>
+      <tr>
+        <td>
+          <strong>Presente par :</strong><br />
+          Papa Malick Teuw<br />
+          Telephone : 77 171 90 13<br />
+          Email : malickteuw.devweb@gmail.com
+        </td>
+        <td>
+          <strong>Encadrant academique :</strong><br />
+          M. Birane Bailla Wone<br />
+          Coach developpeur
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Etablissement :</strong><br />
+          Orange Digital Center
+        </td>
+        <td>
+          <strong>Nature du projet :</strong><br />
+          Projet personnel de fin d'etudes
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Specialite :</strong><br />
+          Developpement Full Stack / Web / Mobile
+        </td>
+        <td>
+          <strong>Duree :</strong><br />
+          21 jours
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Ville / Pays :</strong><br />
+          Thies, Senegal
+        </td>
+        <td>
+          <strong>Annee academique :</strong><br />
+          2025-2026
+        </td>
+      </tr>
+    </table>
+
+    <div class="quote">
+      "Concevoir une solution utile, fiable et lisible est une maniere concrete de transformer
+      un besoin metier en valeur."
+    </div>
+
+    <div class="footer">Orange Digital Center - Annee academique 2025-2026</div>
+  </section>
+
+  <section class="page-break">
+    <div class="section-title">Dedicace</div>
+    <p>
+      Je dedie ce memoire a mes parents pour leur amour, leurs sacrifices et leur soutien constant.
+      Leur confiance a toujours ete un moteur essentiel dans mon parcours de formation et dans
+      la realisation de ce projet.
+    </p>
+    <p>
+      Je le dedie egalement a ma famille, a mes proches, a mes amis et a mes camarades de
+      formation pour leurs encouragements, leur presence et leur appui moral. Chacun d'eux
+      a contribue, d'une maniere ou d'une autre, a renforcer ma determination.
+    </p>
+    <p>
+      Enfin, je dedie ce travail a toutes les personnes qui croient en l'apport du numerique
+      dans l'amelioration des activites de gestion et dans la resolution de problemes concrets.
+    </p>
+  </section>
+
+  <section class="page-break">
+    <div class="section-title">Remerciements</div>
+    <p>
+      Je tiens a exprimer ma profonde gratitude a toutes les personnes qui ont contribue a la
+      realisation de ce memoire et au developpement du projet KYA.
+    </p>
+    <p>
+      Mes remerciements s'adressent en premier lieu a Orange Digital Center pour la qualite de
+      la formation dispensee, le cadre de travail et l'accompagnement pedagogique recu tout au
+      long du cycle. Cette experience m'a permis de consolider mes acquis techniques et de
+      developper une approche plus rigoureuse de la conception logicielle.
+    </p>
+    <p>
+      J'adresse egalement mes sinceres remerciements a mon encadrant academique,
+      M. Birane Bailla Wone, pour ses conseils, sa disponibilite et ses orientations
+      methodologiques. Ses retours m'ont permis d'ameliorer la coherence, la structure
+      et la qualite globale de ce travail.
+    </p>
+    <p>
+      Je remercie aussi l'ensemble des formateurs, de mes camarades et de toutes les personnes
+      qui m'ont soutenu, encourage et accompagne dans ce parcours. Enfin, je remercie tout
+      particulierement ma famille pour sa patience, sa confiance et son soutien permanent.
+    </p>
+  </section>
+
+  <section class="page-break">
+    <div class="section-title">Resume</div>
+    <p>
+      Dans un environnement locatif, la gestion des informations relatives aux clients, aux biens,
+      aux paiements, aux depots et aux documents demeure souvent fragmentee. Cette dispersion
+      rend le suivi plus difficile, augmente les risques d'erreurs et complique la prise de decision.
+      Afin de repondre a cette problematique, ce memoire presente la conception et la realisation
+      de KYA (Keur Ya Aicha), une plateforme de gestion locative multi-roles.
+    </p>
+    <p>
+      La solution proposee centralise les operations essentielles de gestion locative autour de deux
+      niveaux principaux d'administration : le super administrateur et l'administrateur. Elle integre
+      la gestion des clients, entreprises, locations, paiements, depots et documents, tout en
+      ajoutant des mecanismes de validation, de securite, d'audit et d'importation Excel avec
+      controle anti-duplication.
+    </p>
+    <p>
+      Ce memoire presente le contexte du projet, les besoins identifies, la methodologie adoptee,
+      les choix techniques, la conception fonctionnelle et technique, ainsi que les resultats obtenus.
+      Il met en evidence l'apport d'une solution moderne, ergonomique et securisee pour optimiser
+      la gestion locative et renforcer la tracabilite des operations.
+    </p>
+
+    <div class="section-title" style="margin-top:0.9cm;">Abstract</div>
+    <p>
+      In rental management environments, data related to clients, properties, payments,
+      deposits and documents is often scattered across multiple tools. This fragmentation makes
+      monitoring more difficult, increases the risk of errors and weakens decision-making.
+      To address this issue, this report presents the design and implementation of KYA
+      (Keur Ya Aicha), a multi-role rental management platform.
+    </p>
+    <p>
+      The proposed solution centralizes core rental operations around two main administrative
+      levels: super administrator and administrator. It integrates client, company, rental,
+      payment, deposit and document management while adding validation, security, audit
+      and Excel import with anti-duplication rules.
+    </p>
+    <p>
+      This report describes the project context, identified needs, adopted methodology,
+      technical choices, functional and technical design, and the results obtained. It highlights
+      the value of a modern, ergonomic and secure platform for improving rental management
+      and strengthening operational traceability.
+    </p>
+  </section>
+
+  <section class="page-break">
+    <div class="section-title">Glossaire</div>
+    <p><strong>API</strong> : interface permettant la communication entre plusieurs applications.</p>
+    <p><strong>Audit</strong> : journal des actions effectuees dans le systeme.</p>
+    <p><strong>CRUD</strong> : creation, lecture, mise a jour et suppression des donnees.</p>
+    <p><strong>ExcelJS</strong> : bibliotheque permettant la lecture et l'ecriture de fichiers Excel.</p>
+    <p><strong>KYA</strong> : Keur Ya Aicha, plateforme de gestion locative et administrative.</p>
+    <p><strong>ODC</strong> : Orange Digital Center.</p>
+    <p><strong>Prisma</strong> : ORM et outil de modelisation de base de donnees.</p>
+    <p><strong>RBAC</strong> : controle d'acces base sur les roles.</p>
+    <p><strong>TOTP</strong> : mot de passe a usage unique base sur le temps.</p>
+    <p><strong>UML</strong> : langage de modelisation unifie.</p>
+  </section>
+
+  <section class="page-break toc">
+    <div class="section-title">Table des figures</div>
+    <ul>
+      <li>Figure 1 : Identite visuelle du projet KYA</li>
+      <li>Figure 2 : Diagramme de contexte fonctionnel de l'application KYA</li>
+      <li>Figure 3 : Diagramme synthetique des cas d'utilisation par acteur</li>
+    </ul>
+
+    <div class="section-title" style="margin-top:1cm;">Table des tableaux</div>
+    <ul>
+      <li>Tableau 1 : Fiche signaletique du projet</li>
+      <li>Tableau 2 : Repartition des roles et responsabilites</li>
+      <li>Tableau 3 : Technologies principales utilisees</li>
+      <li>Tableau 4 : Correspondance besoins / reponses fonctionnelles</li>
+    </ul>
+
+    <div class="section-title" style="margin-top:1cm;">Sommaire</div>
+    <ul>
+      <li>Introduction</li>
+      <li>I. Presentation du cadre de formation et du projet</li>
+      <li>II. Presentation du sujet, problematique et objectifs</li>
+      <li>III. Methodologie et environnement technique</li>
+      <li>IV. Analyse et conception de la solution</li>
+      <li>V. Realisation, validation et resultats</li>
+      <li>Conclusion generale</li>
+      <li>Perspectives</li>
+      <li>Webographie</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h1>Introduction</h1>
+    <p>
+      Le secteur de la gestion locative exige une organisation rigoureuse des informations liees
+      aux clients, aux biens, aux paiements, aux depots et aux pieces justificatives. Lorsque ces
+      donnees sont gerees de maniere dispersee, les operations deviennent plus lentes, la
+      verification plus complexe et la tracabilite plus faible.
+    </p>
+    <p>
+      Dans ce contexte, le projet KYA (Keur Ya Aicha) a ete pense comme une solution de
+      centralisation et de pilotage des activites locatives. Il a pour ambition de proposer une
+      plateforme moderne, multi-roles et securisee, capable de structurer les responsabilites,
+      de fiabiliser les traitements et d'ameliorer la lisibilite des operations.
+    </p>
+    <p>
+      Au-dela des fonctionnalites classiques de gestion, le projet introduit des elements a forte
+      valeur ajoutee tels que l'import Excel avec validation, les regles anti-duplication, l'audit
+      des actions, l'impersonation controlee du super administrateur et des interfaces
+      ergonomiques adaptees au suivi quotidien.
+    </p>
+    <p>
+      Ce memoire presente le cadre du projet, les besoins identifies, la demarche adoptee,
+      la conception de la solution, la phase de realisation ainsi que les resultats obtenus.
+    </p>
+  </section>
+
+  <section class="page-break">
+    <h1>I. Presentation du cadre de formation et du projet</h1>
+
+    <h2>I.1. Presentation de l'etablissement</h2>
+    <p>
+      Orange Digital Center constitue un cadre de formation et d'innovation numerique qui favorise
+      l'apprentissage par la pratique, l'experimentation et la realisation de projets concrets.
+      Dans le cadre de la specialite Developpement Full Stack / Web / Mobile, la formation met
+      l'accent sur la maitrise des technologies modernes, la resolution de problemes reels et
+      l'adoption de bonnes pratiques de conception et de developpement.
+    </p>
+
+    <h2>I.2. Fiche signaletique du projet</h2>
+    <table class="standard">
+      <tr>
+        <th>Element</th>
+        <th>Information</th>
+      </tr>
+      <tr>
+        <td>Nom du projet</td>
+        <td>KYA (Keur Ya Aicha)</td>
+      </tr>
+      <tr>
+        <td>Type de solution</td>
+        <td>Plateforme de gestion locative multi-roles</td>
+      </tr>
+      <tr>
+        <td>Objectif principal</td>
+        <td>Centraliser la gestion des clients, locations, paiements, depots et documents avec un controle multi-niveaux</td>
+      </tr>
+      <tr>
+        <td>Cadre de realisation</td>
+        <td>Projet personnel de fin d'etudes</td>
+      </tr>
+      <tr>
+        <td>Duree</td>
+        <td>21 jours</td>
+      </tr>
+      <tr>
+        <td>Localisation</td>
+        <td>Thies, Senegal</td>
+      </tr>
+      <tr>
+        <td>Porteur du projet</td>
+        <td>Papa Malick Teuw</td>
+      </tr>
+    </table>
+
+    <h2>I.3. Contexte du projet</h2>
+    <p>
+      Dans la gestion locative, les operations quotidiennes mobilisent plusieurs informations
+      critiques : identite des clients, entreprises rattachees, details des locations, paiements
+      effectues, depots de garantie, documents contractuels et preuves administratives. Lorsque
+      ces elements sont traites dans des outils separes ou de maniere peu structuree, la gestion
+      devient plus difficile, moins fiable et plus difficilement auditable.
+    </p>
+    <p>
+      KYA a ete concu pour repondre a ce besoin de centralisation et d'organisation. La plateforme
+      vise a offrir une experience de gestion claire, avec un controle strict des acces et une
+      meilleure visibilite sur les operations locatives.
+    </p>
+
+    <div class="figure">
+      <img src="../public/logo.png" alt="Logo KYA" style="width:5.5cm;" />
+      <div class="caption">Figure 1 : Identite visuelle du projet KYA</div>
+    </div>
+  </section>
+
+  <section class="page-break">
+    <h1>II. Presentation du sujet, problematique et objectifs</h1>
+
+    <h2>II.1. Presentation du sujet</h2>
+    <p>
+      Le sujet de ce memoire porte sur la conception et la realisation d'une plateforme de gestion
+      locative multi-roles capable de fournir une solution complete pour gerer les clients,
+      locations, paiements, depots et documents, avec un controle multi-niveaux et une interface
+      moderne.
+    </p>
+
+    <h2>II.2. Problematique</h2>
+    <p>
+      Plusieurs structures rencontrent des difficultes a suivre de maniere rigoureuse l'ensemble
+      de leurs operations locatives. Les donnees peuvent etre dupliquees, eparpillees ou
+      insuffisamment securisees. De plus, lorsque les niveaux de responsabilite ne sont pas
+      clairement separes, le risque d'erreur de manipulation et de perte de controle augmente.
+    </p>
+    <p>
+      La question centrale du projet est donc la suivante : comment mettre en place une plateforme
+      de gestion locative moderne, multi-roles, fiable et ergonomique permettant de centraliser
+      les operations, de limiter les erreurs et de renforcer la tracabilite des actions ?
+    </p>
+
+    <h2>II.3. Objectif general</h2>
+    <p>
+      L'objectif general est de proposer une solution complete de gestion locative permettant
+      aux administrateurs et super administrateurs de suivre efficacement les clients, locations,
+      paiements, depots et documents, tout en s'appuyant sur des regles de controle, de validation
+      et de securite.
+    </p>
+
+    <h2>II.4. Objectifs specifiques</h2>
+    <ul>
+      <li>mettre en place une gestion multi-roles claire et securisee ;</li>
+      <li>gerer les demandes d'administration et la supervision globale ;</li>
+      <li>assurer la gestion complete des clients, entreprises et locations ;</li>
+      <li>suivre les paiements, depots et documents associes ;</li>
+      <li>integrer l'importation de donnees via Excel avec validation et anti-duplication ;</li>
+      <li>renforcer la tracabilite via l'audit et l'historique des actions ;</li>
+      <li>offrir une interface moderne avec des cartes, filtres et vues personnalisables.</li>
+    </ul>
+
+    <h2>II.5. Benefices attendus</h2>
+    <ul>
+      <li>faciliter la gestion locative pour les administrateurs et super administrateurs ;</li>
+      <li>permettre un suivi precis et auditable des locations et paiements ;</li>
+      <li>reduire les erreurs et les doublons lors de la gestion des donnees ;</li>
+      <li>moderniser l'experience utilisateur grace a des interfaces interactives.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h1>III. Methodologie et environnement technique</h1>
+
+    <h2>III.1. Demarche adoptee</h2>
+    <p>
+      Etant donne la duree relativement courte du projet, une demarche iterative et incrementale
+      a ete retenue. Cette approche a permis de traiter d'abord le coeur metier, puis d'ajouter
+      progressivement les modules de controle, d'ergonomie et de securite.
+    </p>
+    <ol>
+      <li>analyse des besoins et cadrage fonctionnel ;</li>
+      <li>identification des roles et des regles metier ;</li>
+      <li>modelisation du systeme et des donnees ;</li>
+      <li>realisation des interfaces et des services ;</li>
+      <li>validation technique et verification des scenarios prioritaires.</li>
+    </ol>
+
+    <h2>III.2. Repartition des roles et responsabilites</h2>
+    <table class="standard">
+      <tr>
+        <th>Acteur</th>
+        <th>Responsabilites principales</th>
+      </tr>
+      <tr>
+        <td>Super Admin</td>
+        <td>Approuve les demandes admin, gere les entreprises, active ou desactive les comptes, securise la plateforme et peut impersonner un administrateur.</td>
+      </tr>
+      <tr>
+        <td>Admin</td>
+        <td>Gere ses clients, ses locations, ses paiements, ses depots et ses documents dans son propre perimetre.</td>
+      </tr>
+      <tr>
+        <td>OPS / Support</td>
+        <td>Consulte les journaux, suit les incidents et accompagne l'exploitation des donnees.</td>
+      </tr>
+      <tr>
+        <td>Systeme de paiement</td>
+        <td>Transmet les confirmations et webhooks lies a certains paiements.</td>
+      </tr>
+    </table>
+
+    <h2>III.3. Technologies principales</h2>
+    <table class="standard">
+      <tr>
+        <th>Composant</th>
+        <th>Technologies</th>
+        <th>Contribution au projet</th>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td>React, TypeScript, Vite</td>
+        <td>Construction d'une interface moderne, rapide et modulaire</td>
+      </tr>
+      <tr>
+        <td>UI / Design system</td>
+        <td>Tailwind CSS, shadcn/ui, Radix UI</td>
+        <td>Creation de composants ergonomiques et coherents</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td>Node.js, Next.js backend, services metier</td>
+        <td>Organisation des traitements, regles metier et API</td>
+      </tr>
+      <tr>
+        <td>Base de donnees</td>
+        <td>PostgreSQL, Prisma</td>
+        <td>Persistance structuree et integrite des donnees</td>
+      </tr>
+      <tr>
+        <td>Validation</td>
+        <td>Zod, React Hook Form</td>
+        <td>Controle des formulaires et des entrees</td>
+      </tr>
+      <tr>
+        <td>Importation</td>
+        <td>ExcelJS</td>
+        <td>Lecture de fichiers Excel et controle anti-duplication</td>
+      </tr>
+      <tr>
+        <td>Application bureau</td>
+        <td>Electron</td>
+        <td>Execution de la solution sur poste desktop</td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="page-break">
+    <h1>IV. Analyse et conception de la solution</h1>
+
+    <h2>IV.1. Analyse fonctionnelle</h2>
+    <p>
+      L'analyse fonctionnelle du projet a permis de structurer le systeme autour de plusieurs
+      modules : la gestion des comptes, la gestion locative, la gestion documentaire, la securite,
+      l'importation de donnees et la supervision globale. Le principe directeur a ete de separer
+      clairement les droits du super administrateur et ceux de l'administrateur.
+    </p>
+
+    <h2>IV.2. Correspondance besoins / reponses fonctionnelles</h2>
+    <table class="standard">
+      <tr>
+        <th>Besoin identifie</th>
+        <th>Reponse apportee par KYA</th>
+      </tr>
+      <tr>
+        <td>Centraliser les donnees locatives</td>
+        <td>Regroupement des clients, locations, paiements, depots et documents dans une plateforme unique</td>
+      </tr>
+      <tr>
+        <td>Distinguer les niveaux de responsabilite</td>
+        <td>Gestion multi-roles avec separation nette entre super admin et admin</td>
+      </tr>
+      <tr>
+        <td>Eviter les erreurs et doublons</td>
+        <td>Validation des formulaires et regles anti-duplication lors des imports</td>
+      </tr>
+      <tr>
+        <td>Tracer les operations sensibles</td>
+        <td>Historique, audit logs et controle des actions</td>
+      </tr>
+      <tr>
+        <td>Ameliorer l'usage quotidien</td>
+        <td>Filtres, cartes, tableaux et vues personnalisables</td>
+      </tr>
+    </table>
+
+    <h2>IV.3. Diagramme de contexte</h2>
+    <p>
+      Le diagramme de contexte met en evidence les differents acteurs internes et externes qui
+      interagissent avec l'application KYA. Il montre la place centrale du systeme dans
+      l'orchestration des flux metier, des acces documentaires et des interactions de paiement.
+    </p>
+    <div class="figure">
+      <img src="../contexe.png" alt="Diagramme de contexte KYA" style="width:12.5cm;" />
+      <div class="caption">Figure 2 : Diagramme de contexte fonctionnel de l'application KYA</div>
+    </div>
+
+    <h2>IV.4. Cas d'utilisation par acteur</h2>
+    <p>
+      La plateforme a ete organisee autour de cas d'utilisation correspondant aux besoins reels
+      des differents profils. Le super administrateur dispose d'un role de gouvernance, de
+      supervision et de securisation. L'administrateur porte le coeur des operations locatives.
+    </p>
+    <div class="figure">
+      <img src="../Untitled-3.png" alt="Diagramme des cas d'utilisation KYA" style="width:10.4cm;" />
+      <div class="caption">Figure 3 : Diagramme synthetique des cas d'utilisation par acteur</div>
+    </div>
+
+    <h2>IV.5. Conception technique</h2>
+    <p>
+      La conception technique de KYA s'appuie sur une architecture modulaire, avec une
+      separation entre l'interface utilisateur, les services metier, la couche de validation,
+      les mecanismes de securite et la persistance des donnees. Cette structuration facilite
+      l'evolution du code, la maintenance et le renforcement progressif des regles metier.
+    </p>
+    <p>
+      Le backend met en avant des concepts tels que la supervision globale, la validation des
+      demandes admin, les paiements d'abonnement, l'audit des operations, le blocage d'IP,
+      la seconde authentification et la gestion evenementielle des notifications.
+    </p>
+  </section>
+
+  <section class="page-break">
+    <h1>V. Realisation, validation et resultats</h1>
+
+    <h2>V.1. Modules effectivement valorises</h2>
+    <ol>
+      <li>Gestion des demandes admin et validation par le super administrateur</li>
+      <li>Gestion multi-roles et impersonation controlee</li>
+      <li>Gestion des clients et des entreprises</li>
+      <li>Gestion des locations et des depots</li>
+      <li>Gestion des paiements et des documents</li>
+      <li>Importation Excel avec validation des champs</li>
+      <li>Regles anti-duplication</li>
+      <li>Audit et historisation des actions</li>
+      <li>Filtres avances et vues ergonomiques</li>
+      <li>Notifications et supervision des operations sensibles</li>
+    </ol>
+
+    <h2>V.2. Realisation de l'interface</h2>
+    <p>
+      L'interface a ete orientee vers la lisibilite et la rapidite d'execution. L'utilisateur peut
+      naviguer dans des tableaux, cartes et vues personnalisees afin d'acceder rapidement aux
+      informations essentielles. Cette approche contribue a moderniser l'experience utilisateur
+      tout en gardant une logique de travail metier claire.
+    </p>
+
+    <h2>V.3. Realisation du coeur metier</h2>
+    <p>
+      Le coeur metier du projet couvre la gestion des clients, locations, paiements, depots
+      et documents. Chaque module a ete pense pour fonctionner de maniere coherente avec les
+      autres, afin de fournir un suivi locatif complet et exploitable dans un seul environnement.
+    </p>
+
+    <h2>V.4. Importation et controle de la qualite des donnees</h2>
+    <p>
+      L'import Excel constitue un gain operationnel majeur. Il permet d'inserer rapidement des
+      donnees dans le systeme tout en appliquant des validations sur les champs obligatoires
+      et des regles anti-duplication. Cette fonctionnalite renforce la fiabilite de la base de
+      donnees et limite les erreurs liees a une saisie manuelle repetitive.
+    </p>
+
+    <h2>V.5. Audit, securite et gouvernance</h2>
+    <p>
+      Le projet integre des mecanismes de securite et de controle pour fiabiliser les operations.
+      Parmi les elements notables figurent l'audit des actions, le controle des droits, la seconde
+      authentification pour certaines operations sensibles, la supervision par le super
+      administrateur et les validations destinees a eviter les incoherences de gestion.
+    </p>
+
+    <h2>V.6. Resultats obtenus</h2>
+    <ul>
+      <li>mise en place d'une base fonctionnelle de gestion locative multi-roles ;</li>
+      <li>amelioration de la centralisation des informations metier ;</li>
+      <li>meilleur suivi des paiements, depots et documents ;</li>
+      <li>renforcement de la tracabilite et de la supervision ;</li>
+      <li>experience utilisateur plus moderne grace a des filtres et vues adaptees ;</li>
+      <li>meilleure prevention des erreurs et doublons via la validation et l'import controle.</li>
+    </ul>
+
+    <h2>V.7. Valeur ajoutee du projet</h2>
+    <p>
+      KYA ne se limite pas a une simple interface de saisie. Le projet apporte une structure
+      decisionnelle et organisationnelle a la gestion locative, avec un pilotage plus clair
+      des droits, des operations et des controles. Il constitue ainsi une base serieuse pour une
+      plateforme evolutive orientee vers un usage professionnel.
+    </p>
+  </section>
+
+  <section class="page-break">
+    <h1>Conclusion generale</h1>
+    <p>
+      Ce memoire a permis de presenter la conception et la realisation de KYA, une plateforme
+      de gestion locative multi-roles developpee dans le cadre d'un projet personnel de fin
+      d'etudes. Le travail realise a montre qu'il est possible de structurer un besoin metier
+      concret autour d'une solution moderne, securisee et progressive.
+    </p>
+    <p>
+      La plateforme repond a plusieurs enjeux essentiels : centralisation des informations,
+      separation des responsabilites, reduction des erreurs, tracabilite des operations et
+      amelioration de l'experience utilisateur. Elle represente une base solide pour un outil
+      de gestion locative capable d'evoluer vers un niveau plus avance d'industrialisation.
+    </p>
+    <p>
+      Sur le plan personnel, ce projet a renforce mes competences en analyse de besoins,
+      modelisation, developpement full stack, structuration de regles metier, integration de
+      services et verification de coherence globale. Il constitue ainsi une etape importante
+      dans mon parcours academique et professionnel.
+    </p>
+
+    <h2>Perspectives</h2>
+    <ul>
+      <li>integrer un systeme complet de notifications multi-canaux ;</li>
+      <li>ajouter des tableaux de bord analytiques plus pousses ;</li>
+      <li>developper une experience mobile dediee ;</li>
+      <li>renforcer la signature electronique et l'archivage documentaire ;</li>
+      <li>etendre la gestion des paiements avec davantage d'automatisation.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h1>Webographie</h1>
+    <ol>
+      <li>Documentation interne du projet KYA, dossier <strong>docs/</strong>.</li>
+      <li>Documentation backend KYA, dossier <strong>backend/</strong>.</li>
+      <li>React Documentation : <strong>https://react.dev</strong></li>
+      <li>TypeScript Documentation : <strong>https://www.typescriptlang.org</strong></li>
+      <li>Vite Documentation : <strong>https://vite.dev</strong></li>
+      <li>Tailwind CSS Documentation : <strong>https://tailwindcss.com</strong></li>
+      <li>Next.js Documentation : <strong>https://nextjs.org</strong></li>
+      <li>Prisma Documentation : <strong>https://www.prisma.io</strong></li>
+      <li>PostgreSQL Documentation : <strong>https://www.postgresql.org</strong></li>
+      <li>Electron Documentation : <strong>https://www.electronjs.org</strong></li>
+      <li>Zod Documentation : <strong>https://zod.dev</strong></li>
+      <li>ExcelJS Repository : <strong>https://github.com/exceljs/exceljs</strong></li>
+    </ol>
+  </section>
+</body>
+</html>

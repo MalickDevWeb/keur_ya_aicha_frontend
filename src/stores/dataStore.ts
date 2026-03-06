@@ -55,7 +55,8 @@ export interface DataState {
   addClient: (
     client: Omit<Client, 'id' | 'createdAt' | 'rentals'> & {
       rental?: Omit<Rental, 'id' | 'clientId' | 'payments' | 'documents'>
-    }
+    },
+    options?: { refreshAfterSave?: boolean }
   ) => Promise<Client>
   updateClient: (id: string, data: Partial<Client>) => Promise<void>
   archiveClient: (id: string) => Promise<void>
@@ -142,9 +143,10 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   // Add new client
-  addClient: async (clientData) => {
+  addClient: async (clientData, options) => {
     try {
       set({ error: null })
+      const shouldRefreshAfterSave = options?.refreshAfterSave !== false
       const ctx = await getAuthContext()
       const activeAdminId =
         ctx?.impersonation?.adminId ||
@@ -241,7 +243,11 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       try {
         await createClient(createPayload)
-        await get().fetchClients()
+        if (shouldRefreshAfterSave) {
+          await get().fetchClients()
+        } else {
+          applyClientOptimistically()
+        }
       } catch (error) {
         if (!isLikelyNetworkError(error)) {
           throw error

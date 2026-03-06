@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,12 +16,18 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   CLIENT_IMPORT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
-  hasRentalData,
   validateRow,
   type ClientImportMapping,
   type ClientImportRow,
 } from '@/lib/importClients'
-import { buildDuplicateLookup, buildDuplicateMessage, formatBackendError, type StoredErrors } from './utils'
+import {
+  buildDuplicateLookup,
+  buildDuplicateMessage,
+  buildImportClientPayload,
+  formatBackendError,
+  type StoredErrors,
+  withImportTimeout,
+} from './utils'
 import { normalizeEmailForCompare, normalizePhoneForCompare } from '@/validators/frontend'
 
 const REQUIRED_FIELDS_KEY = 'import_clients_required_fields'
@@ -34,10 +40,12 @@ const cloneEditableErrors = (errors: StoredErrors['errors']) =>
 
 export default function ImportErrors() {
   const navigate = useNavigate()
+  const location = useLocation()
   const goBack = useGoBack('/import/clients')
   const { toast } = useToast()
   const { user, impersonation } = useAuth()
   const addClient = useStore((state) => state.addClient)
+  const refreshClients = useStore((state) => state.fetchClients)
   const [stored, setStored] = useState<StoredErrors | null>(null)
   const [allRuns, setAllRuns] = useState<StoredErrors[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -57,6 +65,23 @@ export default function ImportErrors() {
     }
     return ''
   }, [impersonation?.adminId, user?.id, user?.role])
+  const requestedRunId = String((location.state as { importRunId?: string } | null)?.importRunId || '').trim()
+
+  const selectPreferredRun = useCallback(
+    (runs: StoredErrors[]) => {
+      const visibleRuns = activeAdminId
+        ? runs.filter((run) => String(run.adminId || '').trim() === activeAdminId)
+        : runs
+
+      if (visibleRuns.length === 0) return null
+      if (requestedRunId) {
+        const requestedRun = visibleRuns.find((run) => run.id === requestedRunId)
+        if (requestedRun) return requestedRun
+      }
+      return visibleRuns.find((run) => !run.ignored) || visibleRuns[0] || null
+    },
+    [activeAdminId, requestedRunId]
+  )
 
   useEffect(() => {
     let mounted = true
@@ -64,33 +89,43 @@ export default function ImportErrors() {
       setIsLoading(true)
       try {
         const runs = await fetchImportRuns()
-        const unreadErrorRuns = runs.filter(
+        const visibleRuns = activeAdminId
+          ? runs.filter((run: StoredErrors) => String(run.adminId || '').trim() === activeAdminId)
+          : runs
+        const unreadErrorRuns = visibleRuns.filter(
           (r: StoredErrors) => !r.ignored && (r.errors?.length || 0) > 0 && !r.readErrors
         )
-        if (unreadErrorRuns.length > 0) {
-          await Promise.all(unreadErrorRuns.map((r: StoredErrors) => markImportRunRead(r.id, 'errors')))
-        }
-        const normalizedRuns = runs.map((r: StoredErrors) =>
+        const normalizedRuns = visibleRuns.map((r: StoredErrors) =>
           unreadErrorRuns.some((entry) => entry.id === r.id)
             ? { ...r, readErrors: true }
             : r
         )
-        const latest = normalizedRuns.find((r: StoredErrors) => !r.ignored)
         if (mounted) {
           setAllRuns(normalizedRuns)
-          setStored(latest || null)
+          setStored(selectPreferredRun(normalizedRuns))
+          setIsLoading(false)
+        }
+        if (unreadErrorRuns.length > 0) {
+          void Promise.all(unreadErrorRuns.map((r: StoredErrors) => markImportRunRead(r.id, 'errors')))
         }
       } catch {
-        if (mounted) setStored(null)
-      } finally {
-        if (mounted) setIsLoading(false)
+        if (mounted) {
+          setAllRuns([])
+          setStored(null)
+          setIsLoading(false)
+        }
       }
     }
-    load()
+    void load()
+    const onImportRunsUpdated = () => {
+      void load()
+    }
+    window.addEventListener('import-runs-updated', onImportRunsUpdated)
     return () => {
       mounted = false
+      window.removeEventListener('import-runs-updated', onImportRunsUpdated)
     }
-  }, [])
+  }, [activeAdminId, selectPreferredRun])
 
   useEffect(() => {
     let mounted = true
@@ -192,31 +227,10 @@ export default function ImportErrors() {
         }
 
         try {
-          const shouldCreateRental = hasRentalData(parsed)
-          const result = await addClient({
-            firstName: String(parsed.firstName || '').trim(),
-            lastName: String(parsed.lastName || '').trim(),
-            phone: String(parsed.phone || '').trim(),
-            email: parsed.email ? String(parsed.email).trim() : undefined,
-            cni: parsed.cni ? String(parsed.cni).trim() : undefined,
-            status: parsed.status === 'archived' || parsed.status === 'blacklisted' ? parsed.status : 'active',
-            ...(shouldCreateRental
-              ? {
-                  rental: {
-                    propertyType:
-                      (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
-                    propertyName: String(parsed.propertyName || '').trim(),
-                    startDate: parsed.startDate ? new Date(parsed.startDate as string) : new Date(),
-                    monthlyRent: Number(parsed.monthlyRent || 0),
-                    deposit: {
-                      total: Number(parsed.depositTotal || 0),
-                      paid: Number(parsed.depositPaid || 0),
-                      payments: [],
-                    },
-                  },
-                }
-              : {}),
-          })
+          const result = await withImportTimeout(
+            addClient(buildImportClientPayload(parsed), { refreshAfterSave: false }),
+            `Correction ligne ${err.rowNumber}`
+          )
 
           created.push({
             id: result.id,
@@ -242,14 +256,18 @@ export default function ImportErrors() {
         }
       }
 
+      if (created.length > 0) {
+        await withImportTimeout(refreshClients(), 'Rafraîchissement des clients corrigés')
+      }
+
       const mergedInserted = [...(stored.inserted || []), ...created]
-      await updateImportRun(stored.id, {
+      await withImportTimeout(updateImportRun(stored.id, {
         inserted: mergedInserted,
         errors: failures,
         ignored: failures.length === 0,
         readErrors: true,
         readSuccess: failures.length === 0 ? false : Boolean(stored.readSuccess),
-      } as never)
+      } as never), "Mise à jour du journal d'import")
 
       setStored((prev) =>
         prev
@@ -295,7 +313,10 @@ export default function ImportErrors() {
 
       toast({ title: 'Import réussi', description: `${created.length} client(s) importé(s).` })
       navigate('/import/success', {
-        state: { reason: 'Import relancé avec les lignes corrigées.' },
+        state: {
+          importRunId: stored.id,
+          reason: 'Import relancé avec les lignes corrigées.',
+        },
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : "Échec de l'import des corrections."
@@ -382,10 +403,13 @@ export default function ImportErrors() {
     setIsRefreshing(true)
     try {
       const runs = await fetchImportRuns()
-      const latest = runs.find((r: StoredErrors) => !r.ignored)
-      setAllRuns(runs)
-      setStored(latest || null)
-      setEditableErrors(latest ? cloneEditableErrors(latest.errors) : [])
+      const visibleRuns = activeAdminId
+        ? runs.filter((run: StoredErrors) => String(run.adminId || '').trim() === activeAdminId)
+        : runs
+      setAllRuns(visibleRuns)
+      const preferredRun = selectPreferredRun(visibleRuns)
+      setStored(preferredRun)
+      setEditableErrors(preferredRun ? cloneEditableErrors(preferredRun.errors) : [])
     } catch {
       // ignore
     } finally {
@@ -452,7 +476,7 @@ export default function ImportErrors() {
               <div>
                 <CardTitle>Détails de l'import</CardTitle>
                 <p className="text-sm text-gray-500">
-                  {new Date(stored.createdAt).toLocaleString('fr-FR')}
+                  {stored.createdAt ? new Date(stored.createdAt).toLocaleString('fr-FR') : '—'}
                 </p>
               </div>
               <ErrorsActions
@@ -610,7 +634,9 @@ export default function ImportErrors() {
                         : 'bg-gray-100 hover:bg-gray-200'
                     }`}
                   >
-                    <p className="font-semibold">{new Date(run.createdAt).toLocaleString('fr-FR')}</p>
+                    <p className="font-semibold">
+                      {run.createdAt ? new Date(run.createdAt).toLocaleString('fr-FR') : '—'}
+                    </p>
                     <p className="text-sm">
                       {run.inserted?.length || 0} importés | {run.errors.length} erreurs
                     </p>

@@ -310,7 +310,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div className="min-h-screen flex w-full">
         {showAdminNav ? <AppSidebar /> : null}
 
-        <div className="flex-1 flex flex-col">
+        <div className="min-w-0 flex-1 flex flex-col overflow-x-hidden">
           {/* Header */}
           {showAdminNav && !isSuperAdminRoute ? (
             <header className="h-16 border-b bg-card flex items-center justify-between px-4 lg:px-6">

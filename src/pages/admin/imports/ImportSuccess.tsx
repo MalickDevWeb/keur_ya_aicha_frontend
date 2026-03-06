@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CheckCircle2, FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { fetchImportRuns, markImportRunRead } from '@/services/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 type ImportRun = {
   id: string
@@ -34,10 +35,21 @@ export default function ImportSuccess() {
   const location = useLocation()
   const isMobile = useIsMobile()
   const { toast } = useToast()
+  const { user, impersonation } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isHidingFromSidebar, setIsHidingFromSidebar] = useState(false)
   const [latest, setLatest] = useState<ImportRun | null>(null)
   const [runs, setRuns] = useState<ImportRun[]>([])
+  const activeAdminId = useMemo(() => {
+    const impersonated = String(impersonation?.adminId || '').trim()
+    if (impersonated) return impersonated
+    const role = String(user?.role || '').toUpperCase()
+    if (role === 'ADMIN') {
+      return String(user?.id || '').trim()
+    }
+    return ''
+  }, [impersonation?.adminId, user?.id, user?.role])
+  const requestedRunId = String((location.state as { importRunId?: string } | null)?.importRunId || '').trim()
 
   useEffect(() => {
     let mounted = true
@@ -45,29 +57,50 @@ export default function ImportSuccess() {
       setIsLoading(true)
       try {
         const runs = await fetchImportRuns()
-        const unreadSuccessRuns = runs.filter(
+        const visibleRuns = activeAdminId
+          ? runs.filter((run: ImportRun) => String(run.adminId || '').trim() === activeAdminId)
+          : runs
+
+        const unreadSuccessRuns = visibleRuns.filter(
           (run: ImportRun) => (run.inserted?.length || 0) > 0 && !run.readSuccess
         )
-        if (unreadSuccessRuns.length > 0) {
-          await Promise.all(
-            unreadSuccessRuns.map((run: ImportRun) => markImportRunRead(run.id, 'success'))
-          )
-          window.dispatchEvent(new Event('import-runs-updated'))
-        }
         const unreadIds = new Set(unreadSuccessRuns.map((run: ImportRun) => run.id))
-        const normalizedRuns = runs.map((run: ImportRun) =>
+        const normalizedRuns = visibleRuns.map((run: ImportRun) =>
           unreadIds.has(run.id) ? { ...run, readSuccess: true } : run
         )
         if (!mounted) return
         setRuns(normalizedRuns)
-        setLatest((normalizedRuns && normalizedRuns.length > 0) ? normalizedRuns[0] : null)
-      } finally {
-        if (mounted) setIsLoading(false)
+        const requestedRun = requestedRunId
+          ? normalizedRuns.find((run) => run.id === requestedRunId)
+          : null
+        setLatest(requestedRun || normalizedRuns[0] || null)
+        setIsLoading(false)
+
+        if (unreadSuccessRuns.length > 0) {
+          void Promise.all(
+            unreadSuccessRuns.map((run: ImportRun) => markImportRunRead(run.id, 'success'))
+          ).then(() => {
+            window.dispatchEvent(new Event('import-runs-updated'))
+          })
+        }
+      } catch {
+        if (mounted) {
+          setRuns([])
+          setLatest(null)
+          setIsLoading(false)
+        }
       }
     }
-    load()
-    return () => { mounted = false }
-  }, [])
+    void load()
+    const onImportRunsUpdated = () => {
+      void load()
+    }
+    window.addEventListener('import-runs-updated', onImportRunsUpdated)
+    return () => {
+      mounted = false
+      window.removeEventListener('import-runs-updated', onImportRunsUpdated)
+    }
+  }, [activeAdminId, requestedRunId])
 
   const hideFromSidebar = async () => {
     if (isHidingFromSidebar) return

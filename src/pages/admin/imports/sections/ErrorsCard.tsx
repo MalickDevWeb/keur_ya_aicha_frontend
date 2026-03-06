@@ -12,12 +12,17 @@ type ErrorsCardProps = {
   overrides: RowOverrides
   onShowFix: () => void
   onSaveErrors: () => void
-  onUpdateOverride: (rowIndex: number, field: 'firstName' | 'lastName' | 'phone' | 'cni', value: string) => void
+  onUpdateOverride: (
+    rowIndex: number,
+    field: 'firstName' | 'lastName' | 'phone' | 'email' | 'cni',
+    value: string
+  ) => void
   onRevalidate: () => void
   onImport: () => void
   isAnalyzing: boolean
   isSavingErrors: boolean
   isImporting: boolean
+  importProgress?: { processed: number; total: number }
 }
 
 export function ErrorsCard({
@@ -32,6 +37,7 @@ export function ErrorsCard({
   isAnalyzing,
   isSavingErrors,
   isImporting,
+  importProgress,
 }: ErrorsCardProps) {
   const isBusy = isAnalyzing || isSavingErrors || isImporting
   return (
@@ -84,7 +90,7 @@ export function ErrorsCard({
                         ))}
                       </ul>
                     </div>
-                    <div className="grid md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-5">
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Prénom</Label>
                         <Input
@@ -107,6 +113,14 @@ export function ErrorsCard({
                           placeholder="Téléphone"
                           value={overrides[err.rowIndex]?.phone ?? err.parsed.phone ?? ''}
                           onChange={(event) => onUpdateOverride(err.rowIndex, 'phone', event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Email</Label>
+                        <Input
+                          placeholder="Email"
+                          value={overrides[err.rowIndex]?.email ?? err.parsed.email ?? ''}
+                          onChange={(event) => onUpdateOverride(err.rowIndex, 'email', event.target.value)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -136,7 +150,9 @@ export function ErrorsCard({
                   className="w-full md:w-auto whitespace-normal text-center"
                 >
                   {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                  {isImporting ? 'Import en cours...' : 'Importer'}
+                  {isImporting
+                    ? `Import en cours${importProgress?.total ? ` (${importProgress.processed}/${importProgress.total})` : '...'}`
+                    : 'Importer'}
                 </Button>
               )}
             </div>

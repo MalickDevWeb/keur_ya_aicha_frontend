@@ -199,8 +199,8 @@ export function ErrorsTable({ storedErrors, inserted, editable = false, onUpdate
               ))}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden bg-white">
-              <Table>
+            <div className="overflow-x-auto rounded-lg border bg-white">
+              <Table className="min-w-[960px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ligne</TableHead>

@@ -9,7 +9,7 @@ type SectionWrapperProps = {
 
 export function SectionWrapper({ children, className, id }: SectionWrapperProps) {
   return (
-    <div id={id} className={cn('space-y-4', className)}>
+    <div id={id} className={cn('min-w-0 space-y-4', className)}>
       {children}
     </div>
   )

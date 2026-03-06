@@ -15,6 +15,7 @@ type MappingCardProps = {
   onImport: () => void
   isAnalyzing: boolean
   isImporting: boolean
+  importProgress?: { processed: number; total: number }
 }
 
 export function MappingCard({
@@ -26,6 +27,7 @@ export function MappingCard({
   onImport,
   isAnalyzing,
   isImporting,
+  importProgress,
 }: MappingCardProps) {
   const optionalFields = CLIENT_IMPORT_FIELDS.filter((field) => !requiredFields.includes(field))
   const isBusy = isAnalyzing || isImporting
@@ -43,16 +45,32 @@ export function MappingCard({
           </p>
         </div>
 
+        <div className="rounded-lg border border-dashed border-[#121B53]/15 bg-white p-3 text-sm">
+          <p className="font-medium text-[#121B53]">Colonnes détectées dans le fichier</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {headers.map((header, index) => (
+              <span
+                key={`${header}-${index}`}
+                className="max-w-full rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 break-all"
+              >
+                {index + 1}. {header}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {requiredFields.map((field) => (
-            <div key={field} className="space-y-2">
-              <Label>Obligatoire: {FIELD_LABELS[field] || field}</Label>
+            <div key={field} className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+              <Label className="block text-sm leading-snug">
+                Obligatoire: {FIELD_LABELS[field] || field}
+              </Label>
               <Select
                 value={mapping[field] !== undefined ? String(mapping[field]) : undefined}
                 onValueChange={(val) => onMappingChange({ ...mapping, [field]: Number(val) })}
                 disabled={isBusy}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="Choisir une colonne" />
                 </SelectTrigger>
                 <SelectContent>
@@ -69,8 +87,10 @@ export function MappingCard({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {optionalFields.map((field) => (
-            <div key={field} className="space-y-2">
-              <Label>Optionnel: {FIELD_LABELS[field] || field}</Label>
+            <div key={field} className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+              <Label className="block text-sm leading-snug">
+                Optionnel: {FIELD_LABELS[field] || field}
+              </Label>
               <Select
                 value={mapping[field] !== undefined ? String(mapping[field]) : '__none__'}
                 onValueChange={(val) =>
@@ -78,7 +98,7 @@ export function MappingCard({
                 }
                 disabled={isBusy}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="(optionnel)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -106,7 +126,9 @@ export function MappingCard({
             className="w-full md:w-auto whitespace-normal text-center"
           >
             {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isImporting ? 'Import en cours...' : 'Importer les lignes valides'}
+            {isImporting
+              ? `Import en cours${importProgress?.total ? ` (${importProgress.processed}/${importProgress.total})` : '...'}`
+              : 'Importer les lignes valides'}
           </Button>
         </div>
       </CardContent>

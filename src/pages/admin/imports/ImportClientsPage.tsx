@@ -13,7 +13,6 @@ import {
   FIELD_LABELS,
   CLIENT_IMPORT_FIELDS,
   guessMapping,
-  hasRentalData,
   parseSpreadsheet,
   validateRow,
 } from '@/lib/importClients'
@@ -23,8 +22,15 @@ import { ImportHeaderSection } from './sections/ImportHeaderSection'
 import { FileUploadCard } from './sections/FileUploadCard'
 import { ErrorsCard } from './sections/ErrorsCard'
 import { MappingCard } from './sections/MappingCard'
+import { ReviewBeforeImportCard } from './sections/ReviewBeforeImportCard'
 import type { RowOverrides } from './types'
-import { buildDuplicateLookup, buildDuplicateMessage, formatBackendError } from './utils'
+import {
+  buildDuplicateLookup,
+  buildDuplicateMessage,
+  formatBackendError,
+  buildImportClientPayload,
+  withImportTimeout,
+} from './utils'
 import { normalizeEmailForCompare, normalizePhoneForCompare } from '@/validators/frontend'
 
 const REQUIRED_FIELDS_KEY = 'import_clients_required_fields'
@@ -36,6 +42,7 @@ export default function ImportClientsPage() {
   const { user, impersonation } = useAuth()
   const clients = useStore((state) => state.clients)
   const addClient = useStore((state) => state.addClient)
+  const fetchClients = useStore((state) => state.fetchClients)
 
   const [fileName, setFileName] = useState<string>('')
   const [headers, setHeaders] = useState<string[]>([])
@@ -47,6 +54,7 @@ export default function ImportClientsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [isSavingErrors, setIsSavingErrors] = useState(false)
+  const [importProgress, setImportProgress] = useState({ processed: 0, total: 0 })
   const [showFix, setShowFix] = useState(false)
   const [importAliases, setImportAliases] = useState<
     Partial<Record<keyof ClientImportMapping, string[]>> | null
@@ -252,7 +260,11 @@ export default function ImportClientsPage() {
     }
   }
 
-  const onUpdateOverride = (rowIndex: number, field: 'firstName' | 'lastName' | 'phone' | 'cni', value: string) => {
+  const onUpdateOverride = (
+    rowIndex: number,
+    field: 'firstName' | 'lastName' | 'phone' | 'email' | 'cni',
+    value: string
+  ) => {
     setOverrides((prev) => ({
       ...prev,
       [rowIndex]: {
@@ -266,7 +278,7 @@ export default function ImportClientsPage() {
     if (isSavingErrors) return
     setIsSavingErrors(true)
     try {
-      await createImportRun({
+      const importRun = await createImportRun({
         createdAt: new Date().toISOString(),
         adminId: activeAdminId || undefined,
         fileName,
@@ -281,7 +293,12 @@ export default function ImportClientsPage() {
         readSuccess: true,
         readErrors: false,
       })
-      navigate('/import/errors')
+      navigate('/import/errors', {
+        state: {
+          importRunId: importRun.id,
+          source: 'save-errors',
+        },
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible d'enregistrer les erreurs"
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
@@ -293,47 +310,38 @@ export default function ImportClientsPage() {
   const handleImport = async () => {
     if (!hasData || isImporting) return
     setIsImporting(true)
+    setImportProgress({ processed: 0, total: 0 })
 
     try {
       const nextErrors = collectErrors()
       if (!nextErrors) return
+      setErrors(nextErrors)
+      setShowFix(nextErrors.length > 0)
+
+      const invalidRowIndexes = new Set(nextErrors.map((error) => error.rowIndex))
+      const rowsToImport = rows
+        .map((row, idx) => ({ row, idx }))
+        .filter(({ row, idx }) => {
+          const hasContent = row.some(
+            (cell) => cell !== null && cell !== undefined && String(cell).trim() !== ''
+          )
+          return hasContent && !invalidRowIndexes.has(idx)
+        })
+
+      setImportProgress({ processed: 0, total: rowsToImport.length })
 
       const inserted: Array<{ id: string; firstName: string; lastName: string; phone: string; email?: string }> = []
 
-      for (let idx = 0; idx < rows.length; idx++) {
-        const row = rows[idx]
-        if (!row.some((cell) => cell !== null && cell !== undefined && String(cell).trim() !== '')) continue
-
+      for (let position = 0; position < rowsToImport.length; position++) {
+        const { row, idx } = rowsToImport[position]
+        setImportProgress({ processed: position + 1, total: rowsToImport.length })
         const parsed = buildRow(row, mapping, overrides[idx])
-        const rowErrors = validateRow(parsed, requiredFields)
-        if (rowErrors.length > 0) continue
 
         try {
-          const shouldCreateRental = hasRentalData(parsed)
-          const result = await addClient({
-            firstName: parsed.firstName || '',
-            lastName: parsed.lastName || '',
-            phone: String(parsed.phone || '').trim(),
-            email: parsed.email ? String(parsed.email).trim() : undefined,
-            cni: parsed.cni ? String(parsed.cni).trim() : undefined,
-            status: parsed.status === 'archived' || parsed.status === 'blacklisted' ? parsed.status : 'active',
-            ...(shouldCreateRental
-              ? {
-                  rental: {
-                    propertyType:
-                      (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
-                    propertyName: String(parsed.propertyName || '').trim(),
-                    startDate: parsed.startDate || new Date(),
-                    monthlyRent: Number(parsed.monthlyRent || 0),
-                    deposit: {
-                      total: Number(parsed.depositTotal || 0),
-                      paid: Number(parsed.depositPaid || 0),
-                      payments: [],
-                    },
-                  },
-                }
-              : {}),
-          })
+          const result = await withImportTimeout(
+            addClient(buildImportClientPayload(parsed), { refreshAfterSave: false }),
+            `Ligne ${idx + 2}`
+          )
 
           inserted.push({
             id: result.id,
@@ -353,7 +361,11 @@ export default function ImportClientsPage() {
         }
       }
 
-      await createImportRun({
+      if (inserted.length > 0) {
+        await withImportTimeout(fetchClients(), 'Rafraîchissement des clients importés')
+      }
+
+      const importRun = await withImportTimeout(createImportRun({
         createdAt: new Date().toISOString(),
         adminId: activeAdminId || undefined,
         fileName,
@@ -367,20 +379,28 @@ export default function ImportClientsPage() {
         ignored: false,
         readSuccess: inserted.length === 0,
         readErrors: nextErrors.length === 0,
-      })
+      }), "Enregistrement du journal d'import")
 
       toast({
         title: 'Import terminé',
-        description: nextErrors.length > 0
+        description: rowsToImport.length === 0
+          ? "Aucune ligne valide à importer. Corrigez les erreurs puis réessayez."
+          : nextErrors.length > 0
           ? `${inserted.length} client(s) inséré(s), ${nextErrors.length} erreur(s)`
           : `${inserted.length} client(s) importé(s)`,
       })
 
-      navigate(nextErrors.length > 0 ? '/import/errors' : '/import/success')
+      navigate(nextErrors.length > 0 ? '/import/errors' : '/import/success', {
+        state: {
+          importRunId: importRun.id,
+          source: 'import-clients',
+        },
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : "Échec de l'import."
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
     } finally {
+      setImportProgress({ processed: 0, total: 0 })
       setIsImporting(false)
     }
   }
@@ -415,6 +435,15 @@ export default function ImportClientsPage() {
               onImport={handleImport}
               isAnalyzing={isAnalyzing}
               isImporting={isImporting}
+              importProgress={importProgress}
+            />
+          </SectionWrapper>
+          <SectionWrapper>
+            <ReviewBeforeImportCard
+              rows={rows}
+              mapping={mapping}
+              overrides={overrides}
+              onUpdateOverride={onUpdateOverride}
             />
           </SectionWrapper>
           <SectionWrapper>
@@ -432,6 +461,7 @@ export default function ImportClientsPage() {
               isAnalyzing={isAnalyzing}
               isSavingErrors={isSavingErrors}
               isImporting={isImporting}
+              importProgress={importProgress}
             />
           </SectionWrapper>
         </>

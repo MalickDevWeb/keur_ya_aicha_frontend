@@ -1,3 +1,4 @@
+import { hasRentalData, type ClientImportRow } from '@/lib/importClients'
 import { normalizeEmailForCompare, normalizePhoneForCompare } from '@/validators/frontend'
 
 type Owner = { id?: string; firstName?: string; lastName?: string; phone?: string; email?: string }
@@ -128,4 +129,60 @@ export const formatBackendError = (
   }
   if (message.includes('401')) return 'Non autorisé (session expirée)'
   return message
+}
+
+export const IMPORT_OPERATION_TIMEOUT_MS = 20_000
+
+export async function withImportTimeout<T>(
+  operation: Promise<T>,
+  label: string,
+  timeoutMs = IMPORT_OPERATION_TIMEOUT_MS
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} prend trop de temps. Vérifiez la connexion puis réessayez.`))
+    }, timeoutMs)
+  })
+
+  try {
+    return await Promise.race([operation, timeoutPromise])
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
+export function buildImportClientPayload(parsed: ClientImportRow) {
+  const shouldCreateRental = hasRentalData(parsed)
+  return {
+    firstName: String(parsed.firstName || '').trim(),
+    lastName: String(parsed.lastName || '').trim(),
+    phone: String(parsed.phone || '').trim(),
+    email: parsed.email ? String(parsed.email).trim() : undefined,
+    cni: parsed.cni ? String(parsed.cni).trim() : undefined,
+    status: parsed.status === 'archived' || parsed.status === 'blacklisted' ? parsed.status : 'active',
+    ...(shouldCreateRental
+      ? {
+          rental: {
+            propertyType:
+              (parsed.propertyType as 'studio' | 'room' | 'apartment' | 'villa' | 'other') || 'apartment',
+            propertyName: String(parsed.propertyName || '').trim(),
+            startDate:
+              parsed.startDate instanceof Date
+                ? parsed.startDate
+                : parsed.startDate
+                  ? new Date(parsed.startDate)
+                  : new Date(),
+            monthlyRent: Number(parsed.monthlyRent || 0),
+            deposit: {
+              total: Number(parsed.depositTotal || 0),
+              paid: Number(parsed.depositPaid || 0),
+              payments: [],
+            },
+          },
+        }
+      : {}),
+  }
 }
