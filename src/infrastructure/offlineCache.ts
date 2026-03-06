@@ -13,14 +13,8 @@ type HttpCacheEntry = {
 }
 
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000
-function isElectronDesktopRuntime(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /electron/i.test(String(navigator.userAgent || ''))
-}
-
 const CACHE_ENABLED =
-  String(import.meta.env.VITE_OFFLINE_CACHE_ENABLED ?? 'true').toLowerCase() === 'true' &&
-  isElectronDesktopRuntime()
+  String(import.meta.env.VITE_OFFLINE_CACHE_ENABLED ?? 'true').trim().toLowerCase() === 'true'
 const CACHE_TTL_MS = Math.max(1_000, Number(import.meta.env.VITE_OFFLINE_CACHE_TTL_MS || DEFAULT_CACHE_TTL_MS) || DEFAULT_CACHE_TTL_MS)
 
 function safeStorageGet(storage: Storage | undefined, key: string): string {

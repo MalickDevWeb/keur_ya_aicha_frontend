@@ -1,4 +1,4 @@
-import type { ClientCreateDTO } from '@/dto/backend/requests'
+import type { ClientCreateDTO, ClientUpdateDTO } from '@/dto/backend/requests'
 import type { AdminCreateDTO, UserCreateDTO } from '@/dto/frontend/requests'
 import { apiFetch } from '@/services/http'
 import { ensureRuntimeConfigLoaded, getApiBaseUrl } from '@/services/runtimeConfig'
@@ -13,6 +13,23 @@ type SyncAction =
   | {
       type: 'CREATE_CLIENT'
       payload: ClientCreateDTO
+      idempotencyKey: string
+      createdAt: number
+    }
+  | {
+      type: 'UPDATE_CLIENT'
+      payload: {
+        clientId: string
+        data: ClientUpdateDTO
+      }
+      idempotencyKey: string
+      createdAt: number
+    }
+  | {
+      type: 'DELETE_CLIENT'
+      payload: {
+        clientId: string
+      }
       idempotencyKey: string
       createdAt: number
     }
@@ -42,14 +59,8 @@ export type SyncQueueListItem = {
   summary: string
 }
 
-function isElectronDesktopRuntime(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /electron/i.test(String(navigator.userAgent || ''))
-}
-
 const OFFLINE_SYNC_ENABLED =
-  String(import.meta.env.VITE_OFFLINE_SYNC_ENABLED ?? 'true').trim().toLowerCase() === 'true' &&
-  isElectronDesktopRuntime()
+  String(import.meta.env.VITE_OFFLINE_SYNC_ENABLED ?? 'true').trim().toLowerCase() === 'true'
 
 export function isOfflineSyncEnabled(): boolean {
   return OFFLINE_SYNC_ENABLED
@@ -64,6 +75,18 @@ function buildIdempotencyKey(payload: ClientCreateDTO): string {
   const clientId = String(payload?.id || '').trim()
   if (clientId) return `create-client:${clientId}`
   return `create-client:generated:${Date.now()}`
+}
+
+function buildUpdateClientIdempotencyKey(clientId: string): string {
+  const safeClientId = String(clientId || '').trim()
+  if (safeClientId) return `update-client:${safeClientId}:${Date.now()}`
+  return `update-client:generated:${Date.now()}`
+}
+
+function buildDeleteClientIdempotencyKey(clientId: string): string {
+  const safeClientId = String(clientId || '').trim()
+  if (safeClientId) return `delete-client:${safeClientId}:${Date.now()}`
+  return `delete-client:generated:${Date.now()}`
 }
 
 function buildUserIdempotencyKey(payload: UserCreateDTO): string {
@@ -96,6 +119,11 @@ function isLikelyDuplicateCreateError(error: unknown): boolean {
   )
 }
 
+function isLikelyNotFoundError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
+  return message.includes('ressource non trouvée') || message.includes('resource not found')
+}
+
 function buildQueueItemSummary(action: SyncAction): string {
   if (action.type === 'CREATE_CLIENT') {
     const firstName = String(action.payload?.firstName || '').trim()
@@ -114,6 +142,14 @@ function buildQueueItemSummary(action: SyncAction): string {
     const name = String(action.payload?.name || '').trim()
     return `${name || 'Admin'}${username ? ` (${username})` : ''}`
   }
+  if (action.type === 'UPDATE_CLIENT') {
+    const safeClientId = String(action.payload?.clientId || '').trim()
+    return `Client ${safeClientId || '(sans id)'}`
+  }
+  if (action.type === 'DELETE_CLIENT') {
+    const safeClientId = String(action.payload?.clientId || '').trim()
+    return `Suppression client ${safeClientId || '(sans id)'}`
+  }
   const _exhaustiveCheck: never = action
   return _exhaustiveCheck
 }
@@ -129,13 +165,26 @@ async function getSyncQueueEntries(): Promise<SyncQueueEntry[]> {
   })
 }
 
+function emitQueueUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(OFFLINE_SYNC_QUEUE_UPDATED_EVENT))
+  }
+}
+
+function emitActionEnqueued(action: SyncAction): void {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(
+    new CustomEvent(OFFLINE_SYNC_ACTION_ENQUEUED_EVENT, {
+      detail: { type: action.type, idempotencyKey: action.idempotencyKey },
+    })
+  )
+}
+
 async function removeSyncQueueEntry(key: IDBValidKey): Promise<void> {
   await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
     await idbRequestToPromise(store.delete(key))
   })
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(OFFLINE_SYNC_QUEUE_UPDATED_EVENT))
-  }
+  emitQueueUpdated()
 }
 
 async function checkEntityExists(resourcePath: '/clients' | '/users' | '/admins', entityId: string): Promise<boolean> {
@@ -177,6 +226,59 @@ async function processCreateClientAction(entry: SyncQueueEntry): Promise<'proces
     return 'processed'
   } catch (error) {
     if (isLikelyDuplicateCreateError(error)) {
+      await removeSyncQueueEntry(entry.key)
+      return 'skipped'
+    }
+    throw error
+  }
+}
+
+async function processUpdateClientAction(entry: SyncQueueEntry): Promise<'processed' | 'skipped'> {
+  const payload = entry.value.payload as { clientId?: string; data?: ClientUpdateDTO }
+  const clientId = String(payload?.clientId || '').trim()
+  if (!clientId) {
+    await removeSyncQueueEntry(entry.key)
+    return 'skipped'
+  }
+
+  try {
+    await apiFetch(`/clients/${encodeURIComponent(clientId)}`, {
+      method: 'PUT',
+      headers: {
+        'x-idempotency-key': entry.value.idempotencyKey,
+      },
+      body: JSON.stringify(payload.data || {}),
+    })
+    await removeSyncQueueEntry(entry.key)
+    return 'processed'
+  } catch (error) {
+    if (isLikelyNotFoundError(error)) {
+      await removeSyncQueueEntry(entry.key)
+      return 'skipped'
+    }
+    throw error
+  }
+}
+
+async function processDeleteClientAction(entry: SyncQueueEntry): Promise<'processed' | 'skipped'> {
+  const payload = entry.value.payload as { clientId?: string }
+  const clientId = String(payload?.clientId || '').trim()
+  if (!clientId) {
+    await removeSyncQueueEntry(entry.key)
+    return 'skipped'
+  }
+
+  try {
+    await apiFetch(`/clients/${encodeURIComponent(clientId)}`, {
+      method: 'DELETE',
+      headers: {
+        'x-idempotency-key': entry.value.idempotencyKey,
+      },
+    })
+    await removeSyncQueueEntry(entry.key)
+    return 'processed'
+  } catch (error) {
+    if (isLikelyNotFoundError(error)) {
       await removeSyncQueueEntry(entry.key)
       return 'skipped'
     }
@@ -259,14 +361,89 @@ export async function enqueueCreateClientAction(payload: ClientCreateDTO): Promi
   await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
     await idbRequestToPromise(store.add(action))
   })
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(OFFLINE_SYNC_QUEUE_UPDATED_EVENT))
-    window.dispatchEvent(
-      new CustomEvent(OFFLINE_SYNC_ACTION_ENQUEUED_EVENT, {
-        detail: { type: action.type, idempotencyKey: action.idempotencyKey },
-      })
-    )
+  emitQueueUpdated()
+  emitActionEnqueued(action)
+}
+
+export async function enqueueUpdateClientAction(clientId: string, data: ClientUpdateDTO): Promise<void> {
+  if (!isOfflineSyncEnabled()) return
+
+  const safeClientId = String(clientId || '').trim()
+  if (!safeClientId) return
+
+  const entries = await getSyncQueueEntries()
+  const createEntry = entries.find(
+    (entry) => entry.value.type === 'CREATE_CLIENT' && String((entry.value.payload as ClientCreateDTO)?.id || '').trim() === safeClientId
+  )
+
+  if (createEntry && createEntry.value.type === 'CREATE_CLIENT') {
+    const mergedPayload: ClientCreateDTO = {
+      ...createEntry.value.payload,
+      ...data,
+      id: safeClientId,
+    }
+    const mergedAction: SyncAction = {
+      ...createEntry.value,
+      payload: mergedPayload,
+      createdAt: Date.now(),
+    }
+
+    await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
+      await idbRequestToPromise(store.put(mergedAction, createEntry.key))
+    })
+
+    emitQueueUpdated()
+    emitActionEnqueued(mergedAction)
+    return
   }
+
+  const existingUpdateEntry = entries.find(
+    (entry) => entry.value.type === 'UPDATE_CLIENT' && String((entry.value.payload as { clientId?: string })?.clientId || '').trim() === safeClientId
+  )
+
+  const action: SyncAction = {
+    type: 'UPDATE_CLIENT',
+    payload: {
+      clientId: safeClientId,
+      data,
+    },
+    idempotencyKey: buildUpdateClientIdempotencyKey(safeClientId),
+    createdAt: Date.now(),
+  }
+
+  await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
+    if (existingUpdateEntry) {
+      await idbRequestToPromise(store.put(action, existingUpdateEntry.key))
+      return
+    }
+    await idbRequestToPromise(store.add(action))
+  })
+
+  emitQueueUpdated()
+  emitActionEnqueued(action)
+}
+
+export async function enqueueDeleteClientAction(clientId: string): Promise<void> {
+  if (!isOfflineSyncEnabled()) return
+
+  const safeClientId = String(clientId || '').trim()
+  if (!safeClientId) return
+
+  const action: SyncAction = {
+    type: 'DELETE_CLIENT',
+    payload: {
+      clientId: safeClientId,
+    },
+    idempotencyKey: buildDeleteClientIdempotencyKey(safeClientId),
+    createdAt: Date.now(),
+  }
+
+  await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
+    await idbRequestToPromise(store.add(action))
+  })
+
+  emitQueueUpdated()
+  emitActionEnqueued(action)
 }
 
 export async function enqueueCreateUserAction(payload: UserCreateDTO): Promise<void> {
@@ -282,14 +459,8 @@ export async function enqueueCreateUserAction(payload: UserCreateDTO): Promise<v
   await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
     await idbRequestToPromise(store.add(action))
   })
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(OFFLINE_SYNC_QUEUE_UPDATED_EVENT))
-    window.dispatchEvent(
-      new CustomEvent(OFFLINE_SYNC_ACTION_ENQUEUED_EVENT, {
-        detail: { type: action.type, idempotencyKey: action.idempotencyKey },
-      })
-    )
-  }
+  emitQueueUpdated()
+  emitActionEnqueued(action)
 }
 
 export async function enqueueCreateAdminAction(payload: AdminCreateDTO): Promise<void> {
@@ -305,14 +476,8 @@ export async function enqueueCreateAdminAction(payload: AdminCreateDTO): Promise
   await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
     await idbRequestToPromise(store.add(action))
   })
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(OFFLINE_SYNC_QUEUE_UPDATED_EVENT))
-    window.dispatchEvent(
-      new CustomEvent(OFFLINE_SYNC_ACTION_ENQUEUED_EVENT, {
-        detail: { type: action.type, idempotencyKey: action.idempotencyKey },
-      })
-    )
-  }
+  emitQueueUpdated()
+  emitActionEnqueued(action)
 }
 
 export async function getPendingSyncCount(): Promise<number> {
@@ -341,9 +506,7 @@ export async function clearSyncQueue(): Promise<number> {
   await withStore(OFFLINE_STORES.SYNC_QUEUE, 'readwrite', async (store) => {
     await idbRequestToPromise(store.clear())
   })
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(OFFLINE_SYNC_QUEUE_UPDATED_EVENT))
-  }
+  emitQueueUpdated()
   return entries.length
 }
 
@@ -369,6 +532,16 @@ export async function syncQueuedActions(): Promise<{ processed: number; failed: 
     try {
       if (entry.value.type === 'CREATE_CLIENT') {
         const result = await processCreateClientAction(entry)
+        if (result === 'processed') processed += 1
+        if (result === 'skipped') skipped += 1
+      }
+      if (entry.value.type === 'UPDATE_CLIENT') {
+        const result = await processUpdateClientAction(entry)
+        if (result === 'processed') processed += 1
+        if (result === 'skipped') skipped += 1
+      }
+      if (entry.value.type === 'DELETE_CLIENT') {
+        const result = await processDeleteClientAction(entry)
         if (result === 'processed') processed += 1
         if (result === 'skipped') skipped += 1
       }

@@ -23,7 +23,7 @@ type SyncSummary = {
 }
 
 type EnqueuedActionDetail = {
-  type?: 'CREATE_CLIENT' | 'CREATE_USER' | 'CREATE_ADMIN' | string
+  type?: 'CREATE_CLIENT' | 'UPDATE_CLIENT' | 'DELETE_CLIENT' | 'CREATE_USER' | 'CREATE_ADMIN' | string
   idempotencyKey?: string
 }
 
@@ -35,6 +35,8 @@ function formatDateTime(timestamp: number): string {
 
 function getActionLabel(type?: string): string {
   if (type === 'CREATE_CLIENT') return 'client'
+  if (type === 'UPDATE_CLIENT') return 'mise à jour client'
+  if (type === 'DELETE_CLIENT') return 'suppression client'
   if (type === 'CREATE_USER') return 'utilisateur'
   if (type === 'CREATE_ADMIN') return 'admin'
   return 'élément'

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { addDays, addMonths } from 'date-fns'
 import type { Client, DashboardStats, MonthlyPayment, Rental } from '@/lib/types'
 import type { ClientCreateDTO, ClientUpdateDTO } from '@/dto/backend/requests'
-import { enqueueCreateClientAction } from '@/infrastructure/syncQueue'
+import { enqueueCreateClientAction, enqueueDeleteClientAction, enqueueUpdateClientAction } from '@/infrastructure/syncQueue'
 import {
   fetchClients as fetchClientsAPI,
   createClient,
@@ -262,10 +262,45 @@ export const useDataStore = create<DataState>((set, get) => ({
   updateClient: async (id, data) => {
     try {
       set({ error: null })
-      const payload = serializeClientForApi(data)
-      await updateClientAPI(id, payload as ClientUpdateDTO)
-      await get().fetchClients()
-      await get().refreshStats()
+      const clientId = String(id || '').trim()
+      if (!clientId) throw new Error('Client id manquant')
+
+      const payload = serializeClientForApi(data) as ClientUpdateDTO
+      const applyClientPatchOptimistically = () => {
+        set((state) => {
+          const clients = state.clients.map((client) => {
+            if (client.id !== clientId) return client
+            return {
+              ...client,
+              ...data,
+              rentals: data.rentals ?? client.rentals,
+            } as Client
+          })
+          return {
+            clients,
+            stats: calculateDashboardStats(clients),
+            error: null,
+          }
+        })
+      }
+
+      if (isBrowserOffline()) {
+        await enqueueUpdateClientAction(clientId, payload)
+        applyClientPatchOptimistically()
+        return
+      }
+
+      try {
+        await updateClientAPI(clientId, payload)
+        await get().fetchClients()
+        await get().refreshStats()
+      } catch (error) {
+        if (!isLikelyNetworkError(error)) {
+          throw error
+        }
+        await enqueueUpdateClientAction(clientId, payload)
+        applyClientPatchOptimistically()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update client'
       set({ error: message })
@@ -327,9 +362,88 @@ export const useDataStore = create<DataState>((set, get) => ({
   addMonthlyPayment: async (rentalId, paymentId, amount, options) => {
     try {
       set({ error: null })
-      await postPaymentRecord(rentalId, paymentId, amount, options)
-      await get().fetchClients()
-      await get().refreshStats()
+      const safeRentalId = String(rentalId || '').trim()
+      const safePaymentId = String(paymentId || '').trim()
+      const safeAmount = Math.max(0, Number(amount) || 0)
+
+      const currentClients = get().clients
+      const targetClient = currentClients.find((client) => client.rentals.some((rental) => rental.id === safeRentalId))
+      if (!targetClient) throw new Error('Client with rentalId not found')
+      const targetRental = targetClient.rentals.find((rental) => rental.id === safeRentalId)
+      if (!targetRental) throw new Error('Rental not found on client')
+      const targetPayment = targetRental.payments.find((payment) => payment.id === safePaymentId)
+      if (!targetPayment) throw new Error('Monthly payment entry not found')
+
+      const paymentDate = options?.date ? new Date(options.date) : new Date()
+      const safeDate = Number.isNaN(paymentDate.getTime()) ? new Date() : paymentDate
+      const receipt = {
+        id: generateId(),
+        amount: safeAmount,
+        date: safeDate,
+        receiptNumber: String(options?.receiptNumber || '').trim() || `REC-${Date.now()}`,
+      }
+
+      const optimisticClients = currentClients.map((client) => {
+        if (client.id !== targetClient.id) return client
+        const rentals = client.rentals.map((rental) => {
+          if (rental.id !== safeRentalId) return rental
+          const payments = rental.payments.map((payment) => {
+            if (payment.id !== safePaymentId) return payment
+            const nextPaidAmount = (payment.paidAmount || 0) + safeAmount
+            if (nextPaidAmount >= payment.amount) {
+              return {
+                ...payment,
+                paidAmount: payment.amount,
+                status: 'paid' as const,
+                payments: [...(payment.payments || []), receipt],
+              }
+            }
+            return {
+              ...payment,
+              paidAmount: Math.max(0, nextPaidAmount),
+              status: nextPaidAmount > 0 ? ('partial' as const) : ('unpaid' as const),
+              payments: [...(payment.payments || []), receipt],
+            }
+          })
+          return {
+            ...rental,
+            payments,
+          }
+        })
+        return {
+          ...client,
+          rentals,
+        }
+      })
+
+      const optimisticClient = optimisticClients.find((client) => client.id === targetClient.id)
+      if (!optimisticClient) throw new Error('Client with rentalId not found')
+      const optimisticPayload = serializeClientForApi(optimisticClient) as ClientUpdateDTO
+      const applyOptimisticState = () => {
+        set({
+          clients: optimisticClients,
+          stats: calculateDashboardStats(optimisticClients),
+          error: null,
+        })
+      }
+
+      if (isBrowserOffline()) {
+        await enqueueUpdateClientAction(targetClient.id, optimisticPayload)
+        applyOptimisticState()
+        return
+      }
+
+      try {
+        await postPaymentRecord(rentalId, paymentId, amount, options)
+        await get().fetchClients()
+        await get().refreshStats()
+      } catch (error) {
+        if (!isLikelyNetworkError(error)) {
+          throw error
+        }
+        await enqueueUpdateClientAction(targetClient.id, optimisticPayload)
+        applyOptimisticState()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to add payment'
       set({ error: message })
@@ -341,9 +455,82 @@ export const useDataStore = create<DataState>((set, get) => ({
   editMonthlyPayment: async (rentalId, paymentId, amount) => {
     try {
       set({ error: null })
-      await updateMonthlyPaymentAPI(rentalId, paymentId, amount)
-      await get().fetchClients()
-      await get().refreshStats()
+      const safeRentalId = String(rentalId || '').trim()
+      const safePaymentId = String(paymentId || '').trim()
+      const safeAmount = Math.max(0, Number(amount) || 0)
+
+      const currentClients = get().clients
+      const targetClient = currentClients.find((client) => client.rentals.some((rental) => rental.id === safeRentalId))
+      if (!targetClient) throw new Error('Client with rentalId not found')
+      const targetRental = targetClient.rentals.find((rental) => rental.id === safeRentalId)
+      if (!targetRental) throw new Error('Rental not found on client')
+      const targetPayment = targetRental.payments.find((payment) => payment.id === safePaymentId)
+      if (!targetPayment) throw new Error('Monthly payment entry not found')
+
+      const optimisticClients = currentClients.map((client) => {
+        if (client.id !== targetClient.id) return client
+        const rentals = client.rentals.map((rental) => {
+          if (rental.id !== safeRentalId) return rental
+          const payments = rental.payments.map((payment) => {
+            if (payment.id !== safePaymentId) return payment
+            return {
+              ...payment,
+              paidAmount: Math.min(payment.amount, safeAmount),
+              status:
+                safeAmount >= payment.amount
+                  ? ('paid' as const)
+                  : safeAmount > 0
+                    ? ('partial' as const)
+                    : ('unpaid' as const),
+              payments: [
+                {
+                  id: generateId(),
+                  amount: safeAmount,
+                  date: new Date(),
+                  receiptNumber: `CORR-${Date.now()}`,
+                },
+              ],
+            }
+          })
+          return {
+            ...rental,
+            payments,
+          }
+        })
+        return {
+          ...client,
+          rentals,
+        }
+      })
+
+      const optimisticClient = optimisticClients.find((client) => client.id === targetClient.id)
+      if (!optimisticClient) throw new Error('Client with rentalId not found')
+      const optimisticPayload = serializeClientForApi(optimisticClient) as ClientUpdateDTO
+      const applyOptimisticState = () => {
+        set({
+          clients: optimisticClients,
+          stats: calculateDashboardStats(optimisticClients),
+          error: null,
+        })
+      }
+
+      if (isBrowserOffline()) {
+        await enqueueUpdateClientAction(targetClient.id, optimisticPayload)
+        applyOptimisticState()
+        return
+      }
+
+      try {
+        await updateMonthlyPaymentAPI(rentalId, paymentId, amount)
+        await get().fetchClients()
+        await get().refreshStats()
+      } catch (error) {
+        if (!isLikelyNetworkError(error)) {
+          throw error
+        }
+        await enqueueUpdateClientAction(targetClient.id, optimisticPayload)
+        applyOptimisticState()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to edit payment'
       set({ error: message })
@@ -355,9 +542,73 @@ export const useDataStore = create<DataState>((set, get) => ({
   addDepositPayment: async (rentalId, amount, options) => {
     try {
       set({ error: null })
-      await postDepositPayment(rentalId, amount, options)
-      await get().fetchClients()
-      await get().refreshStats()
+      const safeRentalId = String(rentalId || '').trim()
+      const safeAmount = Math.max(0, Number(amount) || 0)
+
+      const currentClients = get().clients
+      const targetClient = currentClients.find((client) => client.rentals.some((rental) => rental.id === safeRentalId))
+      if (!targetClient) throw new Error('Client with rentalId not found')
+      const targetRental = targetClient.rentals.find((rental) => rental.id === safeRentalId)
+      if (!targetRental) throw new Error('Rental not found on client')
+      if (!targetRental.deposit) throw new Error('Deposit not found on rental')
+
+      const paymentDate = options?.date ? new Date(options.date) : new Date()
+      const safeDate = Number.isNaN(paymentDate.getTime()) ? new Date() : paymentDate
+      const receipt = {
+        id: generateId(),
+        amount: safeAmount,
+        date: safeDate,
+        receiptNumber: String(options?.receiptNumber || '').trim() || `DEP-${Date.now()}`,
+      }
+
+      const optimisticClients = currentClients.map((client) => {
+        if (client.id !== targetClient.id) return client
+        const rentals = client.rentals.map((rental) => {
+          if (rental.id !== safeRentalId) return rental
+          const nextPaid = (rental.deposit.paid || 0) + safeAmount
+          return {
+            ...rental,
+            deposit: {
+              ...rental.deposit,
+              paid: Math.min(rental.deposit.total || 0, nextPaid),
+              payments: [...(rental.deposit.payments || []), receipt],
+            },
+          }
+        })
+        return {
+          ...client,
+          rentals,
+        }
+      })
+
+      const optimisticClient = optimisticClients.find((client) => client.id === targetClient.id)
+      if (!optimisticClient) throw new Error('Client with rentalId not found')
+      const optimisticPayload = serializeClientForApi(optimisticClient) as ClientUpdateDTO
+      const applyOptimisticState = () => {
+        set({
+          clients: optimisticClients,
+          stats: calculateDashboardStats(optimisticClients),
+          error: null,
+        })
+      }
+
+      if (isBrowserOffline()) {
+        await enqueueUpdateClientAction(targetClient.id, optimisticPayload)
+        applyOptimisticState()
+        return
+      }
+
+      try {
+        await postDepositPayment(rentalId, amount, options)
+        await get().fetchClients()
+        await get().refreshStats()
+      } catch (error) {
+        if (!isLikelyNetworkError(error)) {
+          throw error
+        }
+        await enqueueUpdateClientAction(targetClient.id, optimisticPayload)
+        applyOptimisticState()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to add deposit payment'
       set({ error: message })
@@ -392,7 +643,15 @@ export const useDataStore = create<DataState>((set, get) => ({
       })
 
       await get().updateClient(clientId, { rentals: updatedRentals })
-      await get().fetchClients()
+      if (!isBrowserOffline()) {
+        try {
+          await get().fetchClients()
+        } catch (error) {
+          if (!isLikelyNetworkError(error)) {
+            throw error
+          }
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to add document'
       set({ error: message })
@@ -417,11 +676,36 @@ export const useDataStore = create<DataState>((set, get) => ({
   deleteClient: async (clientId) => {
     try {
       set({ error: null })
-      await deleteClientAPI(clientId)
-      set((state) => ({
-        clients: state.clients.filter((c) => c.id !== clientId),
-      }))
-      await get().refreshStats()
+      const safeClientId = String(clientId || '').trim()
+      if (!safeClientId) throw new Error('Client id manquant')
+
+      const applyClientDeleteOptimistically = () => {
+        set((state) => {
+          const clients = state.clients.filter((client) => client.id !== safeClientId)
+          return {
+            clients,
+            stats: calculateDashboardStats(clients),
+            error: null,
+          }
+        })
+      }
+
+      if (isBrowserOffline()) {
+        await enqueueDeleteClientAction(safeClientId)
+        applyClientDeleteOptimistically()
+        return
+      }
+
+      try {
+        await deleteClientAPI(safeClientId)
+        applyClientDeleteOptimistically()
+      } catch (error) {
+        if (!isLikelyNetworkError(error)) {
+          throw error
+        }
+        await enqueueDeleteClientAction(safeClientId)
+        applyClientDeleteOptimistically()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete client'
       set({ error: message })
