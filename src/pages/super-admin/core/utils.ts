@@ -26,10 +26,12 @@ export const getActionBadge = (action?: string) => {
 }
 
 export const buildCredentialsMessage = (data: CreatedAdmin, appUrl: string) => {
+  const identifiantConseille = data.email || data.phone || '—'
   const lines = [
     'FICHE CONTACT — ADMIN',
     CREDENTIALS_SEPARATOR,
     `Nom complet : ${data.name}`,
+    `Identifiant conseillé : ${identifiantConseille}`,
     `Mot de passe : ${data.password}`,
     `Email : ${data.email || '—'}`,
     `Entreprise : ${data.entreprise || '—'}`,
@@ -37,7 +39,8 @@ export const buildCredentialsMessage = (data: CreatedAdmin, appUrl: string) => {
     `Créé le : ${new Date(data.createdAt).toLocaleString()}`,
     `Lien: ${appUrl}`,
     CREDENTIALS_SEPARATOR,
-    'Connexion : utilisez ces identifiants pour accéder à l’espace admin.',
+    'Connexion : utilisez l’email ou le téléphone pour accéder à l’espace admin.',
+    'Téléphone accepté : avec +221 ou sans +221.',
     'Conseil : changez le mot de passe après la première connexion.',
   ]
   return lines.join('\n')
