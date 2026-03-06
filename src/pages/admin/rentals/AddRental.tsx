@@ -135,11 +135,11 @@ export default function AddRental() {
               <CardContent className="space-y-4 pt-6">
                 <div className="space-y-2">
                   <label htmlFor="client-search" className="text-sm font-semibold text-slate-900">
-                    Chercher un client (nom, prénom, téléphone ou ID)
+                    Chercher un client (nom, prénom ou téléphone)
                   </label>
                   <Input
                     id="client-search"
-                    placeholder="Ex: Amadou, Diallo, +221 77, client-1"
+                    placeholder="Ex: Amadou, Diallo, +221 77"
                     value={clientSearch}
                     onChange={(e) => setClientSearch(e.target.value)}
                     className="border-slate-300 placeholder:text-slate-400 focus:ring-primary"

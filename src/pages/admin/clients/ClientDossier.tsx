@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Upload, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ type DocumentRow = Document & {
 };
 
 export default function ClientDossier() {
+  const navigate = useNavigate()
   const goBack = useGoBack('/documents');
   const { toast } = useToast();
   const clients = useStore((state) => state.clients)
@@ -76,6 +78,14 @@ export default function ClientDossier() {
 
   const [modalDoc, setModalDoc] = useState<DocumentRow | null>(null);
 
+  const getDisplayName = (doc: DocumentRow) =>
+    buildReadableDocumentName({
+      name: doc.name,
+      type: doc.type,
+      context: doc.rentalName || doc.clientName,
+      uploadedAt: doc.uploadedAt,
+    })
+
   const confirmDelete = async () => {
     if (!deleteTarget || isDeleting) return;
     setIsDeleting(true);
@@ -107,7 +117,7 @@ export default function ClientDossier() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => goBack('/documents')}>
             <ArrowLeft className="h-4 w-4" />
@@ -120,7 +130,7 @@ export default function ClientDossier() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
@@ -157,15 +167,56 @@ export default function ClientDossier() {
 
       {/* Documents Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Tous les Documents</CardTitle>
-          <Button className="gap-2">
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => navigate('/documents')}>
             <Upload className="h-4 w-4" />
             Importer
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="space-y-3 md:hidden">
+            {allDocuments.map((doc) => (
+              <div key={doc.id} className="rounded-xl border border-border bg-white p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span>{getDocumentIcon(doc.type)}</span>
+                      <p className="font-medium truncate max-w-[220px]">{getDisplayName(doc)}</p>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{doc.clientName}</p>
+                  </div>
+                  <Badge variant="outline">{getDocumentLabel(doc.type)}</Badge>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <p><span className="text-muted-foreground">Propriété:</span> {doc.rentalName}</p>
+                  <p><span className="text-muted-foreground">Date:</span> {formatDate(doc.uploadedAt)}</p>
+                  <p className="col-span-2">
+                    {doc.signed ? (
+                      <Badge className="bg-green-600">Signé</Badge>
+                    ) : (
+                      <Badge variant="secondary">Non signé</Badge>
+                    )}
+                  </p>
+                </div>
+                <div className="mt-2 flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setModalDoc(doc)}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => setDeleteTarget(doc)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -180,12 +231,7 @@ export default function ClientDossier() {
               </TableHeader>
               <TableBody>
                 {allDocuments.map(doc => {
-                  const displayName = buildReadableDocumentName({
-                    name: doc.name,
-                    type: doc.type,
-                    context: doc.rentalName || doc.clientName,
-                    uploadedAt: doc.uploadedAt,
-                  });
+                  const displayName = getDisplayName(doc)
 
                   return (
                     <TableRow key={doc.id}>
