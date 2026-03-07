@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2 } from 'lucide-react'
 import type { AuditAutoExportStatus } from '@/services/api/auditLogs.api'
+import type { PaymentProviderSettings } from '@/services/api'
 import type { PlatformConfig } from '@/services/platformConfig'
 
 type SettingsGovernanceSectionProps = {
@@ -12,6 +13,8 @@ type SettingsGovernanceSectionProps = {
   isLoading: boolean
   isSaving: boolean
   isReloading: boolean
+  paymentProviders: PaymentProviderSettings
+  isPaymentProvidersLoading: boolean
   isApplyingAuditRetention: boolean
   isExportingAudit: boolean
   autoExportStatus: AuditAutoExportStatus | null
@@ -20,6 +23,7 @@ type SettingsGovernanceSectionProps = {
   isDownloadingAutoExport: boolean
   isTestingWebhook: boolean
   onChange: (updater: (prev: PlatformConfig) => PlatformConfig) => void
+  onPaymentProvidersChange: (updater: (prev: PaymentProviderSettings) => PaymentProviderSettings) => void
   onSave: () => void
   onReload: () => void
   onApplyAuditRetention: () => void
@@ -40,6 +44,8 @@ export function SettingsGovernanceSection({
   isLoading,
   isSaving,
   isReloading,
+  paymentProviders,
+  isPaymentProvidersLoading,
   isApplyingAuditRetention,
   isExportingAudit,
   autoExportStatus,
@@ -48,6 +54,7 @@ export function SettingsGovernanceSection({
   isDownloadingAutoExport,
   isTestingWebhook,
   onChange,
+  onPaymentProvidersChange,
   onSave,
   onReload,
   onApplyAuditRetention,
@@ -60,6 +67,7 @@ export function SettingsGovernanceSection({
     isLoading ||
     isSaving ||
     isReloading ||
+    isPaymentProvidersLoading ||
     isApplyingAuditRetention ||
     isExportingAudit ||
     isRunningAutoExport ||
@@ -119,10 +127,41 @@ export function SettingsGovernanceSection({
       paymentRules: { ...prev.paymentRules, blockOnOverdue: checked },
     }))
 
-  const setOrangeOtpEnabled = (checked: boolean) =>
+  const setPaymentBoolean = (
+    key:
+      | 'orangeOtpEnabled'
+      | 'waveEnabled'
+      | 'orangeMoneyEnabled'
+      | 'manualValidationEnabled',
+    checked: boolean
+  ) =>
     onChange((prev) => ({
       ...prev,
-      paymentRules: { ...prev.paymentRules, orangeOtpEnabled: checked },
+      paymentRules: { ...prev.paymentRules, [key]: checked },
+    }))
+
+  const setPaymentMode = (key: 'waveMode' | 'orangeMoneyMode', next: 'manual' | 'api') =>
+    onChange((prev) => ({
+      ...prev,
+      paymentRules: { ...prev.paymentRules, [key]: next },
+    }))
+
+  const setWaveProviderField = (
+    key: 'apiBaseUrl' | 'initiationPath' | 'merchantId' | 'apiKey' | 'apiSecret' | 'webhookSecret',
+    next: string
+  ) =>
+    onPaymentProvidersChange((prev) => ({
+      ...prev,
+      wave: { ...prev.wave, [key]: next },
+    }))
+
+  const setOrangeProviderField = (
+    key: 'apiBaseUrl' | 'initiationPath' | 'merchantCode' | 'clientId' | 'clientSecret' | 'webhookSecret',
+    next: string
+  ) =>
+    onPaymentProvidersChange((prev) => ({
+      ...prev,
+      orangeMoney: { ...prev.orangeMoney, [key]: next },
     }))
 
   const setDocumentsField = (key: 'maxUploadMb' | 'retentionDays', next: string) =>
@@ -348,8 +387,197 @@ export function SettingsGovernanceSection({
           <span className="text-sm text-muted-foreground">Bloquer l’accès si abonnement en retard</span>
         </div>
         <div className="flex items-center gap-3">
-          <Switch checked={value.paymentRules.orangeOtpEnabled} onCheckedChange={setOrangeOtpEnabled} />
+          <Switch
+            checked={value.paymentRules.orangeOtpEnabled}
+            onCheckedChange={(checked) => setPaymentBoolean('orangeOtpEnabled', checked)}
+          />
           <span className="text-sm text-muted-foreground">Activer la validation OTP pour Orange Money</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={value.paymentRules.manualValidationEnabled}
+            onCheckedChange={(checked) => setPaymentBoolean('manualValidationEnabled', checked)}
+          />
+          <span className="text-sm text-muted-foreground">Autoriser la validation manuelle des paiements Mobile Money</span>
+        </div>
+        <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+          <div className="space-y-3 rounded-xl border border-[#00AEEF]/20 bg-[#F6FCFF] p-3">
+            <div className="flex items-center justify-between gap-3">
+              <h5 className="font-medium text-[#006E9A]">Wave</h5>
+              <Switch
+                checked={value.paymentRules.waveEnabled}
+                onCheckedChange={(checked) => setPaymentBoolean('waveEnabled', checked)}
+              />
+            </div>
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">Mode Wave</span>
+              <Select
+                value={value.paymentRules.waveMode}
+                onValueChange={(next) => setPaymentMode('waveMode', next as 'manual' | 'api')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir le mode Wave" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">Validation manuelle</SelectItem>
+                  <SelectItem value="api">API provider</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <div className="grid gap-3">
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">URL API Wave</span>
+                <Input
+                  value={paymentProviders.wave.apiBaseUrl}
+                  onChange={(event) => setWaveProviderField('apiBaseUrl', event.target.value)}
+                  placeholder="https://gateway.wave.example"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Chemin initiation</span>
+                <Input
+                  value={paymentProviders.wave.initiationPath}
+                  onChange={(event) => setWaveProviderField('initiationPath', event.target.value)}
+                  placeholder="/payments"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Merchant ID</span>
+                <Input
+                  value={paymentProviders.wave.merchantId}
+                  onChange={(event) => setWaveProviderField('merchantId', event.target.value)}
+                  placeholder="merchant-wave"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">API Key</span>
+                <Input
+                  value={paymentProviders.wave.apiKey}
+                  onChange={(event) => setWaveProviderField('apiKey', event.target.value)}
+                  placeholder={
+                    paymentProviders.wave.apiKeyConfigured
+                      ? `Déjà configurée (${paymentProviders.wave.apiKeyMasked})`
+                      : 'Coller la clé API Wave'
+                  }
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">API Secret</span>
+                <Input
+                  value={paymentProviders.wave.apiSecret}
+                  onChange={(event) => setWaveProviderField('apiSecret', event.target.value)}
+                  placeholder={
+                    paymentProviders.wave.apiSecretConfigured
+                      ? `Déjà configuré (${paymentProviders.wave.apiSecretMasked})`
+                      : 'Coller le secret Wave'
+                  }
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Webhook Secret</span>
+                <Input
+                  value={paymentProviders.wave.webhookSecret}
+                  onChange={(event) => setWaveProviderField('webhookSecret', event.target.value)}
+                  placeholder={
+                    paymentProviders.wave.webhookSecretConfigured
+                      ? `Déjà configuré (${paymentProviders.wave.webhookSecretMasked})`
+                      : 'Secret de signature webhook'
+                  }
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Webhook à déclarer chez Wave</span>
+                <Input value={paymentProviders.webhooks.wave} readOnly className="bg-muted/30" />
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-[#FF7900]/20 bg-[#FFF8F2] p-3">
+            <div className="flex items-center justify-between gap-3">
+              <h5 className="font-medium text-[#B85600]">Orange Money</h5>
+              <Switch
+                checked={value.paymentRules.orangeMoneyEnabled}
+                onCheckedChange={(checked) => setPaymentBoolean('orangeMoneyEnabled', checked)}
+              />
+            </div>
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">Mode Orange Money</span>
+              <Select
+                value={value.paymentRules.orangeMoneyMode}
+                onValueChange={(next) => setPaymentMode('orangeMoneyMode', next as 'manual' | 'api')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir le mode Orange Money" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">Validation manuelle</SelectItem>
+                  <SelectItem value="api">API provider</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <div className="grid gap-3">
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">URL API Orange Money</span>
+                <Input
+                  value={paymentProviders.orangeMoney.apiBaseUrl}
+                  onChange={(event) => setOrangeProviderField('apiBaseUrl', event.target.value)}
+                  placeholder="https://gateway.orange.example"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Chemin initiation</span>
+                <Input
+                  value={paymentProviders.orangeMoney.initiationPath}
+                  onChange={(event) => setOrangeProviderField('initiationPath', event.target.value)}
+                  placeholder="/payments"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Merchant Code</span>
+                <Input
+                  value={paymentProviders.orangeMoney.merchantCode}
+                  onChange={(event) => setOrangeProviderField('merchantCode', event.target.value)}
+                  placeholder="merchant-orange"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Client ID</span>
+                <Input
+                  value={paymentProviders.orangeMoney.clientId}
+                  onChange={(event) => setOrangeProviderField('clientId', event.target.value)}
+                  placeholder="client-id-orange"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Client Secret</span>
+                <Input
+                  value={paymentProviders.orangeMoney.clientSecret}
+                  onChange={(event) => setOrangeProviderField('clientSecret', event.target.value)}
+                  placeholder={
+                    paymentProviders.orangeMoney.clientSecretConfigured
+                      ? `Déjà configuré (${paymentProviders.orangeMoney.clientSecretMasked})`
+                      : 'Coller le client secret Orange Money'
+                  }
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Webhook Secret</span>
+                <Input
+                  value={paymentProviders.orangeMoney.webhookSecret}
+                  onChange={(event) => setOrangeProviderField('webhookSecret', event.target.value)}
+                  placeholder={
+                    paymentProviders.orangeMoney.webhookSecretConfigured
+                      ? `Déjà configuré (${paymentProviders.orangeMoney.webhookSecretMasked})`
+                      : 'Secret de signature webhook'
+                  }
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Webhook à déclarer chez Orange Money</span>
+                <Input value={paymentProviders.webhooks.orangeMoney} readOnly className="bg-muted/30" />
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 

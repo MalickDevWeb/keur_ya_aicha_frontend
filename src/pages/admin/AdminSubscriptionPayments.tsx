@@ -149,14 +149,6 @@ export default function AdminSubscriptionPayments() {
   const overdueToastKeyRef = useRef('')
   const userRole = String(user?.role || '').toUpperCase()
   const canValidateCash = userRole === 'SUPER_ADMIN'
-  const visiblePaymentMethods = useMemo(
-    () =>
-      canValidateCash
-        ? PAYMENT_METHOD_OPTIONS.filter((method) => method.id === 'cash')
-        : PAYMENT_METHOD_OPTIONS,
-    [canValidateCash]
-  )
-
   const currentMonth = useMemo(() => getMonthKey(new Date().toISOString()), [])
   const waveLogoUrl = useMemo(() => resolveAssetUrl(WAVE_LOGO_PATH), [])
   const orangeLogoUrl = useMemo(() => resolveAssetUrl(ORANGE_LOGO_PATH), [])
@@ -280,11 +272,22 @@ export default function AdminSubscriptionPayments() {
   const waveRecipientPhone = normalizePhone(
     subscriptionStatus?.waveRecipientPhone || paymentRules.waveRecipientPhone || ''
   )
+  const waveEnabled = Boolean(subscriptionStatus?.waveEnabled ?? paymentRules.waveEnabled)
+  const waveMode = subscriptionStatus?.waveMode || paymentRules.waveMode || 'manual'
+  const waveApiConfigured = Boolean(subscriptionStatus?.waveApiConfigured)
   const orangeRecipientPhone = normalizePhone(
     subscriptionStatus?.orangeRecipientPhone || paymentRules.orangeRecipientPhone || ''
   )
+  const orangeMoneyEnabled = Boolean(
+    subscriptionStatus?.orangeMoneyEnabled ?? paymentRules.orangeMoneyEnabled
+  )
+  const orangeMoneyMode = subscriptionStatus?.orangeMoneyMode || paymentRules.orangeMoneyMode || 'manual'
+  const orangeMoneyApiConfigured = Boolean(subscriptionStatus?.orangeMoneyApiConfigured)
   const orangeOtpEnabled = Boolean(
     subscriptionStatus?.orangeOtpEnabled ?? paymentRules.orangeOtpEnabled
+  )
+  const manualValidationEnabled = Boolean(
+    subscriptionStatus?.manualValidationEnabled ?? paymentRules.manualValidationEnabled
   )
   const getPeriodKeyForPayment = (payment: AdminPaymentDTO): string => {
     const rawMonth = String(payment.month || '').trim()
@@ -344,11 +347,22 @@ export default function AdminSubscriptionPayments() {
   })()
   const normalizedPhone = normalizePhone(payerPhone)
   const numericAmount = allowCustomAmount ? Number(amount) : expectedPlanAmount
+  const visiblePaymentMethods = useMemo(() => {
+    if (canValidateCash) {
+      return PAYMENT_METHOD_OPTIONS.filter((method) => method.id === 'cash')
+    }
+    return PAYMENT_METHOD_OPTIONS.filter((method) => {
+      if (method.id === 'cash') return false
+      if (method.id === 'wave') return waveEnabled
+      if (method.id === 'orange_money') return orangeMoneyEnabled
+      return false
+    })
+  }, [canValidateCash, orangeMoneyEnabled, waveEnabled])
   const paymentAccountConfigured =
     paymentMethod === 'wave'
-      ? Boolean(waveRecipientPhone)
+      ? Boolean(waveRecipientPhone) && (waveMode !== 'api' || waveApiConfigured)
       : paymentMethod === 'orange_money'
-      ? Boolean(orangeRecipientPhone)
+      ? Boolean(orangeRecipientPhone) && (orangeMoneyMode !== 'api' || orangeMoneyApiConfigured)
       : true
   const hasValidRawAmount =
     Number.isFinite(numericAmount) &&
@@ -394,10 +408,17 @@ export default function AdminSubscriptionPayments() {
       setPaymentMethod('cash')
       return
     }
-    if (!canValidateCash && paymentMethod === 'cash') {
-      setPaymentMethod('wave')
+    if (!canValidateCash) {
+      if (paymentMethod === 'cash') {
+        setPaymentMethod(visiblePaymentMethods[0]?.id || 'wave')
+        return
+      }
+      const methodStillVisible = visiblePaymentMethods.some((method) => method.id === paymentMethod)
+      if (!methodStillVisible && visiblePaymentMethods[0]) {
+        setPaymentMethod(visiblePaymentMethods[0].id)
+      }
     }
-  }, [canValidateCash, paymentMethod])
+  }, [canValidateCash, paymentMethod, visiblePaymentMethods])
 
   useEffect(() => {
     if (allowCustomAmount) return
@@ -421,23 +442,36 @@ export default function AdminSubscriptionPayments() {
 
   useEffect(() => {
     setFieldErrors({})
-    setWaveMarkedAsPaid(false)
+    if (paymentMethod === 'wave' && waveMode === 'api') {
+      setWaveMarkedAsPaid(true)
+    } else {
+      setWaveMarkedAsPaid(false)
+    }
     if (paymentMethod !== 'orange_money') {
       setOrangeCode('')
       setOrangeCodeInput('')
     }
-  }, [paymentMethod])
+  }, [paymentMethod, waveMode])
 
   useEffect(() => {
     if (paymentMethod !== 'orange_money') return
+    if (orangeMoneyMode === 'api') {
+      setOrangeCode('')
+      setOrangeCodeInput('')
+      return
+    }
     setOrangeCode('')
     setOrangeCodeInput('')
-  }, [payerPhone, amount, paymentMethod])
+  }, [amount, orangeMoneyMode, payerPhone, paymentMethod])
 
   useEffect(() => {
     if (paymentMethod !== 'wave') return
+    if (waveMode === 'api') {
+      setWaveMarkedAsPaid(true)
+      return
+    }
     setWaveMarkedAsPaid(false)
-  }, [payerPhone, amount, paymentMethod])
+  }, [amount, payerPhone, paymentMethod, waveMode])
 
   useEffect(() => {
     let active = true
@@ -549,6 +583,38 @@ export default function AdminSubscriptionPayments() {
       return
     }
 
+    if (paymentMethod === 'wave' && waveMode === 'api' && !waveApiConfigured) {
+      addToast({
+        type: 'error',
+        title: 'Wave API incomplète',
+        message: 'Le Super Admin doit terminer la configuration API Wave.',
+      })
+      return
+    }
+
+    if (paymentMethod === 'orange_money' && orangeMoneyMode === 'api' && !orangeMoneyApiConfigured) {
+      addToast({
+        type: 'error',
+        title: 'Orange Money API incomplète',
+        message: 'Le Super Admin doit terminer la configuration API Orange Money.',
+      })
+      return
+    }
+
+    if (
+      (paymentMethod === 'wave' && waveMode === 'manual') ||
+      (paymentMethod === 'orange_money' && orangeMoneyMode === 'manual')
+    ) {
+      if (!manualValidationEnabled) {
+        addToast({
+          type: 'error',
+          title: 'Validation manuelle désactivée',
+          message: 'Le Super Admin a désactivé la validation manuelle des paiements Mobile Money.',
+        })
+        return
+      }
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors)
       addToast({
@@ -559,7 +625,7 @@ export default function AdminSubscriptionPayments() {
       return
     }
 
-    if (paymentMethod === 'orange_money' && orangeOtpEnabled) {
+    if (paymentMethod === 'orange_money' && orangeOtpEnabled && orangeMoneyMode !== 'api') {
       if (!orangeCode) {
         const generatedCode = buildOrangeSimulationCode()
         setOrangeCode(generatedCode)
@@ -583,7 +649,7 @@ export default function AdminSubscriptionPayments() {
       }
     }
 
-    if (paymentMethod === 'wave' && !waveMarkedAsPaid) {
+    if (paymentMethod === 'wave' && waveMode !== 'api' && !waveMarkedAsPaid) {
       addToast({
         type: 'info',
         title: 'Confirmation Wave requise',
@@ -594,7 +660,7 @@ export default function AdminSubscriptionPayments() {
 
     setPaying(true)
     try {
-      const paidAt = new Date().toISOString()
+      const nowIso = new Date().toISOString()
       const baseAmount = allowCustomAmount ? numericAmount : expectedPlanAmount
       const penaltyMultiplier = overdueByRules ? 1 + latePenaltyPercent / 100 : 1
       const effectiveAmount = Number((baseAmount * penaltyMultiplier).toFixed(0))
@@ -613,15 +679,15 @@ export default function AdminSubscriptionPayments() {
         provider,
         payerPhone: paymentMethod === 'cash' ? '' : normalizedPhone,
         transactionRef:
-          paymentMethod === 'orange_money'
-            ? `OM-SIM-${Date.now()}`
-            : paymentMethod === 'wave'
-            ? `WAVE-SIM-${Date.now()}`
+          paymentMethod === 'orange_money' && orangeMoneyMode !== 'api'
+            ? `OM-MAN-${Date.now()}`
+            : paymentMethod === 'wave' && waveMode !== 'api'
+            ? `WAVE-MAN-${Date.now()}`
             : '',
         note: note.trim(),
-        paidAt,
+        paidAt: paymentMethod === 'cash' ? nowIso : undefined,
         month: requiredMonth,
-        createdAt: paidAt,
+        createdAt: nowIso,
       })
       setPayments((prev) => [payment, ...prev])
       const freshStatus = await getAdminPaymentStatus()
@@ -640,7 +706,13 @@ export default function AdminSubscriptionPayments() {
         title: payment?.status === 'pending' ? 'Paiement initié' : 'Paiement enregistré',
         message:
           payment?.status === 'pending'
-            ? `Paiement ${paymentMethod === 'wave' ? 'Wave' : 'Orange Money'} en attente de confirmation provider.`
+            ? paymentMethod === 'wave'
+              ? waveMode === 'api'
+                ? 'Paiement Wave initié. En attente de confirmation provider.'
+                : 'Déclaration Wave enregistrée. En attente de validation.'
+              : orangeMoneyMode === 'api'
+                ? 'Paiement Orange Money initié. En attente de confirmation provider.'
+                : 'Déclaration Orange Money enregistrée. En attente de validation.'
             : paymentMethod === 'cash'
             ? 'Paiement espèces enregistré. Accès mis à jour.'
             : `Paiement ${paymentMethod === 'wave' ? 'Wave' : 'Orange Money'} confirmé.`,
@@ -724,6 +796,11 @@ export default function AdminSubscriptionPayments() {
             Bénéficiaire Mobile Money: <span className="font-semibold">{paymentRecipientName || 'Non défini'}</span>
             {waveRecipientPhone ? ` • Wave ${waveRecipientPhone}` : ' • Wave non configuré'}
             {orangeRecipientPhone ? ` • Orange ${orangeRecipientPhone}` : ' • Orange non configuré'}
+          </p>
+          <p className="text-xs text-[#121B53]/70">
+            Modes actifs: Wave {waveEnabled ? (waveMode === 'api' ? 'API' : 'manuel') : 'désactivé'} • Orange Money{' '}
+            {orangeMoneyEnabled ? (orangeMoneyMode === 'api' ? 'API' : 'manuel') : 'désactivé'} • Validation manuelle{' '}
+            {manualValidationEnabled ? 'autorisée' : 'désactivée'}
           </p>
         </CardHeader>
         <CardContent className="h-full space-y-3 overflow-hidden pb-3">
@@ -842,6 +919,11 @@ export default function AdminSubscriptionPayments() {
               )
             })}
           </div>
+          {!canValidateCash && visiblePaymentMethods.length === 0 ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              Aucun moyen de paiement mobile n’est actuellement activé par le Super Admin.
+            </div>
+          ) : null}
 
           {paymentMethod !== 'cash' ? (
             <div className="space-y-3">
@@ -891,7 +973,11 @@ export default function AdminSubscriptionPayments() {
                       <p>1. Vérifiez le numéro et le montant.</p>
                       <p>2. Scannez le QR code depuis l’application Wave.</p>
                       <p>3. Le transfert doit arriver sur le compte Wave configuré par le Super Admin.</p>
-                      <p>4. Revenez ici puis confirmez la validation.</p>
+                      <p>
+                        4. {waveMode === 'api'
+                          ? 'Le backend initiera ensuite le paiement provider et attendra le webhook.'
+                          : 'Revenez ici puis déclarez le paiement pour validation manuelle.'}
+                      </p>
                       <div className="flex flex-wrap gap-2 pt-1">
                         <Button
                           type="button"
@@ -907,8 +993,13 @@ export default function AdminSubscriptionPayments() {
                           variant={waveMarkedAsPaid ? 'default' : 'secondary'}
                           className={waveMarkedAsPaid ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                           onClick={() => setWaveMarkedAsPaid((prev) => !prev)}
+                          disabled={waveMode === 'api'}
                         >
-                          {waveMarkedAsPaid ? 'Wave validé' : 'J’ai validé sur Wave'}
+                          {waveMode === 'api'
+                            ? 'Validation provider attendue'
+                            : waveMarkedAsPaid
+                              ? 'Wave validé'
+                              : 'J’ai validé sur Wave'}
                         </Button>
                       </div>
                       {isMobileViewport ? (
@@ -935,7 +1026,11 @@ export default function AdminSubscriptionPayments() {
                     <Badge className="bg-[#FF7900] text-black">OM</Badge>
                   </div>
                   <div className="mt-3 space-y-1">
-                    {orangeOtpEnabled ? (
+                    {orangeMoneyMode === 'api' ? (
+                      <p className="text-xs text-[#8C490D]">
+                        Le backend initiera le paiement Orange Money via l’API configurée puis attendra le retour provider.
+                      </p>
+                    ) : orangeOtpEnabled ? (
                       <>
                         <label className="text-xs font-medium text-[#B85600]">Code de validation OM</label>
                         <Input
@@ -1029,9 +1124,13 @@ export default function AdminSubscriptionPayments() {
                   : paying
                   ? 'Traitement...'
                   : paymentMethod === 'wave'
-                  ? 'Confirmer paiement Wave'
+                  ? waveMode === 'api'
+                    ? 'Initier paiement Wave'
+                    : 'Déclarer paiement Wave'
                   : paymentMethod === 'orange_money'
-                  ? orangeOtpEnabled
+                  ? orangeMoneyMode === 'api'
+                    ? 'Initier paiement OM'
+                    : orangeOtpEnabled
                     ? orangeCode
                       ? 'Confirmer code OM'
                       : 'Recevoir code OM'

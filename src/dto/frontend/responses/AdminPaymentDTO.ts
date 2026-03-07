@@ -31,6 +31,13 @@ export interface AdminPaymentStatusDTO {
   allowCustomAmount?: boolean
   recipientName?: string
   waveRecipientPhone?: string
+  waveEnabled?: boolean
+  waveMode?: 'manual' | 'api'
+  waveApiConfigured?: boolean
   orangeRecipientPhone?: string
+  orangeMoneyEnabled?: boolean
+  orangeMoneyMode?: 'manual' | 'api'
+  orangeMoneyApiConfigured?: boolean
   orangeOtpEnabled?: boolean
+  manualValidationEnabled?: boolean
 }

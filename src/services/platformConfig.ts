@@ -25,8 +25,13 @@ export type PaymentRulesConfig = {
   blockOnOverdue: boolean
   recipientName: string
   waveRecipientPhone: string
+  waveEnabled: boolean
+  waveMode: 'manual' | 'api'
   orangeRecipientPhone: string
+  orangeMoneyEnabled: boolean
+  orangeMoneyMode: 'manual' | 'api'
   orangeOtpEnabled: boolean
+  manualValidationEnabled: boolean
 }
 
 export type DocumentsConfig = {
@@ -118,8 +123,13 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
     blockOnOverdue: true,
     recipientName: 'Keur Ya Aicha',
     waveRecipientPhone: '771719013',
+    waveEnabled: true,
+    waveMode: 'manual',
     orangeRecipientPhone: '771719013',
+    orangeMoneyEnabled: true,
+    orangeMoneyMode: 'manual',
     orangeOtpEnabled: true,
+    manualValidationEnabled: true,
   },
   documents: {
     maxUploadMb: 10,
@@ -194,6 +204,10 @@ function asOptionalString(value: unknown): string {
   return str.trim()
 }
 
+function asProviderMode(value: unknown, fallback: 'manual' | 'api'): 'manual' | 'api' {
+  return String(value || '').trim().toLowerCase() === 'api' ? 'api' : fallback
+}
+
 function asStringArray(value: unknown, fallback: string[]): string[] {
   if (!Array.isArray(value)) return fallback
   const normalized = value
@@ -260,10 +274,24 @@ function sanitizePlatformConfig(value: unknown): PlatformConfig {
         DEFAULT_PLATFORM_CONFIG.paymentRules.recipientName
       ),
       waveRecipientPhone: asOptionalString(paymentRules.waveRecipientPhone),
+      waveEnabled: asBoolean(paymentRules.waveEnabled, DEFAULT_PLATFORM_CONFIG.paymentRules.waveEnabled),
+      waveMode: asProviderMode(paymentRules.waveMode, DEFAULT_PLATFORM_CONFIG.paymentRules.waveMode),
       orangeRecipientPhone: asOptionalString(paymentRules.orangeRecipientPhone),
+      orangeMoneyEnabled: asBoolean(
+        paymentRules.orangeMoneyEnabled,
+        DEFAULT_PLATFORM_CONFIG.paymentRules.orangeMoneyEnabled
+      ),
+      orangeMoneyMode: asProviderMode(
+        paymentRules.orangeMoneyMode,
+        DEFAULT_PLATFORM_CONFIG.paymentRules.orangeMoneyMode
+      ),
       orangeOtpEnabled: asBoolean(
         paymentRules.orangeOtpEnabled,
         DEFAULT_PLATFORM_CONFIG.paymentRules.orangeOtpEnabled
+      ),
+      manualValidationEnabled: asBoolean(
+        paymentRules.manualValidationEnabled,
+        DEFAULT_PLATFORM_CONFIG.paymentRules.manualValidationEnabled
       ),
     },
     documents: {
@@ -484,10 +512,12 @@ function isWriteMethod(method: string): boolean {
 function isMaintenanceWhitelistPath(path: string): boolean {
   return (
     path.startsWith('/settings') ||
+    path.startsWith('/payment-providers') ||
     path.startsWith('/audit_logs') ||
     path.startsWith('/auth') ||
     path.startsWith('/authContext') ||
     path.startsWith('/undo-actions') ||
+    path.startsWith('/admin_payments/webhook') ||
     path === '/sign' ||
     path.startsWith('/cloudinary/open-url')
   )

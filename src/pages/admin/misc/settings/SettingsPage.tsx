@@ -5,7 +5,14 @@ import { useElectronAPI } from '@/hooks/useElectronAPI'
 import { useToast } from '@/hooks/use-toast'
 import { useActionLogger } from '@/lib/actionLogger'
 import { CLIENT_IMPORT_FIELDS, DEFAULT_IMPORT_ALIASES, DEFAULT_REQUIRED_FIELDS, type ClientImportMapping } from '@/lib/importClients'
-import { changeOwnPassword, getSetting, setSetting } from '@/services/api'
+import {
+  changeOwnPassword,
+  getPaymentProviderSettings,
+  savePaymentProviderSettings,
+  type PaymentProviderSettings,
+  getSetting,
+  setSetting,
+} from '@/services/api'
 import { uploadToCloudinary } from '@/services/api/uploads.api'
 import {
   applyAuditLogsRetention,
@@ -68,6 +75,41 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
+function buildEmptyPaymentProviderSettings(): PaymentProviderSettings {
+  return {
+    wave: {
+      apiBaseUrl: '',
+      initiationPath: '/payments',
+      merchantId: '',
+      apiKey: '',
+      apiKeyConfigured: false,
+      apiKeyMasked: '',
+      apiSecret: '',
+      apiSecretConfigured: false,
+      apiSecretMasked: '',
+      webhookSecret: '',
+      webhookSecretConfigured: false,
+      webhookSecretMasked: '',
+    },
+    orangeMoney: {
+      apiBaseUrl: '',
+      initiationPath: '/payments',
+      merchantCode: '',
+      clientId: '',
+      clientSecret: '',
+      clientSecretConfigured: false,
+      clientSecretMasked: '',
+      webhookSecret: '',
+      webhookSecretConfigured: false,
+      webhookSecretMasked: '',
+    },
+    webhooks: {
+      wave: '',
+      orangeMoney: '',
+    },
+  }
+}
+
 export default function SettingsPage() {
   const { user, impersonation } = useAuth()
   const { toast } = useToast()
@@ -92,9 +134,13 @@ export default function SettingsPage() {
   const [runtimeConfigPortablePath, setRuntimeConfigPortablePath] = useState<string | null>(null)
   const [runtimeConfigWrittenPath, setRuntimeConfigWrittenPath] = useState<string | null>(null)
   const [platformConfigDraft, setPlatformConfigDraft] = useState<PlatformConfig>(getPlatformConfigSnapshot())
+  const [paymentProviderSettings, setPaymentProviderSettings] = useState<PaymentProviderSettings>(
+    buildEmptyPaymentProviderSettings()
+  )
   const [platformConfigLoading, setPlatformConfigLoading] = useState(false)
   const [platformConfigSaving, setPlatformConfigSaving] = useState(false)
   const [platformConfigReloading, setPlatformConfigReloading] = useState(false)
+  const [paymentProviderLoading, setPaymentProviderLoading] = useState(false)
   const [auditRetentionApplying, setAuditRetentionApplying] = useState(false)
   const [auditExporting, setAuditExporting] = useState(false)
   const [auditAutoExportStatus, setAuditAutoExportStatus] = useState<AuditAutoExportStatus | null>(null)
@@ -153,6 +199,19 @@ export default function SettingsPage() {
       applyBrandingToDocument(config)
     } finally {
       setPlatformConfigLoading(false)
+    }
+  }, [canEditRequired])
+
+  const loadPaymentProviders = useCallback(async () => {
+    if (!canEditRequired) return
+    setPaymentProviderLoading(true)
+    try {
+      const config = await getPaymentProviderSettings()
+      setPaymentProviderSettings(config)
+    } catch {
+      setPaymentProviderSettings(buildEmptyPaymentProviderSettings())
+    } finally {
+      setPaymentProviderLoading(false)
     }
   }, [canEditRequired])
 
@@ -244,6 +303,11 @@ export default function SettingsPage() {
     if (!canEditRequired) return
     void loadPlatformConfig()
   }, [canEditRequired, loadPlatformConfig])
+
+  useEffect(() => {
+    if (!canEditRequired) return
+    void loadPaymentProviders()
+  }, [canEditRequired, loadPaymentProviders])
 
   useEffect(() => {
     if (!canEditRequired) return
@@ -475,6 +539,7 @@ export default function SettingsPage() {
     setPlatformConfigReloading(true)
     try {
       await loadPlatformConfig()
+      await loadPaymentProviders()
       await loadAuditAutoExportStatus(true)
     } finally {
       setPlatformConfigReloading(false)
@@ -497,9 +562,42 @@ export default function SettingsPage() {
       void logAction('settings.governance.save.error', { message })
       return
     }
+    const waveApiBaseUrl = String(paymentProviderSettings.wave.apiBaseUrl || '').trim()
+    if (waveApiBaseUrl && !isValidHttpUrl(waveApiBaseUrl)) {
+      const message = "L'URL API Wave est invalide."
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.governance.save.error', { message })
+      return
+    }
+    const orangeApiBaseUrl = String(paymentProviderSettings.orangeMoney.apiBaseUrl || '').trim()
+    if (orangeApiBaseUrl && !isValidHttpUrl(orangeApiBaseUrl)) {
+      const message = "L'URL API Orange Money est invalide."
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.governance.save.error', { message })
+      return
+    }
 
     try {
       setPlatformConfigSaving(true)
+      const savedProviders = await savePaymentProviderSettings({
+        wave: {
+          apiBaseUrl: paymentProviderSettings.wave.apiBaseUrl,
+          initiationPath: paymentProviderSettings.wave.initiationPath,
+          merchantId: paymentProviderSettings.wave.merchantId,
+          apiKey: paymentProviderSettings.wave.apiKey,
+          apiSecret: paymentProviderSettings.wave.apiSecret,
+          webhookSecret: paymentProviderSettings.wave.webhookSecret,
+        },
+        orangeMoney: {
+          apiBaseUrl: paymentProviderSettings.orangeMoney.apiBaseUrl,
+          initiationPath: paymentProviderSettings.orangeMoney.initiationPath,
+          merchantCode: paymentProviderSettings.orangeMoney.merchantCode,
+          clientId: paymentProviderSettings.orangeMoney.clientId,
+          clientSecret: paymentProviderSettings.orangeMoney.clientSecret,
+          webhookSecret: paymentProviderSettings.orangeMoney.webhookSecret,
+        },
+      })
+      setPaymentProviderSettings(savedProviders)
       const saved = await savePlatformConfig(platformConfigDraft)
       setPlatformConfigDraft(saved)
       applyBrandingToDocument(saved)
@@ -863,6 +961,8 @@ export default function SettingsPage() {
           isLoading={platformConfigLoading}
           isSaving={platformConfigSaving}
           isReloading={platformConfigReloading}
+          paymentProviders={paymentProviderSettings}
+          isPaymentProvidersLoading={paymentProviderLoading}
           isApplyingAuditRetention={auditRetentionApplying}
           isExportingAudit={auditExporting}
           autoExportStatus={auditAutoExportStatus}
@@ -871,6 +971,7 @@ export default function SettingsPage() {
           isDownloadingAutoExport={auditAutoExportDownloading}
           isTestingWebhook={webhookTesting}
           onChange={(updater) => setPlatformConfigDraft((prev) => updater(prev))}
+          onPaymentProvidersChange={(updater) => setPaymentProviderSettings((prev) => updater(prev))}
           onSave={saveGovernanceConfig}
           onReload={() => {
             void reloadGovernanceConfig()

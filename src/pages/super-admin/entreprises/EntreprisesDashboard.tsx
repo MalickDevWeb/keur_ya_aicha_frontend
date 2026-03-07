@@ -11,6 +11,7 @@ import {
   fetchAdminRequests,
   fetchEntreprises,
   setImpersonation as setImpersonationApi,
+  validateAdminPayment,
 } from '@/services/api'
 import type { AdminDTO, AdminPaymentDTO, AdminRequestDTO, EntrepriseDTO } from '@/dto/frontend/responses'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
@@ -98,6 +99,23 @@ export function EntreprisesDashboard() {
 
   const currentMonth = useMemo(() => new Date().toISOString().slice(0, 7), [])
 
+  const isSettledPayment = (payment: AdminPaymentDTO) => {
+    const status = String(payment.status || '').trim().toLowerCase()
+    return status === 'paid' || status === 'success' || status === 'succeeded'
+  }
+
+  const getPaymentTimestamp = (payment: AdminPaymentDTO) =>
+    String(payment.createdAt || payment.paidAt || '').trim()
+
+  const resolveLatestPendingPayment = (payments: AdminPaymentDTO[], adminId: string) =>
+    [...payments]
+      .filter(
+        (payment) =>
+          payment.adminId === adminId && String(payment.status || '').trim().toLowerCase() === 'pending'
+      )
+      .sort((left, right) => getPaymentTimestamp(right).localeCompare(getPaymentTimestamp(left)))[0] ||
+    null
+
   const paymentsByAdmin = useMemo(() => {
     const map = new Map<string, AdminPaymentDTO[]>()
     adminPayments.forEach((payment) => {
@@ -116,12 +134,14 @@ export function EntreprisesDashboard() {
 
   const isAdminPaidThisMonth = (adminId?: string) => {
     if (!adminId) return false
-    return (paymentsByAdmin.get(adminId) || []).some((payment) => payment.month === currentMonth)
+    return (paymentsByAdmin.get(adminId) || []).some(
+      (payment) => payment.month === currentMonth && isSettledPayment(payment)
+    )
   }
 
   const getLastPaidAt = (adminId?: string) => {
     if (!adminId) return null
-    return paymentsByAdmin.get(adminId)?.[0]?.paidAt || null
+    return (paymentsByAdmin.get(adminId) || []).find((payment) => isSettledPayment(payment))?.paidAt || null
   }
 
   const rows = useMemo<EntrepriseRow[]>(() => {
@@ -178,6 +198,32 @@ export function EntreprisesDashboard() {
         userId: admin.userId,
       })
 
+      const pendingPayment = resolveLatestPendingPayment(await fetchAdminPayments(), admin.id)
+      if (pendingPayment?.id) {
+        const validatedPayment = await validateAdminPayment(
+          pendingPayment.id,
+          'Paiement Mobile Money valide par Super Admin depuis la liste entreprises.'
+        )
+
+        setAdminPayments((prev) =>
+          (prev.some((payment) => payment.id === validatedPayment.id)
+            ? prev.map((payment) => (payment.id === validatedPayment.id ? validatedPayment : payment))
+            : [validatedPayment, ...prev]
+          ).sort((left, right) =>
+            String(right.paidAt || right.createdAt || '').localeCompare(
+              String(left.paidAt || left.createdAt || '')
+            )
+          )
+        )
+
+        addToast({
+          type: 'success',
+          title: 'Paiement valide',
+          message: `Le paiement en attente de ${admin.name || admin.username} a été validé et appliqué.`,
+        })
+        return
+      }
+
       const now = new Date().toISOString()
       const payment = await createAdminPayment({
         id: crypto.randomUUID(),
@@ -186,7 +232,7 @@ export function EntreprisesDashboard() {
         amount: safeAmount,
         method: 'cash',
         provider: 'manual',
-        note: 'Paiement valide par Super Admin depuis la liste entreprises.',
+        note: 'Paiement direct valide par Super Admin depuis la liste entreprises.',
         paidAt: now,
         createdAt: now,
       })

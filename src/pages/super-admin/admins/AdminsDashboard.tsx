@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   clearImpersonation as clearImpersonationApi,
   createAdminPayment,
+  fetchAdminPayments,
   fetchAdmins,
   fetchEntreprises,
   setImpersonation as setImpersonationApi,
   updateAdmin,
+  validateAdminPayment,
 } from '@/services/api'
-import type { AdminDTO, EntrepriseDTO } from '@/dto/frontend/responses'
+import type { AdminDTO, AdminPaymentDTO, EntrepriseDTO } from '@/dto/frontend/responses'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
 import { useNavigate } from 'react-router-dom'
@@ -40,6 +42,25 @@ const FEATURE_KEYS = Object.keys(ADMIN_FEATURE_PERMISSION_DEFAULTS) as Array<
 
 const DEFAULT_MONTHLY_AMOUNT = 5000
 const DEFAULT_ANNUAL_AMOUNT = 60000
+
+function getPaymentTimestamp(payment: AdminPaymentDTO): string {
+  return String(payment.createdAt || payment.paidAt || '').trim()
+}
+
+function resolveLatestPendingPayment(
+  payments: AdminPaymentDTO[],
+  adminId: string
+): AdminPaymentDTO | null {
+  return (
+    [...payments]
+      .filter(
+        (payment) =>
+          payment.adminId === adminId && String(payment.status || '').trim().toLowerCase() === 'pending'
+      )
+      .sort((left, right) => getPaymentTimestamp(right).localeCompare(getPaymentTimestamp(left)))[0] ||
+    null
+  )
+}
 
 function buildSubscriptionDraft(admin: AdminDTO): SubscriptionDraft {
   const mode = String(admin.subscriptionMode || 'monthly').toLowerCase()
@@ -253,6 +274,24 @@ export function AdminsDashboard() {
         userId: subscriptionTarget.userId,
       })
 
+      const pendingPayment = resolveLatestPendingPayment(
+        await fetchAdminPayments(),
+        subscriptionTarget.id
+      )
+
+      if (pendingPayment?.id) {
+        await validateAdminPayment(
+          pendingPayment.id,
+          'Paiement Mobile Money valide par Super Admin depuis la supervision.'
+        )
+        addToast({
+          type: 'success',
+          title: 'Paiement valide',
+          message: `Le paiement en attente de ${subscriptionTarget.name || subscriptionTarget.username} a été validé et appliqué.`,
+        })
+        return
+      }
+
       const now = new Date().toISOString()
       await createAdminPayment({
         id: crypto.randomUUID(),
@@ -261,7 +300,7 @@ export function AdminsDashboard() {
         amount: Math.round(amountToSend),
         method: 'cash',
         provider: 'manual',
-        note: 'Paiement valide par Super Admin depuis la supervision.',
+        note: 'Paiement direct valide par Super Admin depuis la supervision.',
         paidAt: now,
         createdAt: now,
       })

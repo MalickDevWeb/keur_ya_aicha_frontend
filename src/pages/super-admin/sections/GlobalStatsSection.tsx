@@ -34,7 +34,13 @@ export function GlobalStatsSection({
   ).length
   const showEntreprises = activeEntreprisesCount > 0
   const currentMonth = new Date().toISOString().slice(0, 7)
-  const monthlyPayments = adminPayments.filter((payment) => payment.month === currentMonth)
+  const monthlyPayments = adminPayments.filter((payment) => {
+    const status = String(payment.status || '').trim().toLowerCase()
+    return (
+      payment.month === currentMonth &&
+      (status === 'paid' || status === 'success' || status === 'succeeded')
+    )
+  })
   const subscriptionTotal = monthlyPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)
   const statsGridClassName = showEntreprises
     ? 'grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
