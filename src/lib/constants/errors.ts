@@ -23,7 +23,7 @@ export const AUTH_ERRORS = {
   INVALID_INVITE_CODE: 'Code d\'invitation invalide.',
 
   // Password errors
-  WEAK_PASSWORD: 'Le mot de passe doit contenir au moins 6 caractères.',
+  WEAK_PASSWORD: 'Le mot de passe doit contenir au moins 8 caractères.',
   PASSWORD_MISMATCH: 'Les mots de passe ne correspondent pas.',
 } as const
 

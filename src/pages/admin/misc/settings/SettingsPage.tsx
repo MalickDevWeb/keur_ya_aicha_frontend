@@ -652,10 +652,10 @@ export default function SettingsPage() {
       toast({ title: 'Erreur', description: 'Tous les champs mot de passe sont requis.', variant: 'destructive' })
       return
     }
-    if (safeNewPassword.length < 6) {
+    if (safeNewPassword.length < 8) {
       toast({
         title: 'Erreur',
-        description: 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+        description: 'Le nouveau mot de passe doit contenir au moins 8 caractères.',
         variant: 'destructive',
       })
       return

@@ -103,7 +103,7 @@ export function SettingsAccountSecuritySection({
             label="Nouveau mot de passe"
             value={newPassword}
             onChange={onNewPasswordChange}
-            placeholder="6 caractères minimum"
+            placeholder="8 caractères minimum"
           />
           <PasswordField
             id="confirm-password"

@@ -3,8 +3,8 @@ import { z } from 'zod'
 export const inscriptionAdminSchema = z.object({
   firstName: z.string().min(2, 'Prénom requis'),
   lastName: z.string().min(2, 'Nom requis'),
-  password: z.string().min(6, 'Mot de passe requis (6 caractères min.)'),
-  confirmPassword: z.string().min(6, 'Confirmation requise'),
+  password: z.string().min(8, 'Mot de passe requis (8 caractères min.)'),
+  confirmPassword: z.string().min(8, 'Confirmation requise'),
   phone: z
     .string()
     .min(1, 'Numéro requis')
