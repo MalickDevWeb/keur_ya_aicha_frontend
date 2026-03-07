@@ -19,6 +19,7 @@ import {
 import { DEFAULT_LOGO_ASSET_PATH, DEFAULT_VIDEO_ASSET_PATH, resolveAssetUrl } from "@/services/assets";
 import { useToast } from "@/contexts/ToastContext";
 import { connexionSchema, ConnexionFormData } from "@/validators/frontend";
+import { AuthAccessNoticeDialog, type AuthAccessNoticeKind } from "./AuthAccessNoticeDialog";
 
 // TEMPORAIRE: désactiver le blocage local des tentatives de connexion.
 // Remettre à false quand tu voudras réactiver le blocage.
@@ -142,7 +143,7 @@ export default function LoginPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loginFieldError, setLoginFieldError] = useState("");
-  const [pendingModalOpen, setPendingModalOpen] = useState(false);
+  const [authNotice, setAuthNotice] = useState<AuthAccessNoticeKind | null>(null);
   const [loading, setLoading] = useState(false);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const [isVideoExpanded, setIsVideoExpanded] = useState(false);
@@ -255,9 +256,14 @@ export default function LoginPage() {
   ): Promise<boolean> => {
     const isPending = await checkPendingAdminApproval(identifier, password);
     if (!isPending) return false;
-    setPendingModalOpen(true);
+    setAuthNotice("pending");
     setLoginFieldError("");
     return true;
+  };
+
+  const openAccessDeniedModal = () => {
+    setAuthNotice("denied");
+    setLoginFieldError("");
   };
 
   const onSubmit = async (data: ConnexionFormData) => {
@@ -272,7 +278,7 @@ export default function LoginPage() {
 
     setLoading(true);
     setLoginFieldError("");
-    setPendingModalOpen(false);
+    setAuthNotice(null);
     try {
       const success = await login(data.telephone, data.motDePasse);
       if (success) {
@@ -360,13 +366,21 @@ export default function LoginPage() {
         setLoginFieldError('Connexion internet indisponible. Réessaie quand le réseau revient.');
         return;
       }
-      const isApprovalBlock =
+      const isExplicitAccessDenied =
         normalized.includes('accès interdit') ||
+        normalized.includes('access forbidden') ||
+        normalized.includes('décision du super admin') ||
+        normalized.includes('decision du super admin');
+      const isApprovalBlock =
+        isExplicitAccessDenied ||
         normalized.includes("demande en attente") ||
         normalized.includes('en attente');
       if (isApprovalBlock) {
         setLoginFieldError("");
-        setPendingModalOpen(true);
+        if (!isExplicitAccessDenied && (await openPendingApprovalModalIfNeeded(data.telephone, data.motDePasse))) {
+          return;
+        }
+        openAccessDeniedModal();
         return;
       }
       const isOriginBlocked =
@@ -1021,74 +1035,13 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {pendingModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(5, 10, 30, 0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: 16,
-          }}
-          onClick={() => setPendingModalOpen(false)}
-        >
-          <div
-            style={{
-              maxWidth: 420,
-              width: "100%",
-              background: "#fff",
-              borderRadius: 16,
-              padding: "18px 20px",
-              boxShadow: "0 20px 60px rgba(10,15,40,0.25)",
-              border: "1px solid rgba(18,27,83,0.12)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
-                  background: "rgba(74,124,255,0.12)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#1E3A8A",
-                  fontWeight: 700,
-                }}
-              >
-                i
-              </div>
-              <div style={{ fontWeight: 700, color: "#121B53" }}>Compte en attente</div>
-            </div>
-            <p style={{ fontSize: 14, color: "#334155", lineHeight: 1.5 }}>
-              Votre demande est en attente d'approbation du super admin. Vous pourrez vous
-              connecter dès validation.
-            </p>
-            <button
-              type="button"
-              onClick={() => setPendingModalOpen(false)}
-              style={{
-                marginTop: 14,
-                width: "100%",
-                background: "#121B53",
-                color: "#fff",
-                border: "none",
-                borderRadius: 12,
-                padding: "10px 12px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Compris
-            </button>
-          </div>
-        </div>
-      )}
+      <AuthAccessNoticeDialog
+        open={authNotice !== null}
+        notice={authNotice}
+        onOpenChange={(open) => {
+          if (!open) setAuthNotice(null);
+        }}
+      />
     </>
   );
 }

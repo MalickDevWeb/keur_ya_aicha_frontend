@@ -2,9 +2,19 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { vi } from 'vitest'
 import LoginPage from './Login'
 
-const login = vi.fn(async () => true)
-const addToast = vi.fn()
-const navigate = vi.fn()
+const {
+  login,
+  addToast,
+  navigate,
+  checkPendingAdminApproval,
+  getAuthContext,
+} = vi.hoisted(() => ({
+  login: vi.fn(async () => true),
+  addToast: vi.fn(),
+  navigate: vi.fn(),
+  checkPendingAdminApproval: vi.fn(async () => false),
+  getAuthContext: vi.fn(async () => ({ user: { role: 'ADMIN', subscriptionBlocked: false } })),
+}))
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -19,6 +29,11 @@ vi.mock('@/contexts/ToastContext', () => ({
   useToast: () => ({
     addToast,
   }),
+}))
+
+vi.mock('@/services/api', () => ({
+  checkPendingAdminApproval,
+  getAuthContext,
 }))
 
 vi.mock('react-router-dom', async () => {
@@ -42,6 +57,8 @@ describe('Login page', () => {
     login.mockClear()
     addToast.mockClear()
     navigate.mockClear()
+    checkPendingAdminApproval.mockClear()
+    getAuthContext.mockClear()
   })
 
   it('submits credentials and navigates on success', async () => {
@@ -95,5 +112,20 @@ describe('Login page', () => {
         screen.getAllByText(/Origine non autorisée par l'API/i).length
       ).toBeGreaterThan(0)
     )
+  })
+
+  it("shows contact popup when access is denied by the super admin", async () => {
+    login.mockRejectedValueOnce(new Error("Demande en attente d'approbation"))
+    checkPendingAdminApproval.mockResolvedValueOnce(false)
+    render(<LoginPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('email@exemple.com ou +221 77 123 45 67'), { target: { value: '771234567' } })
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'admin123' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /Se connecter/i }))
+
+    await waitFor(() => expect(screen.getByText(/Vous n'avez pas accès/i)).toBeInTheDocument())
+    expect(screen.getByText(/WhatsApp: 77 171 90 13/i)).toBeInTheDocument()
+    expect(screen.getByText(/Email: malickteuw\.devweb@gmail\.com/i)).toBeInTheDocument()
   })
 })
