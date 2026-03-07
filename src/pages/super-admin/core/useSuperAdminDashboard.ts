@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  createAdmin,
   createAdminRequest,
-  createEntreprise,
   fetchAdminRequests,
   fetchAdmins,
   fetchAuditLogs,
@@ -13,10 +11,7 @@ import {
   fetchUsers,
   updateAdminRequest,
 } from '@/services/api'
-import type {
-  AdminDTO,
-  AdminRequestDTO,
-} from '@/dto/frontend/responses'
+import type { AdminRequestDTO } from '@/dto/frontend/responses'
 import type { CreatedAdmin } from './types'
 import { buildCredentialsMessage, createEntityId, formatPhoneForWhatsapp, normalize, normalizePhone } from './utils'
 
@@ -25,43 +20,9 @@ function isSecondAuthRequiredError(error: unknown): boolean {
   return message.includes('seconde authentification super admin requise')
 }
 
-function isConflictLikeError(error: unknown): boolean {
-  const message = String((error as { message?: string })?.message || error || '').toLowerCase()
-  return message.includes('conflit') || message.includes('already exists') || message.includes('deja')
-}
-
 function getFulfilledValue<T>(result: PromiseSettledResult<T>): T | null {
   if (result.status !== 'fulfilled') return null
   return result.value
-}
-
-function resolveSafeAdminEmail(username: string, email?: string): string {
-  const normalized = String(email || '').trim()
-  if (normalized) return normalized
-  const base = String(username || '').trim() || 'admin'
-  return `${base}@kya.local`
-}
-
-function normalizeAdminStatus(status?: string): 'ACTIF' | 'SUSPENDU' | 'ARCHIVE' {
-  const value = String(status || '').toUpperCase()
-  if (value === 'SUSPENDU' || value === 'BLACKLISTE') return 'SUSPENDU'
-  if (value === 'ARCHIVE') return 'ARCHIVE'
-  return 'ACTIF'
-}
-
-function findAdminMatch(
-  admins: AdminDTO[],
-  username: string,
-  email?: string
-): AdminDTO | null {
-  const normalizedUsername = normalize(username)
-  const normalizedEmail = normalize(email)
-  const item = admins.find((admin) => {
-    if (normalize(admin.username) === normalizedUsername) return true
-    if (normalizedEmail && normalize(admin.email) === normalizedEmail) return true
-    return false
-  })
-  return item || null
 }
 
 export function useSuperAdminDashboard() {
@@ -199,83 +160,6 @@ export function useSuperAdminDashboard() {
     void refresh()
   }, [canReadAdminScopedData, requiresSecondAuth])
 
-  const ensureEntrepriseForAdmin = async (
-    admin: AdminDTO,
-    entrepriseName?: string,
-    requestId?: string
-  ): Promise<void> => {
-    const trimmedName = String(entrepriseName || '').trim()
-    if (!trimmedName) return
-
-    const alreadyLinked = state.entreprises.some((entreprise) => {
-      if (String(entreprise.adminId || '') !== String(admin.id || '')) return false
-      return normalize(entreprise.name) === normalize(trimmedName)
-    })
-    if (alreadyLinked) return
-
-    try {
-      await createEntreprise({
-        id: `${admin.id}-entreprise`,
-        name: trimmedName,
-        adminId: admin.id,
-        adminRequestId: requestId,
-        createdAt: new Date().toISOString(),
-      })
-    } catch (error) {
-      if (isSecondAuthRequiredError(error)) {
-        markSecondAuthRequired()
-        throw error
-      }
-      if (!isConflictLikeError(error)) {
-        throw error
-      }
-    }
-  }
-
-  const provisionApprovedRequestAccount = async (
-    req: AdminRequestDTO,
-    username: string,
-    password?: string
-  ): Promise<AdminDTO | null> => {
-    const email = resolveSafeAdminEmail(username, req.email)
-    const existingLocalAdmin = findAdminMatch(state.admins as AdminDTO[], username, email)
-    if (existingLocalAdmin) {
-      await ensureEntrepriseForAdmin(existingLocalAdmin, req.entrepriseName, req.id)
-      return existingLocalAdmin
-    }
-
-    try {
-      const createdAdmin = await createAdmin({
-        id: String(req.id || createEntityId('admin')),
-        userId: String(req.id || createEntityId('user')),
-        adminRequestId: req.id,
-        username,
-        name: String(req.name || username),
-        email,
-        phone: req.phone || undefined,
-        ...(password ? { password } : {}),
-        status: normalizeAdminStatus(req.status),
-        createdAt: req.createdAt || new Date().toISOString(),
-      })
-      await ensureEntrepriseForAdmin(createdAdmin, req.entrepriseName, req.id)
-      return createdAdmin
-    } catch (error) {
-      if (isSecondAuthRequiredError(error)) {
-        markSecondAuthRequired()
-        throw error
-      }
-
-      const fallbackAdmins = await fetchAdmins().catch(() => [] as AdminDTO[])
-      const existingRemoteAdmin = findAdminMatch(fallbackAdmins, username, email)
-      if (!existingRemoteAdmin) {
-        throw error
-      }
-
-      await ensureEntrepriseForAdmin(existingRemoteAdmin, req.entrepriseName, req.id)
-      return existingRemoteAdmin
-    }
-  }
-
   const handleCreateAdmin = async () => {
     const { newAdmin } = state
     if (!newAdmin.name || !newAdmin.entreprise) {
@@ -320,21 +204,6 @@ export function useSuperAdminDashboard() {
         paid: true,
         paidAt: createdAt,
       })
-      await provisionApprovedRequestAccount(
-        {
-          ...createdRequest,
-          status: 'ACTIF',
-          username: generatedUsername,
-          password: safePassword,
-          email: newAdmin.email || undefined,
-          phone: normalizedPhone,
-          entrepriseName: newAdmin.entreprise || '',
-          paid: true,
-          paidAt: createdAt,
-        },
-        generatedUsername,
-        safePassword
-      )
 
       setState((prev) => ({
         ...prev,
@@ -425,16 +294,6 @@ export function useSuperAdminDashboard() {
         paid: true,
         paidAt: new Date().toISOString(),
       })
-      await provisionApprovedRequestAccount(
-        {
-          ...req,
-          ...updated,
-          status: 'ACTIF',
-          username,
-        },
-        username,
-        undefined
-      )
 
       const createdAdmin: CreatedAdmin = {
         name: req.name,
@@ -467,9 +326,13 @@ export function useSuperAdminDashboard() {
       if (isSecondAuthRequiredError(error)) {
         markSecondAuthRequired()
       }
+      const message = error instanceof Error ? error.message : ''
       setState((prev) => ({
         ...prev,
-        approveErrors: { ...prev.approveErrors, [req.id]: "Échec de validation de la demande." },
+        approveErrors: {
+          ...prev.approveErrors,
+          [req.id]: message || "Échec de validation de la demande.",
+        },
       }))
     }
   }
