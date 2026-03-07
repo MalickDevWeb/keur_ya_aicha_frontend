@@ -67,7 +67,6 @@ export interface AdminRequestDTO {
   entrepriseName?: string
   status: AdminStatus
   username?: string
-  password?: string
   paid?: boolean
   paidAt?: string
   createdAt?: string

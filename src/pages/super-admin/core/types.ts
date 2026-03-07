@@ -3,7 +3,8 @@ export type CreatedAdmin = {
   username: string
   email?: string
   entreprise?: string
-  password: string
+  password?: string
+  passwordManagedByAdmin?: boolean
   phone?: string
   createdAt: string
 }

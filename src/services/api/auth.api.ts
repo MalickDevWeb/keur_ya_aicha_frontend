@@ -330,6 +330,16 @@ export async function verifySuperAdminSecondAuth(password: string, username?: st
   throw new Error(payload.error || payload.message || `Erreur HTTP ${response.status}`)
 }
 
+export async function changeOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch<void>('/authContext/change-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      currentPassword: String(currentPassword || ''),
+      newPassword: String(newPassword || ''),
+    }),
+  })
+}
+
 /**
  * Déconnexion du contexte d'authentification
  */

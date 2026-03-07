@@ -27,12 +27,15 @@ export const getActionBadge = (action?: string) => {
 
 export const buildCredentialsMessage = (data: CreatedAdmin, appUrl: string) => {
   const identifiantConseille = data.email || data.phone || '—'
+  const passwordLine = data.password
+    ? `Mot de passe : ${data.password}`
+    : 'Mot de passe : celui choisi lors de l’inscription (non affiché)'
   const lines = [
     'FICHE CONTACT — ADMIN',
     CREDENTIALS_SEPARATOR,
     `Nom complet : ${data.name}`,
     `Identifiant conseillé : ${identifiantConseille}`,
-    `Mot de passe : ${data.password}`,
+    passwordLine,
     `Email : ${data.email || '—'}`,
     `Entreprise : ${data.entreprise || '—'}`,
     `Téléphone : ${data.phone || '—'}`,

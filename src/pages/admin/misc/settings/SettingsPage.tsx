@@ -5,7 +5,7 @@ import { useElectronAPI } from '@/hooks/useElectronAPI'
 import { useToast } from '@/hooks/use-toast'
 import { useActionLogger } from '@/lib/actionLogger'
 import { CLIENT_IMPORT_FIELDS, DEFAULT_IMPORT_ALIASES, DEFAULT_REQUIRED_FIELDS, type ClientImportMapping } from '@/lib/importClients'
-import { getSetting, setSetting } from '@/services/api'
+import { changeOwnPassword, getSetting, setSetting } from '@/services/api'
 import { uploadToCloudinary } from '@/services/api/uploads.api'
 import { deleteAuditLogs, listAuditLogs } from '@/services/api/auditLogs.api'
 import {
@@ -24,6 +24,7 @@ import {
   validateRuntimeSignUrl,
 } from '@/services/runtimeConfig'
 import { SettingsHeaderSection } from './sections/SettingsHeaderSection'
+import { SettingsAccountSecuritySection } from './sections/SettingsAccountSecuritySection'
 import { SettingsAdminBrandingSection } from './sections/SettingsAdminBrandingSection'
 import { SettingsGovernanceSection } from './sections/SettingsGovernanceSection'
 import { SettingsImportAliasesSection } from './sections/SettingsImportAliasesSection'
@@ -96,11 +97,16 @@ export default function SettingsPage() {
   const [adminLogoLoading, setAdminLogoLoading] = useState(false)
   const [adminLogoSaving, setAdminLogoSaving] = useState(false)
   const [adminLogoUploading, setAdminLogoUploading] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordSaving, setPasswordSaving] = useState(false)
 
   const role = String(user?.role || '').toUpperCase()
   const canEdit = user && (role === 'ADMIN' || role === 'SUPER_ADMIN')
   const canEditRequired = role === 'SUPER_ADMIN'
   const canEditAdminBranding = role === 'ADMIN' || !!impersonation?.adminId
+  const roleLabel = role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'ADMIN' ? 'Admin' : 'Compte'
   const activeAdminId = String(
     impersonation?.adminId || (role === 'ADMIN' ? user?.id || '' : '')
   ).trim()
@@ -636,6 +642,59 @@ export default function SettingsPage() {
     }
   }
 
+  const saveOwnPassword = async () => {
+    if (passwordSaving) return
+    const safeCurrentPassword = String(currentPassword || '')
+    const safeNewPassword = String(newPassword || '')
+    const safeConfirmPassword = String(confirmPassword || '')
+
+    if (!safeCurrentPassword || !safeNewPassword || !safeConfirmPassword) {
+      toast({ title: 'Erreur', description: 'Tous les champs mot de passe sont requis.', variant: 'destructive' })
+      return
+    }
+    if (safeNewPassword.length < 6) {
+      toast({
+        title: 'Erreur',
+        description: 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (safeCurrentPassword === safeNewPassword) {
+      toast({
+        title: 'Erreur',
+        description: 'Le nouveau mot de passe doit être différent de l’actuel.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (safeNewPassword !== safeConfirmPassword) {
+      toast({
+        title: 'Erreur',
+        description: 'La confirmation du nouveau mot de passe ne correspond pas.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    void logAction('settings.accountPassword.change.start')
+    setPasswordSaving(true)
+    try {
+      await changeOwnPassword(safeCurrentPassword, safeNewPassword)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      toast({ title: 'Mot de passe mis à jour', description: 'Le mot de passe du compte connecté a été modifié.' })
+      void logAction('settings.accountPassword.change.success')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Impossible de changer le mot de passe.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.accountPassword.change.error', { message })
+    } finally {
+      setPasswordSaving(false)
+    }
+  }
+
   if (!canEdit) {
     return (
       <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
@@ -668,6 +727,19 @@ export default function SettingsPage() {
           logoLibrary={adminLogoLibrary}
         />
       ) : null}
+
+      <SettingsAccountSecuritySection
+        currentPassword={currentPassword}
+        newPassword={newPassword}
+        confirmPassword={confirmPassword}
+        onCurrentPasswordChange={setCurrentPassword}
+        onNewPasswordChange={setNewPassword}
+        onConfirmPasswordChange={setConfirmPassword}
+        onSave={saveOwnPassword}
+        isSaving={passwordSaving}
+        roleLabel={roleLabel}
+        isImpersonating={Boolean(impersonation?.adminId)}
+      />
 
       <SettingsRequiredFieldsSection
         requiredFields={requiredFields}

@@ -8,6 +8,7 @@ import { DEFAULT_PLATFORM_CONFIG, type PlatformConfig } from '@/services/platfor
 const {
   getSettingMock,
   setSettingMock,
+  changeOwnPasswordMock,
   toastMock,
   logActionMock,
   refreshPlatformConfigFromServerMock,
@@ -16,6 +17,7 @@ const {
 } = vi.hoisted(() => ({
   getSettingMock: vi.fn(),
   setSettingMock: vi.fn(),
+  changeOwnPasswordMock: vi.fn(async () => undefined),
   toastMock: vi.fn(),
   logActionMock: vi.fn().mockResolvedValue(undefined),
   refreshPlatformConfigFromServerMock: vi.fn(),
@@ -53,6 +55,7 @@ vi.mock('@/lib/actionLogger', () => ({
 vi.mock('@/services/api', () => ({
   getSetting: getSettingMock,
   setSetting: setSettingMock,
+  changeOwnPassword: changeOwnPasswordMock,
 }))
 
 vi.mock('@/services/api/uploads.api', () => ({
@@ -115,6 +118,7 @@ describe('SettingsPage governance UI', () => {
     vi.clearAllMocks()
     getSettingMock.mockResolvedValue(null)
     setSettingMock.mockResolvedValue(undefined)
+    changeOwnPasswordMock.mockResolvedValue(undefined)
     refreshPlatformConfigFromServerMock.mockResolvedValue(
       JSON.parse(JSON.stringify(DEFAULT_PLATFORM_CONFIG)) as PlatformConfig
     )
@@ -164,5 +168,33 @@ describe('SettingsPage governance UI', () => {
     expect(savedConfig.maintenance.enabled).toBe(true)
     expect(savedConfig.maintenance.message).toBe('Maintenance active depuis test UI')
     expect(sendComplianceWebhookAlertMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('changes password from settings without exposing login page flow', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    )
+
+    await user.type(await screen.findByLabelText('Mot de passe actuel'), 'ancienMotDePasse')
+    await user.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveauMotDePasse')
+    await user.type(screen.getByLabelText('Confirmer le nouveau mot de passe'), 'nouveauMotDePasse')
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Mettre à jour le mot de passe',
+      })
+    )
+
+    await waitFor(() =>
+      expect(changeOwnPasswordMock).toHaveBeenCalledWith('ancienMotDePasse', 'nouveauMotDePasse')
+    )
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Mot de passe mis à jour',
+      })
+    )
   })
 })

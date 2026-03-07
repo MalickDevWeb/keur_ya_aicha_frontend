@@ -93,7 +93,9 @@ export function CreateAdminDialog({
                   </div>
                   <div className="rounded-lg border border-[#DCE6FF] bg-white p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Mot de passe</p>
-                    <p className="font-semibold">{createdAdmin.password}</p>
+                    <p className="font-semibold">
+                      {createdAdmin.password || 'Déjà défini par l’admin. Non affiché pour sécurité.'}
+                    </p>
                   </div>
                   <div className="rounded-lg border border-[#DCE6FF] bg-white p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Email</p>

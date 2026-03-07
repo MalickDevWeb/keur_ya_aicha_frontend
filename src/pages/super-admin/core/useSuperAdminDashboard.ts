@@ -235,7 +235,7 @@ export function useSuperAdminDashboard() {
   const provisionApprovedRequestAccount = async (
     req: AdminRequestDTO,
     username: string,
-    password: string
+    password?: string
   ): Promise<AdminDTO | null> => {
     const email = resolveSafeAdminEmail(username, req.email)
     const existingLocalAdmin = findAdminMatch(state.admins as AdminDTO[], username, email)
@@ -253,7 +253,7 @@ export function useSuperAdminDashboard() {
         name: String(req.name || username),
         email,
         phone: req.phone || undefined,
-        password,
+        ...(password ? { password } : {}),
         status: normalizeAdminStatus(req.status),
         createdAt: req.createdAt || new Date().toISOString(),
       })
@@ -338,7 +338,12 @@ export function useSuperAdminDashboard() {
 
       setState((prev) => ({
         ...prev,
-        createdAdmin: { ...newAdmin, username: generatedUsername, createdAt },
+        createdAdmin: {
+          ...newAdmin,
+          username: generatedUsername,
+          createdAt,
+          passwordManagedByAdmin: false,
+        },
         newAdmin: {
           username: '',
           name: '',
@@ -411,11 +416,9 @@ export function useSuperAdminDashboard() {
     }))
 
     try {
-      const password = req.password || 'admin123'
       const updated = await updateAdminRequest(req.id, {
         status: 'ACTIF',
         username,
-        password,
         email: req.email || undefined,
         phone: req.phone || undefined,
         entrepriseName: req.entrepriseName || '',
@@ -428,20 +431,19 @@ export function useSuperAdminDashboard() {
           ...updated,
           status: 'ACTIF',
           username,
-          password,
         },
         username,
-        password
+        undefined
       )
 
       const createdAdmin: CreatedAdmin = {
         name: req.name,
         username,
-        password,
         email: req.email || '',
         entreprise: req.entrepriseName || '',
         phone: req.phone || '',
         createdAt: new Date().toISOString(),
+        passwordManagedByAdmin: true,
       }
 
       setState((prev) => ({

@@ -124,7 +124,7 @@ export function SuperAdminDashboard({ onCreatedAdmin: _onCreatedAdmin }: SuperAd
       doc.setFontSize(11)
       const rows = [
         ['Nom', data.name],
-        ['Mot de passe', data.password],
+        ['Mot de passe', data.password || 'Déjà défini par l’admin (non affiché)'],
         ['Email', data.email || '—'],
         ['Entreprise', data.entreprise || '—'],
         ['Créé le', new Date(data.createdAt).toLocaleString()],
