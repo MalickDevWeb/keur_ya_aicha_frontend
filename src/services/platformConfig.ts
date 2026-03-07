@@ -441,67 +441,15 @@ export function applyBrandingToDocument(config: PlatformConfig): void {
 
   if (primaryColor) {
     document.documentElement.style.setProperty('--kya-brand-primary', primaryColor)
-    const hsl = hexToHslCss(primaryColor)
-    if (hsl) {
-      const lighter = lightenHsl(hsl, 28)
-      document.documentElement.style.setProperty('--primary', hsl)
-      document.documentElement.style.setProperty('--ring', hsl)
-      document.documentElement.style.setProperty('--sidebar-accent', hsl)
-      document.documentElement.style.setProperty('--sidebar-primary', lighter)
-    }
   }
+  document.documentElement.style.removeProperty('--primary')
+  document.documentElement.style.removeProperty('--ring')
+  document.documentElement.style.removeProperty('--sidebar-accent')
+  document.documentElement.style.removeProperty('--sidebar-primary')
   if (resolvedLogoUrl) {
     document.documentElement.style.setProperty('--kya-brand-logo-url', `url("${resolvedLogoUrl}")`)
   }
   document.title = config.branding.appName || DEFAULT_PLATFORM_CONFIG.branding.appName
-}
-
-function hexToHslCss(value: string): string | null {
-  const normalized = String(value || '').trim().replace(/^#/, '')
-  if (!/^[\da-fA-F]{3}$|^[\da-fA-F]{6}$/.test(normalized)) return null
-
-  const fullHex =
-    normalized.length === 3
-      ? normalized
-          .split('')
-          .map((part) => `${part}${part}`)
-          .join('')
-      : normalized
-  const r = Number.parseInt(fullHex.slice(0, 2), 16) / 255
-  const g = Number.parseInt(fullHex.slice(2, 4), 16) / 255
-  const b = Number.parseInt(fullHex.slice(4, 6), 16) / 255
-  if (![r, g, b].every((channel) => Number.isFinite(channel))) return null
-
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const delta = max - min
-  const lightness = (max + min) / 2
-
-  if (delta === 0) {
-    return `0 0% ${Math.round(lightness * 100)}%`
-  }
-
-  const saturation = delta / (1 - Math.abs(2 * lightness - 1))
-  let hue = 0
-  if (max === r) {
-    hue = ((g - b) / delta) % 6
-  } else if (max === g) {
-    hue = (b - r) / delta + 2
-  } else {
-    hue = (r - g) / delta + 4
-  }
-  const normalizedHue = Math.round(hue * 60 < 0 ? hue * 60 + 360 : hue * 60)
-  return `${normalizedHue} ${Math.round(saturation * 100)}% ${Math.round(lightness * 100)}%`
-}
-
-function lightenHsl(hsl: string, amount: number): string {
-  const match = String(hsl || '').match(/^(\d+)\s+(\d+)%\s+(\d+)%$/)
-  if (!match) return hsl
-  const hue = Number(match[1])
-  const saturation = Number(match[2])
-  const lightness = Number(match[3])
-  const nextLightness = Math.min(95, Math.max(0, lightness + amount))
-  return `${hue} ${saturation}% ${nextLightness}%`
 }
 
 function normalizePath(path: string): string {

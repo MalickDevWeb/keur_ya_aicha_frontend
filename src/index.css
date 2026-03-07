@@ -325,6 +325,66 @@
     --sidebar-border: 210 10% 88%;
     --sidebar-ring: 0 0% 96%;
   }
+
+  /* Palette unifiee KYA appliquee a toute l'application, meme si un ancien theme est encore present */
+  :root,
+  .dark,
+  .theme-orange,
+  .theme-dark,
+  .theme-clinic,
+  .theme-gray {
+    --background: 220 38% 97%;
+    --foreground: 231 65% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 231 65% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 231 65% 20%;
+
+    --primary: 227 63% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 231 65% 20%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 30% 94%;
+    --muted-foreground: 224 21% 50%;
+
+    --accent: 220 73% 92%;
+    --accent-foreground: 231 65% 20%;
+
+    --highlight: 214 72% 90%;
+    --highlight-foreground: 231 65% 20%;
+
+    --success: 145 67% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 41 95% 48%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 79% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 31% 87%;
+    --input: 220 31% 87%;
+    --ring: 227 63% 45%;
+
+    --sidebar-background: 231 65% 20%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 255 94% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 258 85% 24%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 231 44% 28%;
+    --sidebar-ring: 220 73% 92%;
+
+    --chart-1: 227 63% 45%;
+    --chart-2: 231 65% 20%;
+    --chart-3: 145 67% 40%;
+    --chart-4: 41 95% 48%;
+    --chart-5: 0 79% 58%;
+  }
 }
 
 @layer base {

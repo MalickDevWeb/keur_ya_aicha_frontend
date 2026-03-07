@@ -34,7 +34,7 @@ export function LanguageSelector({ variant = 'default', className }: LanguageSel
             'gap-2',
             variant === 'sidebar' && 'text-sidebar-foreground hover:bg-sidebar-accent',
             variant !== 'sidebar' &&
-              'text-[#121B53] border-white/60 bg-white/95 hover:bg-white/95 hover:text-[#121B53]',
+              'border-border bg-white/95 text-foreground hover:bg-accent hover:text-foreground',
             className
           )}
         >

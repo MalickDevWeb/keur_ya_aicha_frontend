@@ -15,8 +15,9 @@ export function PaymentsStatsSection({ stats }: PaymentsStatsSectionProps) {
       suffix: '',
       helper: `${stats.paid} complètement payés`,
       icon: ChartColumnBig,
-      wrapperClass: 'from-[#78C8FF] via-[#5BA5E2] to-[#3A79C8]',
-      titleClass: 'text-[#102A6A]',
+      wrapperClass: 'border-[#B8D4FF] bg-[#EDF5FF]',
+      titleClass: 'text-[#5D73A8]',
+      iconClass: 'bg-[#C6D8FF] text-[#4939F5]',
     },
     {
       id: 'totalAmount',
@@ -25,8 +26,9 @@ export function PaymentsStatsSection({ stats }: PaymentsStatsSectionProps) {
       suffix: 'K',
       helper: 'FCFA',
       icon: WalletCards,
-      wrapperClass: 'from-[#D6F2FF] via-[#C2E8F8] to-[#B7DDEB]',
-      titleClass: 'text-[#1E2D56]',
+      wrapperClass: 'border-[#B8D4FF] bg-[#EAF2FF]',
+      titleClass: 'text-[#5D73A8]',
+      iconClass: 'bg-[#CFE0FF] text-[#2E49B6]',
     },
     {
       id: 'paid',
@@ -35,8 +37,9 @@ export function PaymentsStatsSection({ stats }: PaymentsStatsSectionProps) {
       suffix: 'K',
       helper: 'FCFA encaissés',
       icon: CircleCheckBig,
-      wrapperClass: 'from-[#55E7C1] via-[#16D3A8] to-[#00B975]',
-      titleClass: 'text-[#047857]',
+      wrapperClass: 'border-[#9BE7BE] bg-[#EAFBF0]',
+      titleClass: 'text-[#2F8F5B]',
+      iconClass: 'bg-[#B8F0CC] text-[#16A34A]',
     },
     {
       id: 'remaining',
@@ -45,8 +48,9 @@ export function PaymentsStatsSection({ stats }: PaymentsStatsSectionProps) {
       suffix: 'K',
       helper: 'FCFA à recouvrer',
       icon: Hourglass,
-      wrapperClass: 'from-[#D0ECF3] via-[#E7D58A] to-[#F5A300]',
-      titleClass: 'text-[#B36A00]',
+      wrapperClass: 'border-[#E7D778] bg-[#FFF8E7]',
+      titleClass: 'text-[#A46A0B]',
+      iconClass: 'bg-[#F4E58E] text-[#D97706]',
     },
   ] as const
 
@@ -58,10 +62,10 @@ export function PaymentsStatsSection({ stats }: PaymentsStatsSectionProps) {
           <Card
             key={card.id}
             style={{ animationDelay: `${index * 70}ms` }}
-            className={`group relative overflow-hidden border border-white/50 bg-gradient-to-br ${card.wrapperClass} shadow-[0_10px_28px_rgba(12,18,60,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(12,18,60,0.24)] animate-fade-in`}
+            className={`group relative overflow-hidden rounded-[20px] border ${card.wrapperClass} shadow-[0_14px_32px_rgba(18,27,83,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(18,27,83,0.16)] animate-fade-in`}
           >
-            <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/25 transition-transform duration-500 group-hover:scale-125" />
-            <div className="pointer-events-none absolute -left-6 -bottom-10 h-24 w-24 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-125" />
+            <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/55 transition-transform duration-500 group-hover:scale-125" />
+            <div className="pointer-events-none absolute -left-6 -bottom-10 h-24 w-24 rounded-full bg-white/35 transition-transform duration-500 group-hover:scale-125" />
             <CardHeader className="pb-2 relative z-10">
               <CardTitle className={`text-xs font-semibold uppercase tracking-[0.16em] ${card.titleClass}`}>{card.title}</CardTitle>
             </CardHeader>
@@ -74,7 +78,7 @@ export function PaymentsStatsSection({ stats }: PaymentsStatsSectionProps) {
                   </p>
                   <p className="mt-3 text-base font-medium text-[#2F4A8F]">{card.helper}</p>
                 </div>
-                <div className="rounded-2xl bg-white/18 p-3 text-[#121B53]/50 transition-colors duration-300 group-hover:bg-white/30 group-hover:text-[#121B53]/70">
+                <div className={`rounded-2xl p-3 transition-colors duration-300 ${card.iconClass}`}>
                   <Icon className="h-11 w-11" />
                 </div>
               </div>

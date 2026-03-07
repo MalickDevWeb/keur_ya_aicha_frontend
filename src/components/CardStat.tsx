@@ -24,28 +24,24 @@ export function CardStat({
 }: CardStatProps) {
   const variantConfig = {
     default: {
-      bg: 'from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30',
-      border: 'border-blue-200 dark:border-blue-800',
-      icon: 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-600 dark:text-blue-400',
-      accent: 'text-blue-600 dark:text-blue-400',
+      card: 'border-[#B8D4FF] bg-[#EDF5FF]',
+      icon: 'bg-[#C6D8FF] text-[#4939F5]',
+      accent: 'bg-[#2C44B6]',
     },
     success: {
-      bg: 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30',
-      border: 'border-green-200 dark:border-green-800',
-      icon: 'bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 text-green-600 dark:text-green-400',
-      accent: 'text-green-600 dark:text-green-400',
+      card: 'border-[#9BE7BE] bg-[#EAFBF0]',
+      icon: 'bg-[#B8F0CC] text-[#16A34A]',
+      accent: 'bg-[#16A34A]',
     },
     warning: {
-      bg: 'from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30',
-      border: 'border-amber-200 dark:border-amber-800',
-      icon: 'bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900 dark:to-amber-800 text-amber-600 dark:text-amber-400',
-      accent: 'text-amber-600 dark:text-amber-400',
+      card: 'border-[#E7D778] bg-[#FFF8E7]',
+      icon: 'bg-[#F4E58E] text-[#D97706]',
+      accent: 'bg-[#D97706]',
     },
     danger: {
-      bg: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30',
-      border: 'border-red-200 dark:border-red-800',
-      icon: 'bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900 dark:to-red-800 text-red-600 dark:text-red-400',
-      accent: 'text-red-600 dark:text-red-400',
+      card: 'border-[#F0B9C1] bg-[#FFF1F3]',
+      icon: 'bg-[#FFD6DB] text-[#EF4444]',
+      accent: 'bg-[#EF4444]',
     },
   };
 
@@ -54,31 +50,29 @@ export function CardStat({
   return (
     <Card
       className={cn(
-        'relative overflow-hidden transition-all duration-300 border hover:shadow-md hover:scale-102 backdrop-blur-sm',
-        `bg-gradient-to-br ${config.bg}`,
-        config.border,
+        'relative overflow-hidden rounded-[20px] border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(18,27,83,0.12)]',
+        config.card,
         onClick && 'cursor-pointer',
         className
       )}
       onClick={onClick}
     >
-      {/* Decorative gradient background */}
-      <div className="absolute top-0 right-0 w-16 h-16 opacity-5 dark:opacity-10">
-        <div className={cn('w-full h-full rounded-full bg-gradient-to-br', config.bg)} />
+      <div className="absolute right-0 top-0 h-20 w-20 opacity-20">
+        <div className="h-full w-full rounded-full bg-white/60 blur-2xl" />
       </div>
 
       <CardContent className="p-3 sm:p-4 relative z-10">
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-2 flex-1 min-w-0">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#5D73A8] truncate">
               {title}
             </p>
             <div className="space-y-0.5">
-              <p className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight break-words">
+              <p className="text-2xl sm:text-3xl font-black tracking-tight text-[#121B53] break-words">
                 {isCurrency ? (
                   <>
                     {formatCurrency(value).slice(0, -4)}{' '}
-                    <span className={cn('text-sm sm:text-base font-bold', config.accent)}>
+                    <span className="text-sm font-black text-[#33469B] sm:text-base">
                       K
                     </span>
                   </>
@@ -87,13 +81,13 @@ export function CardStat({
                 )}
               </p>
               {isCurrency && (
-                <p className="text-xs text-muted-foreground font-medium">FCFA</p>
+                <p className="text-xs font-medium text-[#5D73A8]">FCFA</p>
               )}
             </div>
           </div>
           <div
             className={cn(
-              'flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex-shrink-0',
+              'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl sm:h-12 sm:w-12',
               config.icon
             )}
           >
@@ -101,8 +95,7 @@ export function CardStat({
           </div>
         </div>
 
-        {/* Bottom accent line */}
-        <div className={cn('h-0.5 w-8 rounded-full mt-3', config.accent)} />
+        <div className={cn('mt-3 h-1 w-10 rounded-full', config.accent)} />
       </CardContent>
     </Card>
   );

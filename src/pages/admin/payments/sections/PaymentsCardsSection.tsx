@@ -48,28 +48,28 @@ export function PaymentsCardsSection({
             <Card
               key={payment.id}
               style={{ animationDelay: `${index * 60}ms` }}
-              className="group overflow-hidden border-[#121B53]/18 bg-white shadow-[0_12px_30px_rgba(12,18,60,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(12,18,60,0.2)] animate-fade-in"
+              className="group overflow-hidden rounded-[20px] border-[#121B53]/18 bg-white shadow-[0_12px_30px_rgba(12,18,60,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(12,18,60,0.2)] animate-fade-in"
             >
               <div
                 className={
-                  `p-4 text-white relative overflow-hidden ${
+                  `relative overflow-hidden p-4 ${
                     isPaid
-                      ? 'bg-gradient-to-br from-emerald-500 via-emerald-500 to-emerald-700'
+                      ? 'bg-gradient-to-br from-[#EAFBF0] via-[#DDF8E7] to-[#D0F2DE] text-[#166534]'
                       : isPartial
-                        ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500'
-                        : 'bg-gradient-to-br from-rose-500 via-rose-500 to-red-600'
+                        ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF3D4] to-[#FBE8B5] text-[#9A6700]'
+                        : 'bg-gradient-to-br from-[#FFF1F3] via-[#FFE4E8] to-[#FFD7DD] text-[#B42318]'
                   }`
                 }
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/15 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
-                <div className="absolute -left-8 -bottom-10 w-20 h-20 bg-black/5 rounded-full group-hover:scale-125 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-white/50 -mr-12 -mt-12 transition-transform duration-500 group-hover:scale-150" />
+                <div className="absolute -left-8 -bottom-10 h-20 w-20 rounded-full bg-white/25 transition-transform duration-500 group-hover:scale-125" />
                 <div className="relative z-10">
-                  <h3 className="font-black text-4xl leading-none tracking-tight text-white truncate">{clientName}</h3>
-                  <p className="mt-1 text-white/90 text-lg truncate">{payment.propertyName || 'Bien inconnu'}</p>
+                  <h3 className="truncate text-4xl font-black leading-none tracking-tight">{clientName}</h3>
+                  <p className="mt-1 truncate text-lg opacity-80">{payment.propertyName || 'Bien inconnu'}</p>
                 </div>
               </div>
 
-              <div className="p-4 space-y-3 bg-gradient-to-b from-white to-slate-50">
+              <div className="space-y-3 bg-gradient-to-b from-white to-slate-50 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-[#405A9A] uppercase tracking-[0.16em]">Période</span>
                   <span className="text-xs bg-[#ECF3FF] border border-[#D7E4FF] px-3 py-1 rounded-md font-semibold text-[#121B53]">

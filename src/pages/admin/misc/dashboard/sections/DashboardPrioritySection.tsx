@@ -40,7 +40,7 @@ export function DashboardPrioritySection({
   const visibleItems = items.slice(0, 10)
 
   return (
-    <Card>
+    <Card className="border-border/80 bg-white">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -57,7 +57,7 @@ export function DashboardPrioritySection({
       <CardContent className={isMobile ? 'p-3 space-y-3' : 'p-0'}>
         {isMobile ? (
           visibleItems.map((item, index) => (
-            <Card key={`${item.client.id}-${item.rental.id}-${index}`} className="border border-border/70">
+            <Card key={`${item.client.id}-${item.rental.id}-${index}`} className="border border-border/70 bg-[#F9FBFF]">
               <CardContent className="p-3 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -96,6 +96,7 @@ export function DashboardPrioritySection({
                       event.stopPropagation()
                       onViewClient(item.client.id)
                     }}
+                    className="border-border bg-white"
                   >
                     Détails
                   </Button>
@@ -108,7 +109,7 @@ export function DashboardPrioritySection({
                       onPay(item)
                     }}
                     title="Enregistrer un paiement"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="bg-primary text-white hover:bg-primary/90"
                   >
                     <DollarSign className="w-4 h-4 mr-1" />
                     Payer
@@ -133,7 +134,7 @@ export function DashboardPrioritySection({
               </TableHeader>
               <TableBody>
                 {visibleItems.map((item, index) => (
-                  <TableRow key={`${item.client.id}-${item.rental.id}-${index}`} className="hover:bg-muted/50">
+                  <TableRow key={`${item.client.id}-${item.rental.id}-${index}`} className="hover:bg-accent/40">
                     <TableCell>
                       <div>
                         <p className="font-medium">
@@ -163,7 +164,7 @@ export function DashboardPrioritySection({
                             onPay(item)
                           }}
                           title="Enregistrer un paiement"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="text-primary hover:bg-accent hover:text-primary"
                         >
                           <DollarSign className="w-4 h-4 mr-1" />
                           Payer

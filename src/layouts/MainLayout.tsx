@@ -307,24 +307,24 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         {showAdminNav ? <AppSidebar /> : null}
 
         <div className="min-w-0 flex-1 flex flex-col overflow-x-hidden">
           {/* Header */}
           {showAdminNav && !isSuperAdminRoute ? (
-            <header className="h-16 border-b bg-card flex items-center justify-between px-4 lg:px-6">
+            <header className="flex h-16 items-center justify-between border-b border-border/70 bg-white/90 px-4 backdrop-blur-sm lg:px-6">
               <div className="flex items-center gap-4">
-                <SidebarTrigger className="lg:hidden h-9 w-9 rounded-full border border-[#121B53]/20 bg-white/90 text-[#121B53] shadow-sm hover:bg-[#121B53]/10" />
+                <SidebarTrigger className="h-9 w-9 rounded-full border border-border bg-white text-foreground shadow-sm hover:bg-accent lg:hidden" />
                 <h2 className="font-semibold text-lg hidden sm:block">{getPageTitle()}</h2>
               </div>
               <LanguageSelector />
             </header>
           ) : null}
           {showAdminNav && isSuperAdminRoute ? (
-            <header className="md:hidden h-14 border-b bg-card flex items-center gap-2 px-4">
-              <SidebarTrigger className="h-9 w-9 rounded-full border border-[#121B53]/20 bg-white/90 text-[#121B53] shadow-sm hover:bg-[#121B53]/10" />
-              <span className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-slate-900">
+            <header className="flex h-14 items-center gap-2 border-b border-border/70 bg-white/90 px-4 backdrop-blur-sm md:hidden">
+              <SidebarTrigger className="h-9 w-9 rounded-full border border-border bg-white text-foreground shadow-sm hover:bg-accent" />
+              <span className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-foreground">
                 {platformConfig.branding.appName || 'Super Admin'}
               </span>
               <div className="shrink-0">
@@ -348,12 +348,12 @@ export function MainLayout({ children }: MainLayoutProps) {
               </div>
             )}
             {isSuperAdmin && impersonation && (
-              <div className="mb-4 overflow-hidden rounded-2xl border border-blue-200/60 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white shadow-lg">
+              <div className="mb-4 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-r from-secondary via-primary to-secondary text-white shadow-[0_18px_40px_rgba(18,27,83,0.18)]">
                 <div className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.3em] text-blue-200">Mode Super Admin</p>
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/70">Mode Super Admin</p>
                     <p className="text-base font-semibold">Espace de {impersonation.adminName}</p>
-                    <p className="text-xs text-blue-200">Actions rapides sur le statut du compte</p>
+                    <p className="text-xs text-white/70">Actions rapides sur le statut du compte</p>
                   </div>
                   <div className="grid w-full grid-cols-2 gap-2 md:w-auto md:flex md:flex-wrap md:items-center md:justify-end">
                     <Button
@@ -379,7 +379,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     </Button>
                     <Button
                       size="sm"
-                      className="w-full bg-emerald-500/90 text-white hover:bg-emerald-500 md:w-auto md:min-w-[140px]"
+                      className="w-full bg-white text-secondary hover:bg-white/90 md:w-auto md:min-w-[140px]"
                       onClick={() => setAdminStatus('ACTIF')}
                     >
                       Restaurer

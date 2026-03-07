@@ -25,7 +25,10 @@ export function SettingsThemeSection({
   return (
     <section className="mt-6">
       <h3 className="font-medium">Palette</h3>
-      <p className="text-sm text-muted-foreground mt-2">Palette actuelle: {persistedTheme || 'Par défaut'}</p>
+      <p className="mt-2 text-sm text-muted-foreground">Palette actuelle: {persistedTheme || 'KYA Bleu'}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        La palette visuelle est maintenant harmonisée sur toute l&apos;application.
+      </p>
 
       <div className="flex gap-3 flex-wrap mt-3 items-center">
         {AVAILABLE_THEMES.map((theme) => (

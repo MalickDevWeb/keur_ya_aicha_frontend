@@ -12,15 +12,15 @@ export function DashboardHeaderSection({ title, subtitle, onImport, onAddClient 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-2">
-        <h1 className="text-3xl font-black text-foreground sm:text-4xl">{title}</h1>
+        <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">{title}</h1>
         <p className="text-base text-muted-foreground">{subtitle}</p>
       </div>
       <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-none sm:flex sm:gap-2">
-        <Button type="button" variant="outline" onClick={onImport} className="w-full sm:w-auto">
+        <Button type="button" variant="outline" onClick={onImport} className="w-full border-border bg-white sm:w-auto">
           <Upload className="w-4 h-4 mr-2" />
           Importer Excel
         </Button>
-        <Button type="button" onClick={onAddClient} className="w-full bg-secondary hover:bg-secondary/90 sm:w-auto">
+        <Button type="button" onClick={onAddClient} className="w-full bg-primary text-white hover:bg-primary/90 sm:w-auto">
           Ajouter client
         </Button>
       </div>
