@@ -13,13 +13,16 @@ function isLikelyNetworkError(error: unknown): boolean {
   )
 }
 
-/**
- * Récupère les 10 derniers logs d'audit (triés par date décroissante)
- * @returns Array des logs d'audit
- */
-export async function listAuditLogs(): Promise<AuditLogDTO[]> {
+export async function listAuditLogs(options?: { limit?: number }): Promise<AuditLogDTO[]> {
   try {
-    return await apiFetch<AuditLogDTO[]>('/audit_logs?_sort=createdAt&_order=desc')
+    const params = new URLSearchParams({
+      _sort: 'createdAt',
+      _order: 'desc',
+    })
+    if (typeof options?.limit === 'number' && Number.isFinite(options.limit) && options.limit > 0) {
+      params.set('_limit', String(Math.floor(options.limit)))
+    }
+    return await apiFetch<AuditLogDTO[]>(`/audit_logs?${params.toString()}`)
   } catch (error) {
     if (isLikelyNetworkError(error)) return []
     throw error

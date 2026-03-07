@@ -1,6 +1,7 @@
 import type { ClientDTO } from '@/dto/backend/responses/ClientDTO'
 import type { ClientCreateDTO, ClientUpdateDTO } from '@/dto/backend/requests'
 import { createCrudEndpoint } from './endpoint.factory'
+import { apiFetch } from '../http'
 
 /**
  * Endpoint CRUD pour les clients
@@ -53,7 +54,10 @@ export async function createClient(data: ClientCreateDTO): Promise<ClientDTO> {
  * @returns Client mis à jour
  */
 export async function updateClient(id: string, data: ClientUpdateDTO): Promise<ClientDTO> {
-  return clientApi.update(id, data)
+  return apiFetch<ClientDTO>(`/clients/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
 }
 
 /**

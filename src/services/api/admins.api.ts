@@ -7,6 +7,7 @@ import type {
 } from '@/dto/frontend/requests'
 import { enqueueCreateAdminAction } from '@/infrastructure/syncQueue'
 import { createCrudEndpoint } from './endpoint.factory'
+import { apiFetch } from '../http'
 
 /**
  * Endpoint CRUD pour les administrateurs
@@ -80,7 +81,10 @@ export async function createAdmin(data: AdminCreateDTO): Promise<AdminDTO> {
  * @returns Administrateur mis à jour
  */
 export async function updateAdmin(id: string, data: AdminUpdateDTO): Promise<AdminDTO> {
-  return adminApi.update(id, data)
+  return apiFetch<AdminDTO>(`/admins/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
 }
 
 /**

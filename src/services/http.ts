@@ -152,6 +152,10 @@ function isAuthorizationLikeErrorMessage(message: string): boolean {
   )
 }
 
+function isAuthLikePath(path: string): boolean {
+  return path.startsWith('/auth') || path.startsWith('/authContext')
+}
+
 function isBrowserOffline(): boolean {
   if (typeof navigator === 'undefined') return false
   return navigator.onLine === false
@@ -177,7 +181,7 @@ function reportApiError(method: string, path: string, err: unknown) {
   } else {
     logger.error(`Appel API échoué: ${method} ${path}`, err)
   }
-  const shouldSkipRemoteAudit = likelyNetworkError || isAuthorizationLikeErrorMessage(errorMessage)
+  const shouldSkipRemoteAudit = likelyNetworkError || isAuthorizationLikeErrorMessage(errorMessage) || isAuthLikePath(path)
 
   if (!shouldSkipRemoteAudit) {
     void sendComplianceWebhookAlert('api_error', {
@@ -193,6 +197,14 @@ function reportApiError(method: string, path: string, err: unknown) {
       targetType: 'request',
       targetId: path,
       message: `Erreur API ${method} ${path}`,
+      source: 'client',
+      category: 'operations',
+      severity: 'high',
+      meta: {
+        method: String(method || 'GET').toUpperCase(),
+        path,
+        error: errorMessage,
+      },
       createdAt: new Date().toISOString(),
     })
   }
@@ -388,6 +400,14 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       targetType: 'request',
       targetId: path,
       message: `Requête lente ${safeMethod} ${path} (${duration}ms)`,
+      source: 'client',
+      category: 'operations',
+      severity: 'warn',
+      meta: {
+        method: safeMethod,
+        path,
+        durationMs: duration,
+      },
       createdAt: new Date().toISOString(),
     })
   }

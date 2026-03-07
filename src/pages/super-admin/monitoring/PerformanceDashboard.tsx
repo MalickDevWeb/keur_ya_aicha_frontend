@@ -60,6 +60,13 @@ function extractDuration(message?: string) {
   return Number(match[1] || 0)
 }
 
+function getDurationMs(log: AuditLogDTO) {
+  const rawMeta = (log.meta as { durationMs?: unknown; durationms?: unknown } | undefined) || {}
+  const direct = Number(rawMeta.durationMs ?? rawMeta.durationms ?? 0)
+  if (Number.isFinite(direct) && direct > 0) return direct
+  return extractDuration(log.message)
+}
+
 function toHourLabel(date: Date) {
   return `${String(date.getHours()).padStart(2, '0')}:00`
 }
@@ -121,7 +128,7 @@ function buildSeries(logs: AuditLogDTO[], period: PeriodKey) {
     const action = String(log.action || '')
     if (SLOW_ACTIONS.has(action)) {
       bucket.slowCount += 1
-      bucket.slowDurationMs += extractDuration(log.message)
+      bucket.slowDurationMs += getDurationMs(log)
     }
     if (ERROR_ACTIONS.has(action)) {
       bucket.errorCount += 1
@@ -172,7 +179,7 @@ export function PerformanceDashboard() {
     const load = async () => {
       setLoading(true)
       try {
-        const data = await listAuditLogs()
+        const data = await listAuditLogs({ limit: 2000 })
         if (active) setLogs(Array.isArray(data) ? data : [])
       } finally {
         if (active) setLoading(false)

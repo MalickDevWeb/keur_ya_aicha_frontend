@@ -6,5 +6,9 @@ export interface AuditLogDTO {
   targetId?: string
   message?: string
   ipAddress?: string
+  source?: string
+  category?: string
+  severity?: string
+  meta?: Record<string, unknown>
   createdAt?: string
 }

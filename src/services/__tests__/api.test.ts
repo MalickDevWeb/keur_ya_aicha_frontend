@@ -109,12 +109,12 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
     db.clients.push(created)
     return jsonResponse(created, 201)
   }
-  if (pathname.startsWith('/clients/') && method === 'PUT') {
+  if (pathname.startsWith('/clients/') && method === 'PATCH') {
     const id = pathname.split('/')[2]
     const body = (parseBody(init) || {}) as DbEntity
     const idx = db.clients.findIndex((c) => c.id === id)
     if (idx === -1) return jsonResponse({ message: 'Not found' }, 404)
-    db.clients[idx] = { ...body }
+    db.clients[idx] = { ...db.clients[idx], ...body }
     return jsonResponse(db.clients[idx])
   }
   if (pathname.startsWith('/clients/') && method === 'DELETE') {

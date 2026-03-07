@@ -13,11 +13,17 @@ export async function logUiAction(payload: {
 }) {
   await createAuditLog({
     actor: payload.actor,
-    action: payload.action,
+    action: 'UI_ACTION',
     targetType: 'ui',
     targetId: payload.targetId,
-    message: payload.message,
-    meta: payload.meta,
+    message: payload.message || String(payload.action || '').trim(),
+    source: 'client',
+    category: 'ui',
+    severity: 'info',
+    meta: {
+      event: payload.action,
+      ...payload.meta,
+    },
   })
 }
 

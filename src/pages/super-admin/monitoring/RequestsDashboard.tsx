@@ -65,7 +65,7 @@ export function RequestsDashboard() {
     const load = async () => {
       setLoading(true)
       try {
-        const data = await listAuditLogs()
+        const data = await listAuditLogs({ limit: 2000 })
         if (active) setLogs(Array.isArray(data) ? data : [])
       } finally {
         if (active) setLoading(false)

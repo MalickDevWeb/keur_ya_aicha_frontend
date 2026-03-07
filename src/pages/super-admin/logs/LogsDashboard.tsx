@@ -5,6 +5,7 @@ import { listAuditLogs } from '@/services/api/auditLogs.api'
 import type { AuditLogDTO } from '@/dto/frontend/responses'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 function normalizeLogValue(value?: string) {
@@ -23,6 +24,37 @@ function getLogType(action?: string): 'all' | 'create' | 'update' | 'delete' | '
   return 'other'
 }
 
+function formatMetaValue(value: unknown) {
+  if (value == null || value === '') return ''
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) return value.map((item) => formatMetaValue(item)).filter(Boolean).join(', ')
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function getMetaPreview(meta?: Record<string, unknown>) {
+  if (!meta || typeof meta !== 'object') return []
+  return [
+    ['event', meta.event],
+    ['method', meta.method],
+    ['path', meta.path],
+    ['durationMs', meta.durationMs ?? meta.durationms],
+    ['error', meta.error],
+    ['previousStatus', meta.previousStatus ?? meta.previousstatus],
+    ['nextStatus', meta.nextStatus ?? meta.nextstatus],
+  ]
+    .map(([label, value]) => ({ label, value: formatMetaValue(value) }))
+    .filter((entry) => entry.value)
+}
+
+function getSeverityClass(severity?: string) {
+  const safeSeverity = String(severity || '').toLowerCase()
+  if (safeSeverity === 'critical') return 'border-red-200 bg-red-50 text-red-700'
+  if (safeSeverity === 'high') return 'border-amber-200 bg-amber-50 text-amber-700'
+  if (safeSeverity === 'warn') return 'border-orange-200 bg-orange-50 text-orange-700'
+  return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+}
+
 export function LogsDashboard() {
   const [logs, setLogs] = useState<AuditLogDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +67,7 @@ export function LogsDashboard() {
     const load = async () => {
       setLoading(true)
       try {
-        const data = await listAuditLogs()
+        const data = await listAuditLogs({ limit: 2000 })
         if (active) setLogs(Array.isArray(data) ? data : [])
       } finally {
         if (active) setLoading(false)
@@ -52,16 +84,20 @@ export function LogsDashboard() {
     return logs.filter((log) => {
       if (filter !== 'all' && getLogType(log.action) !== filter) return false
       if (!needle) return true
-      const haystack = [
-        log.actor,
-        log.action,
-        log.message,
-        log.targetType,
-        log.targetId,
-        log.ipAddress,
-      ]
-        .map((value) => normalizeLogValue(value))
-        .join(' ')
+        const haystack = [
+          log.actor,
+          log.action,
+          log.message,
+          log.targetType,
+          log.targetId,
+          log.ipAddress,
+          log.source,
+          log.category,
+          log.severity,
+          ...getMetaPreview(log.meta).map((entry) => entry.value),
+        ]
+          .map((value) => normalizeLogValue(value))
+          .join(' ')
       return haystack.includes(needle)
     })
   }, [logs, search, filter])
@@ -130,22 +166,48 @@ export function LogsDashboard() {
               <div className="divide-y divide-[#121B53]/10 rounded-2xl border border-[#121B53]/10 bg-white">
                 {visibleLogs.map((log) => (
                   <div key={log.id} className="px-3 py-3 sm:px-5 sm:py-4">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                    <div className="text-sm font-semibold text-[#121B53] break-words">{log.message || log.action}</div>
-                    {log.createdAt ? (
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(log.createdAt).toLocaleString()}
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                      <div className="text-sm font-semibold text-[#121B53] break-words">{log.message || log.action}</div>
+                      {log.createdAt ? (
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {log.severity ? (
+                        <Badge variant="outline" className={cn('capitalize', getSeverityClass(log.severity))}>
+                          {log.severity}
+                        </Badge>
+                      ) : null}
+                      {log.category ? (
+                        <Badge variant="outline" className="border-slate-200 bg-slate-50 capitalize text-slate-700">
+                          {log.category}
+                        </Badge>
+                      ) : null}
+                      {log.source ? (
+                        <Badge variant="outline" className="border-blue-200 bg-blue-50 capitalize text-blue-700">
+                          {log.source}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground break-all">
+                      {log.action ? <span>Action: {log.action}</span> : null}
+                      {log.targetType ? <span> · Cible: {log.targetType}</span> : null}
+                      {log.targetId ? <span> · ID: {log.targetId}</span> : null}
+                      {log.actor ? <span> · Acteur: {log.actor}</span> : null}
+                      {log.ipAddress ? <span> · IP: {log.ipAddress}</span> : null}
+                    </div>
+                    {getMetaPreview(log.meta).length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
+                        {getMetaPreview(log.meta).map((entry) => (
+                          <span key={`${log.id}-${entry.label}`} className="rounded-full bg-slate-100 px-2 py-1">
+                            {entry.label}: {entry.value}
+                          </span>
+                        ))}
                       </div>
                     ) : null}
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground break-all">
-                    {log.action ? <span>Action: {log.action}</span> : null}
-                    {log.targetType ? <span> · Cible: {log.targetType}</span> : null}
-                    {log.targetId ? <span> · ID: {log.targetId}</span> : null}
-                    {log.actor ? <span> · Acteur: {log.actor}</span> : null}
-                    {log.ipAddress ? <span> · IP: {log.ipAddress}</span> : null}
-                  </div>
-                </div>
                 ))}
               </div>
               {filteredLogs.length > 20 && (
