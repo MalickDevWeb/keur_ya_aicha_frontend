@@ -31,6 +31,28 @@ type DocumentsUploadSectionProps = {
   onUpload: () => void
 }
 
+const IMAGE_EXTENSION_PATTERN = /\.(jpe?g|png|webp|heic|heif)$/i
+
+function normalizeSelectedFile(nextFile: File | null, source: 'library' | 'camera'): File | null {
+  if (!nextFile) return null
+  if (source !== 'camera') return nextFile
+
+  const mimeType = String(nextFile.type || '').trim().toLowerCase()
+  const fileName = String(nextFile.name || '').trim()
+  const hasRecognizedImageMimeType = mimeType.startsWith('image/')
+  const hasRecognizedImageExtension = IMAGE_EXTENSION_PATTERN.test(fileName)
+
+  if (hasRecognizedImageMimeType || hasRecognizedImageExtension) {
+    return nextFile
+  }
+
+  const baseName = fileName.replace(/\.[^/.]+$/, '').trim() || `capture-${Date.now()}`
+  return new File([nextFile], `${baseName}.jpg`, {
+    type: 'image/jpeg',
+    lastModified: nextFile.lastModified || Date.now(),
+  })
+}
+
 export function DocumentsUploadSection({
   clients,
   clientId,
@@ -52,16 +74,20 @@ export function DocumentsUploadSection({
   const rentals = activeClient?.rentals ?? []
   const [selectionSource, setSelectionSource] = useState<'library' | 'camera' | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [imagePreviewFailed, setImagePreviewFailed] = useState(false)
   const previewKind = getDocumentUploadPreviewKind(file)
   const isCameraCapture = selectionSource === 'camera'
+  const shouldRenderImagePreview = Boolean(previewUrl) && !imagePreviewFailed && (previewKind === 'image' || isCameraCapture)
 
   useEffect(() => {
     if (!file) {
       setPreviewUrl(null)
       setSelectionSource(null)
+      setImagePreviewFailed(false)
       return
     }
 
+    setImagePreviewFailed(false)
     const nextPreviewUrl = URL.createObjectURL(file)
     setPreviewUrl(nextPreviewUrl)
     return () => {
@@ -74,8 +100,9 @@ export function DocumentsUploadSection({
     source: 'library' | 'camera',
     input: HTMLInputElement
   ) => {
-    setSelectionSource(nextFile ? source : null)
-    onFileChange(nextFile)
+    const normalizedFile = normalizeSelectedFile(nextFile, source)
+    setSelectionSource(normalizedFile ? source : null)
+    onFileChange(normalizedFile)
     input.value = ''
   }
 
@@ -197,12 +224,13 @@ export function DocumentsUploadSection({
                       <span className="truncate font-medium">{file.name}</span>
                     </div>
                     {previewUrl ? (
-                      previewKind === 'image' ? (
+                      shouldRenderImagePreview ? (
                         <div className="overflow-hidden rounded-xl border border-[#121B53]/10 bg-[#F7F9FF]">
                           <img
                             src={previewUrl}
                             alt="Prévisualisation du document"
                             className="h-48 w-full object-contain bg-white"
+                            onError={() => setImagePreviewFailed(true)}
                           />
                         </div>
                       ) : previewKind === 'pdf' ? (
@@ -215,7 +243,9 @@ export function DocumentsUploadSection({
                         </div>
                       ) : (
                         <div className="rounded-xl border border-[#121B53]/10 bg-[#F7F9FF] px-3 py-6 text-center text-sm text-[#121B53]/65">
-                          Prévisualisation non disponible pour ce format, mais le fichier sera envoyé tel quel.
+                          {isCameraCapture
+                            ? "Aperçu indisponible pour ce format photo sur ce téléphone, mais la capture est bien sélectionnée et pourra être envoyée."
+                            : 'Prévisualisation non disponible pour ce format, mais le fichier sera envoyé tel quel.'}
                         </div>
                       )
                     ) : null}
