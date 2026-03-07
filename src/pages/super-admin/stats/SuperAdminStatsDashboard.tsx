@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
 import { useAuth } from '@/contexts/AuthContext'
-import { fetchAdmins, fetchAdminRequests, fetchEntreprises, fetchClients } from '@/services/api'
+import { fetchAdmins, fetchAdminRequests, fetchEntreprises, listClientsSummary } from '@/services/api'
 import type { AdminRequestDTO } from '@/dto/frontend/responses'
 import type { ClientDTO } from '@/dto/backend/responses'
 import { PIE_COLORS } from '../core/constants'
@@ -30,7 +30,7 @@ export function SuperAdminStatsDashboard() {
           fetchEntreprises(),
         ])
         const clientsResult = canReadAdminScopedData
-          ? await Promise.allSettled([fetchClients()])
+          ? await Promise.allSettled([listClientsSummary()])
           : null
 
         if (!active) return

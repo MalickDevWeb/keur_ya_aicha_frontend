@@ -14,7 +14,6 @@ interface DataProviderProps {
 export function DataProvider({ children }: DataProviderProps) {
   const { isAuthenticated, isLoading, user, impersonation } = useAuth()
   const fetchClients = useDataStore((state) => state.fetchClients)
-  const fetchStats = useDataStore((state) => state.fetchStats)
   const resetData = useDataStore((state) => state.resetData)
 
   // Reload store when auth context changes (login/logout/impersonation)
@@ -43,7 +42,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
     const initializeStore = async () => {
       try {
-        await Promise.all([fetchClients(), fetchStats()])
+        await fetchClients()
       } catch {
         // Silently handle initialization errors
         // Error state is available in the store
@@ -53,7 +52,6 @@ export function DataProvider({ children }: DataProviderProps) {
     void initializeStore()
   }, [
     fetchClients,
-    fetchStats,
     resetData,
     isAuthenticated,
     isLoading,

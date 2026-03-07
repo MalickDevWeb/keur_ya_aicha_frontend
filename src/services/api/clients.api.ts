@@ -19,6 +19,10 @@ export async function listClients(): Promise<ClientDTO[]> {
   return clientApi.list()
 }
 
+export async function listClientsSummary(): Promise<ClientDTO[]> {
+  return apiFetch<ClientDTO[]>('/clients?view=summary')
+}
+
 // Backward-compatible name
 export async function fetchClients(): Promise<ClientDTO[]> {
   return listClients()

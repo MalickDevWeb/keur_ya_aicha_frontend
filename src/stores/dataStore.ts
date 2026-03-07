@@ -5,6 +5,7 @@ import type { ClientCreateDTO, ClientUpdateDTO } from '@/dto/backend/requests'
 import { enqueueCreateClientAction, enqueueDeleteClientAction, enqueueUpdateClientAction } from '@/infrastructure/syncQueue'
 import {
   fetchClients as fetchClientsAPI,
+  listClientsSummary as fetchClientsSummaryAPI,
   createClient,
   updateClient as updateClientAPI,
   deleteClient as deleteClientAPI,
@@ -125,7 +126,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   // Fetch stats from API (calculated from clients)
   fetchStats: async () => {
     try {
-      const [dtos, ctx] = await Promise.all([fetchClientsAPI(), getAuthContext()])
+      const [dtos, ctx] = await Promise.all([fetchClientsSummaryAPI(), getAuthContext()])
       const activeAdminId =
         ctx?.impersonation?.adminId ||
         (String(ctx?.user?.role || '').toUpperCase() === 'ADMIN' ? ctx?.user?.id || null : null)
@@ -299,7 +300,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       try {
         await updateClientAPI(clientId, payload)
         await get().fetchClients()
-        await get().refreshStats()
       } catch (error) {
         if (!isLikelyNetworkError(error)) {
           throw error
@@ -442,7 +442,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       try {
         await postPaymentRecord(rentalId, paymentId, amount, options)
         await get().fetchClients()
-        await get().refreshStats()
       } catch (error) {
         if (!isLikelyNetworkError(error)) {
           throw error
@@ -529,7 +528,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       try {
         await updateMonthlyPaymentAPI(rentalId, paymentId, amount)
         await get().fetchClients()
-        await get().refreshStats()
       } catch (error) {
         if (!isLikelyNetworkError(error)) {
           throw error
@@ -607,7 +605,6 @@ export const useDataStore = create<DataState>((set, get) => ({
       try {
         await postDepositPayment(rentalId, amount, options)
         await get().fetchClients()
-        await get().refreshStats()
       } catch (error) {
         if (!isLikelyNetworkError(error)) {
           throw error
