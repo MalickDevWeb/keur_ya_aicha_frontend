@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/contexts/AuthContext'
-import { fetchAdminPayments, fetchAdmins, fetchAdminRequests, fetchEntreprises } from '@/services/api'
+import { useToast } from '@/contexts/ToastContext'
+import {
+  clearImpersonation as clearImpersonationApi,
+  createAdminPayment,
+  fetchAdminPayments,
+  fetchAdmins,
+  fetchAdminRequests,
+  fetchEntreprises,
+  setImpersonation as setImpersonationApi,
+} from '@/services/api'
 import type { AdminDTO, AdminPaymentDTO, AdminRequestDTO, EntrepriseDTO } from '@/dto/frontend/responses'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
@@ -13,6 +22,7 @@ import type { EntrepriseRow, ViewMode } from './types'
 export function EntreprisesDashboard() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { addToast } = useToast()
   const { user, impersonation, setImpersonation } = useAuth()
   const role = String(user?.role || '').toUpperCase()
   const canReadAdminScopedData = role !== 'SUPER_ADMIN' || Boolean(impersonation?.adminId)
@@ -24,6 +34,7 @@ export function EntreprisesDashboard() {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [enteringId, setEnteringId] = useState<string | null>(null)
+  const [payingAdminId, setPayingAdminId] = useState<string | null>(null)
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -147,6 +158,66 @@ export function EntreprisesDashboard() {
     }
   }
 
+  const handlePaySubscription = async (admin?: AdminDTO, amount?: number) => {
+    if (!admin?.id || !admin.userId) return
+    const safeAmount = Math.round(Number(amount) || 0)
+    if (!Number.isFinite(safeAmount) || safeAmount <= 0) {
+      addToast({
+        type: 'error',
+        title: 'Montant invalide',
+        message: 'Le montant du paiement doit etre superieur a 0.',
+      })
+      return
+    }
+
+    setPayingAdminId(admin.id)
+    try {
+      await setImpersonationApi({
+        adminId: admin.id,
+        adminName: admin.name || admin.username || 'Admin',
+        userId: admin.userId,
+      })
+
+      const now = new Date().toISOString()
+      const payment = await createAdminPayment({
+        id: crypto.randomUUID(),
+        adminId: admin.id,
+        entrepriseId: admin.entrepriseId || '',
+        amount: safeAmount,
+        method: 'cash',
+        provider: 'manual',
+        note: 'Paiement valide par Super Admin depuis la liste entreprises.',
+        paidAt: now,
+        createdAt: now,
+      })
+
+      setAdminPayments((prev) =>
+        [payment, ...prev].sort((a, b) => String(b.paidAt || '').localeCompare(String(a.paidAt || '')))
+      )
+
+      addToast({
+        type: 'success',
+        title: 'Paiement applique',
+        message: `L’abonnement de ${admin.name || admin.username} est maintenant a jour.`,
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Impossible de valider ce paiement admin.'
+      addToast({
+        type: 'error',
+        title: 'Paiement impossible',
+        message,
+      })
+    } finally {
+      try {
+        await clearImpersonationApi()
+      } catch {
+        // best effort cleanup
+      }
+      setPayingAdminId(null)
+    }
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 animate-fade-in sm:space-y-6 sm:px-4 sm:py-6 lg:px-6">
       <SectionWrapper>
@@ -169,6 +240,8 @@ export function EntreprisesDashboard() {
           onEnterAdmin={handleEnterAdmin}
           isAdminPaidThisMonth={isAdminPaidThisMonth}
           getLastPaidAt={getLastPaidAt}
+          payingAdminId={payingAdminId}
+          onPaySubscription={handlePaySubscription}
           selectedEntrepriseId={selectedEntrepriseId}
           onSelectEntreprise={setSelectedEntrepriseId}
           noResultsLabel={t('clients.noResults')}

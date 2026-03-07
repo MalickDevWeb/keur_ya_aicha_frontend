@@ -1,12 +1,13 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SearchInput } from '@/components/SearchInput'
 import { cn } from '@/lib/utils'
 import { Building2, Grid3x3, List } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { AdminDTO } from '@/dto/frontend/responses'
 import type { EntrepriseRow, ViewMode } from '../types'
 
@@ -21,9 +22,22 @@ type EntreprisesListSectionProps = {
   onEnterAdmin: (admin?: AdminDTO) => void
   isAdminPaidThisMonth: (adminId?: string) => boolean
   getLastPaidAt: (adminId?: string) => string | null
+  payingAdminId: string | null
+  onPaySubscription: (admin?: AdminDTO, amount?: number) => void
   selectedEntrepriseId: string | null
   onSelectEntreprise: (entrepriseId: string) => void
   noResultsLabel: string
+}
+
+function getDefaultPaymentAmount(admin?: AdminDTO): string {
+  if (!admin) return '5000'
+  const mode = String(admin.subscriptionMode || 'monthly').toLowerCase()
+  if (mode === 'annual') {
+    const annual = Number(admin.subscriptionAnnualAmount || 60000)
+    return String(Number.isFinite(annual) && annual > 0 ? Math.round(annual) : 60000)
+  }
+  const monthly = Number(admin.subscriptionMonthlyAmount || 5000)
+  return String(Number.isFinite(monthly) && monthly > 0 ? Math.round(monthly) : 5000)
 }
 
 export function EntreprisesListSection({
@@ -37,17 +51,29 @@ export function EntreprisesListSection({
   onEnterAdmin,
   isAdminPaidThisMonth,
   getLastPaidAt,
+  payingAdminId,
+  onPaySubscription,
   selectedEntrepriseId,
   onSelectEntreprise,
   noResultsLabel,
 }: EntreprisesListSectionProps) {
   const isMobile = useIsMobile()
+  const [paymentAmounts, setPaymentAmounts] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (isMobile && viewMode !== 'cards') {
       onViewModeChange('cards')
     }
   }, [isMobile, viewMode, onViewModeChange])
+
+  const resolvePaymentAmount = (admin?: AdminDTO): string => {
+    if (!admin?.id) return getDefaultPaymentAmount(admin)
+    return paymentAmounts[admin.id] || getDefaultPaymentAmount(admin)
+  }
+
+  const setPaymentAmount = (adminId: string, value: string) => {
+    setPaymentAmounts((prev) => ({ ...prev, [adminId]: value }))
+  }
 
   return (
     <Card className="border-[#121B53]/15 bg-white/85 shadow-[0_20px_50px_rgba(12,18,60,0.12)]">
@@ -103,6 +129,9 @@ export function EntreprisesListSection({
               const paid = isAdminPaidThisMonth(admin?.id)
               const lastPaidAt = getLastPaidAt(admin?.id)
               const isSelected = selectedEntrepriseId === entreprise.id
+              const allowCustomAmount = Boolean(admin?.subscriptionAllowCustomAmount)
+              const paymentAmount = resolvePaymentAmount(admin)
+              const isPaying = Boolean(admin?.id) && payingAdminId === admin.id
               return (
               <Card
                 key={entreprise.id}
@@ -157,6 +186,37 @@ export function EntreprisesListSection({
                         >
                           {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
                         </Button>
+                        {admin ? (
+                          <div className="space-y-2 rounded-xl border border-[#121B53]/10 bg-white/80 p-3">
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#121B53]/55">
+                                Paiement direct
+                              </p>
+                              <Input
+                                value={paymentAmount}
+                                disabled={!allowCustomAmount || isPaying || paid}
+                                onChange={(event) => {
+                                  if (!allowCustomAmount) return
+                                  setPaymentAmount(admin.id, event.target.value.replace(/[^\d]/g, ''))
+                                }}
+                                className="border-[#121B53]/20 bg-white"
+                              />
+                              <p className="text-[11px] text-[#121B53]/60">
+                                {allowCustomAmount
+                                  ? 'Montant modifiable pour cet admin.'
+                                  : 'Montant verrouille par le plan de cet admin.'}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                              disabled={isPaying || paid}
+                              onClick={() => onPaySubscription(admin, Number(paymentAmount))}
+                            >
+                              {paid ? 'Deja paye' : isPaying ? 'Paiement...' : 'Payer / Valider'}
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
                     </>
                   ) : (
@@ -184,6 +244,9 @@ export function EntreprisesListSection({
                 const paid = isAdminPaidThisMonth(admin?.id)
                 const lastPaidAt = getLastPaidAt(admin?.id)
                 const isSelected = selectedEntrepriseId === entreprise.id
+                const allowCustomAmount = Boolean(admin?.subscriptionAllowCustomAmount)
+                const paymentAmount = resolvePaymentAmount(admin)
+                const isPaying = Boolean(admin?.id) && payingAdminId === admin.id
                 return (
                   <Card key={entreprise.id} className="border border-[#121B53]/10 shadow-sm">
                     <CardContent className="p-4 space-y-3">
@@ -206,14 +269,37 @@ export function EntreprisesListSection({
                       </div>
 
                       {isSelected ? (
-                        <Button
-                          size="sm"
-                          className="w-full bg-[#121B53] text-white hover:bg-[#0B153D]"
-                          disabled={!admin || enteringId === admin?.id}
-                          onClick={() => onEnterAdmin(admin)}
-                        >
-                          {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
-                        </Button>
+                        <div className="space-y-2">
+                          <Button
+                            size="sm"
+                            className="w-full bg-[#121B53] text-white hover:bg-[#0B153D]"
+                            disabled={!admin || enteringId === admin?.id}
+                            onClick={() => onEnterAdmin(admin)}
+                          >
+                            {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
+                          </Button>
+                          {admin ? (
+                            <>
+                              <Input
+                                value={paymentAmount}
+                                disabled={!allowCustomAmount || isPaying || paid}
+                                onChange={(event) => {
+                                  if (!allowCustomAmount) return
+                                  setPaymentAmount(admin.id, event.target.value.replace(/[^\d]/g, ''))
+                                }}
+                                className="border-[#121B53]/20 bg-white"
+                              />
+                              <Button
+                                size="sm"
+                                className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                                disabled={isPaying || paid}
+                                onClick={() => onPaySubscription(admin, Number(paymentAmount))}
+                              >
+                                {paid ? 'Deja paye' : isPaying ? 'Paiement...' : 'Payer / Valider'}
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
                       ) : (
                         <Button size="sm" variant="outline" className="w-full" onClick={() => onSelectEntreprise(entreprise.id)}>
                           Voir les détails
@@ -241,6 +327,9 @@ export function EntreprisesListSection({
                       const paid = isAdminPaidThisMonth(admin?.id)
                       const lastPaidAt = getLastPaidAt(admin?.id)
                       const isSelected = selectedEntrepriseId === entreprise.id
+                      const allowCustomAmount = Boolean(admin?.subscriptionAllowCustomAmount)
+                      const paymentAmount = resolvePaymentAmount(admin)
+                      const isPaying = Boolean(admin?.id) && payingAdminId === admin.id
                       return (
                         <TableRow key={entreprise.id}>
                           <TableCell className="font-medium">{entreprise.name || '—'}</TableCell>
@@ -258,6 +347,27 @@ export function EntreprisesListSection({
                                 >
                                   {enteringId === admin?.id ? 'Ouverture...' : "Entrer dans l'espace"}
                                 </Button>
+                                {admin ? (
+                                  <>
+                                    <Input
+                                      value={paymentAmount}
+                                      disabled={!allowCustomAmount || isPaying || paid}
+                                      onChange={(event) => {
+                                        if (!allowCustomAmount) return
+                                        setPaymentAmount(admin.id, event.target.value.replace(/[^\d]/g, ''))
+                                      }}
+                                      className="h-9 w-[150px] border-[#121B53]/20 bg-white"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      className="bg-emerald-600 text-white hover:bg-emerald-700"
+                                      disabled={isPaying || paid}
+                                      onClick={() => onPaySubscription(admin, Number(paymentAmount))}
+                                    >
+                                      {paid ? 'Deja paye' : isPaying ? 'Paiement...' : 'Payer / Valider'}
+                                    </Button>
+                                  </>
+                                ) : null}
                                 <Badge className={paid ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'}>
                                   {paid ? 'Payé ce mois' : 'Non payé'}
                                 </Badge>

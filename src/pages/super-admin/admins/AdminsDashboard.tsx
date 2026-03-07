@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchAdmins, fetchEntreprises, updateAdmin } from '@/services/api'
+import {
+  clearImpersonation as clearImpersonationApi,
+  createAdminPayment,
+  fetchAdmins,
+  fetchEntreprises,
+  setImpersonation as setImpersonationApi,
+  updateAdmin,
+} from '@/services/api'
 import type { AdminDTO, EntrepriseDTO } from '@/dto/frontend/responses'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { SuperAdminHeader } from '../components/SuperAdminHeader'
@@ -67,6 +74,8 @@ export function AdminsDashboard() {
     permissions: { ...ADMIN_FEATURE_PERMISSION_DEFAULTS },
   })
   const [savingSubscription, setSavingSubscription] = useState(false)
+  const [directPaymentAmount, setDirectPaymentAmount] = useState(String(DEFAULT_MONTHLY_AMOUNT))
+  const [processingDirectPayment, setProcessingDirectPayment] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -91,6 +100,21 @@ export function AdminsDashboard() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!subscriptionTarget || subscriptionDraft.allowCustomAmount) return
+    setDirectPaymentAmount(
+      subscriptionDraft.mode === 'annual'
+        ? subscriptionDraft.annualAmount
+        : subscriptionDraft.monthlyAmount
+    )
+  }, [
+    subscriptionDraft.allowCustomAmount,
+    subscriptionDraft.annualAmount,
+    subscriptionDraft.mode,
+    subscriptionDraft.monthlyAmount,
+    subscriptionTarget,
+  ])
 
   const entrepriseByAdmin = useMemo(() => {
     const map = new Map<string, EntrepriseDTO[]>()
@@ -141,11 +165,15 @@ export function AdminsDashboard() {
 
   const openSubscriptionDialog = (admin: AdminDTO) => {
     setSubscriptionTarget(admin)
-    setSubscriptionDraft(buildSubscriptionDraft(admin))
+    const nextDraft = buildSubscriptionDraft(admin)
+    setSubscriptionDraft(nextDraft)
+    setDirectPaymentAmount(
+      nextDraft.mode === 'annual' ? nextDraft.annualAmount : nextDraft.monthlyAmount
+    )
   }
 
   const closeSubscriptionDialog = () => {
-    if (savingSubscription) return
+    if (savingSubscription || processingDirectPayment) return
     setSubscriptionTarget(null)
   }
 
@@ -193,6 +221,71 @@ export function AdminsDashboard() {
       addToast({ type: 'error', title: 'Erreur', message })
     } finally {
       setSavingSubscription(false)
+    }
+  }
+
+  const paySubscriptionDirectly = async () => {
+    if (!subscriptionTarget?.id || !subscriptionTarget.userId) return
+
+    const fallbackAmount =
+      subscriptionDraft.mode === 'annual'
+        ? Number(subscriptionDraft.annualAmount)
+        : Number(subscriptionDraft.monthlyAmount)
+    const typedAmount = Number(directPaymentAmount)
+    const amountToSend = subscriptionDraft.allowCustomAmount
+      ? typedAmount
+      : fallbackAmount
+
+    if (!Number.isFinite(amountToSend) || amountToSend <= 0) {
+      addToast({
+        type: 'error',
+        title: 'Montant invalide',
+        message: 'Le montant du paiement doit être supérieur à 0.',
+      })
+      return
+    }
+
+    setProcessingDirectPayment(true)
+    try {
+      await setImpersonationApi({
+        adminId: subscriptionTarget.id,
+        adminName: subscriptionTarget.name || subscriptionTarget.username || 'Admin',
+        userId: subscriptionTarget.userId,
+      })
+
+      const now = new Date().toISOString()
+      await createAdminPayment({
+        id: crypto.randomUUID(),
+        adminId: subscriptionTarget.id,
+        entrepriseId: subscriptionTarget.entrepriseId || '',
+        amount: Math.round(amountToSend),
+        method: 'cash',
+        provider: 'manual',
+        note: 'Paiement valide par Super Admin depuis la supervision.',
+        paidAt: now,
+        createdAt: now,
+      })
+
+      addToast({
+        type: 'success',
+        title: 'Paiement applique',
+        message: `L’abonnement de ${subscriptionTarget.name || subscriptionTarget.username} est maintenant a jour.`,
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Impossible de valider ce paiement admin.'
+      addToast({
+        type: 'error',
+        title: 'Paiement impossible',
+        message,
+      })
+    } finally {
+      try {
+        await clearImpersonationApi()
+      } catch {
+        // best effort cleanup
+      }
+      setProcessingDirectPayment(false)
     }
   }
 
@@ -313,6 +406,43 @@ export function AdminsDashboard() {
               Autoriser cet admin à saisir manuellement un montant différent
             </label>
 
+            <div className="space-y-3 rounded-xl border border-[#121B53]/15 bg-[#F7F9FF] p-3 sm:p-4">
+              <div>
+                <p className="text-sm font-medium text-[#121B53]">Paiement direct Super Admin</p>
+                <p className="text-xs text-[#121B53]/70">
+                  Valide immédiatement l’abonnement côté backend et débloque l’application si
+                  le compte était en retard.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-[#121B53]">Montant a appliquer (FCFA)</label>
+                  <Input
+                    value={directPaymentAmount}
+                    onChange={(event) => {
+                      if (!subscriptionDraft.allowCustomAmount) return
+                      setDirectPaymentAmount(event.target.value.replace(/[^\d]/g, ''))
+                    }}
+                    disabled={!subscriptionDraft.allowCustomAmount || processingDirectPayment}
+                    className="border-[#121B53]/20"
+                  />
+                  <p className="text-xs text-[#121B53]/65">
+                    {subscriptionDraft.allowCustomAmount
+                      ? 'Le Super Admin peut saisir un montant manuel pour cet admin.'
+                      : 'Montant verrouille: la valeur definie par le plan sera appliquee automatiquement.'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={paySubscriptionDirectly}
+                  disabled={processingDirectPayment}
+                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  {processingDirectPayment ? 'Paiement...' : 'Payer / Valider'}
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-3 rounded-xl border border-[#121B53]/15 bg-white p-3 sm:p-4">
               <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                 <p className="text-sm font-medium text-[#121B53]">Fonctionnalités autorisées</p>
@@ -379,12 +509,16 @@ export function AdminsDashboard() {
           </div>
 
           <DialogFooter className="gap-2 border-t border-[#121B53]/10 pt-3 sm:pt-4">
-            <Button variant="outline" onClick={closeSubscriptionDialog} disabled={savingSubscription}>
+            <Button
+              variant="outline"
+              onClick={closeSubscriptionDialog}
+              disabled={savingSubscription || processingDirectPayment}
+            >
               Fermer
             </Button>
             <Button
               onClick={saveSubscriptionConfig}
-              disabled={savingSubscription}
+              disabled={savingSubscription || processingDirectPayment}
               className="bg-[#121B53] text-white hover:bg-[#0B153D]"
             >
               {savingSubscription ? 'Enregistrement...' : 'Enregistrer la configuration'}

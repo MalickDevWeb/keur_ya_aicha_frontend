@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Camera, CheckCircle2, FileText, ImagePlus, RotateCcw, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -50,8 +50,6 @@ export function DocumentsUploadSection({
 }: DocumentsUploadSectionProps) {
   const activeClient = clients.find((client) => client.id === clientId)
   const rentals = activeClient?.rentals ?? []
-  const filePickerRef = useRef<HTMLInputElement | null>(null)
-  const cameraPickerRef = useRef<HTMLInputElement | null>(null)
   const [selectionSource, setSelectionSource] = useState<'library' | 'camera' | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const previewKind = getDocumentUploadPreviewKind(file)
@@ -71,14 +69,6 @@ export function DocumentsUploadSection({
     }
   }, [file])
 
-  const pickFileFromLibrary = () => {
-    filePickerRef.current?.click()
-  }
-
-  const pickFileFromCamera = () => {
-    cameraPickerRef.current?.click()
-  }
-
   const handleFileSelection = (
     nextFile: File | null,
     source: 'library' | 'camera',
@@ -96,6 +86,10 @@ export function DocumentsUploadSection({
     : isCameraCapture
       ? 'Confirmer et téléverser'
       : 'Téléverser le document'
+
+  const pickerLabelClassName =
+    'relative flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#121B53]/20 bg-white px-4 py-2 text-sm font-medium text-[#121B53] transition hover:bg-[#F7F9FF] focus-within:ring-2 focus-within:ring-[#121B53]/20'
+  const pickerInputClassName = 'absolute inset-0 h-full w-full cursor-pointer opacity-0'
 
   return (
     <Card className="border-[#121B53]/15 bg-white/90 shadow-[0_22px_60px_rgba(12,18,60,0.14)]">
@@ -169,44 +163,32 @@ export function DocumentsUploadSection({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#121B53]/60">Fichier / Caméra</p>
             <div className="mt-3 space-y-3">
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="justify-start gap-2 rounded-xl border-[#121B53]/20 bg-white text-[#121B53]"
-                  onClick={pickFileFromLibrary}
-                >
+                <label className={pickerLabelClassName}>
                   <ImagePlus className="h-4 w-4" />
                   Galerie / Fichiers
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="justify-start gap-2 rounded-xl border-[#121B53]/20 bg-white text-[#121B53]"
-                  onClick={pickFileFromCamera}
-                >
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf,image/*"
+                    className={pickerInputClassName}
+                    onChange={(event) =>
+                      handleFileSelection(event.target.files?.[0] ?? null, 'library', event.currentTarget)
+                    }
+                  />
+                </label>
+                <label className={pickerLabelClassName}>
                   <Camera className="h-4 w-4" />
                   Prendre une photo
-                </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className={pickerInputClassName}
+                    onChange={(event) =>
+                      handleFileSelection(event.target.files?.[0] ?? null, 'camera', event.currentTarget)
+                    }
+                  />
+                </label>
               </div>
-              <input
-                ref={filePickerRef}
-                type="file"
-                accept=".pdf,application/pdf,image/*"
-                className="hidden"
-                onChange={(event) =>
-                  handleFileSelection(event.target.files?.[0] ?? null, 'library', event.currentTarget)
-                }
-              />
-              <input
-                ref={cameraPickerRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(event) =>
-                  handleFileSelection(event.target.files?.[0] ?? null, 'camera', event.currentTarget)
-                }
-              />
               <div className="rounded-xl border border-dashed border-[#121B53]/25 bg-white p-3">
                 {file ? (
                   <div className="space-y-3">
@@ -249,15 +231,25 @@ export function DocumentsUploadSection({
                     </div>
                     <div className="flex flex-col gap-2">
                       <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="gap-2"
-                          onClick={isCameraCapture ? pickFileFromCamera : pickFileFromLibrary}
+                        <label
+                          className={`${pickerLabelClassName} justify-center border-[#121B53]/15 sm:w-auto`}
                         >
                           {isCameraCapture ? <RotateCcw className="h-4 w-4" /> : <ImagePlus className="h-4 w-4" />}
                           {isCameraCapture ? 'Reprendre la photo' : 'Changer le fichier'}
-                        </Button>
+                          <input
+                            type="file"
+                            accept={isCameraCapture ? 'image/*' : '.pdf,application/pdf,image/*'}
+                            capture={isCameraCapture ? 'environment' : undefined}
+                            className={pickerInputClassName}
+                            onChange={(event) =>
+                              handleFileSelection(
+                                event.target.files?.[0] ?? null,
+                                isCameraCapture ? 'camera' : 'library',
+                                event.currentTarget
+                              )
+                            }
+                          />
+                        </label>
                         <Button
                           type="button"
                           variant="ghost"

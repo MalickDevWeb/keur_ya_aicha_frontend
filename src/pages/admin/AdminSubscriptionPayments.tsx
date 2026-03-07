@@ -274,6 +274,18 @@ export default function AdminSubscriptionPayments() {
     return Number.isFinite(adminMonthly) && adminMonthly > 0 ? Math.round(adminMonthly) : 5000
   })()
   const allowCustomAmount = Boolean(subscriptionStatus?.allowCustomAmount ?? admin?.subscriptionAllowCustomAmount)
+  const paymentRecipientName = String(
+    subscriptionStatus?.recipientName || paymentRules.recipientName || 'Keur Ya Aicha'
+  ).trim()
+  const waveRecipientPhone = normalizePhone(
+    subscriptionStatus?.waveRecipientPhone || paymentRules.waveRecipientPhone || ''
+  )
+  const orangeRecipientPhone = normalizePhone(
+    subscriptionStatus?.orangeRecipientPhone || paymentRules.orangeRecipientPhone || ''
+  )
+  const orangeOtpEnabled = Boolean(
+    subscriptionStatus?.orangeOtpEnabled ?? paymentRules.orangeOtpEnabled
+  )
   const getPeriodKeyForPayment = (payment: AdminPaymentDTO): string => {
     const rawMonth = String(payment.month || '').trim()
     if (subscriptionMode === 'annual') {
@@ -332,21 +344,27 @@ export default function AdminSubscriptionPayments() {
   })()
   const normalizedPhone = normalizePhone(payerPhone)
   const numericAmount = allowCustomAmount ? Number(amount) : expectedPlanAmount
+  const paymentAccountConfigured =
+    paymentMethod === 'wave'
+      ? Boolean(waveRecipientPhone)
+      : paymentMethod === 'orange_money'
+      ? Boolean(orangeRecipientPhone)
+      : true
   const hasValidRawAmount =
     Number.isFinite(numericAmount) &&
     numericAmount > 0 &&
     (!allowCustomAmount || (numericAmount >= MIN_AMOUNT_FCFA && numericAmount <= MAX_AMOUNT_FCFA))
   const waveCheckoutLink = useMemo(() => {
     if (paymentMethod !== 'wave') return ''
-    if (!hasValidRawAmount || !isValidSenegalMobileNumber(payerPhone)) return ''
+    if (!hasValidRawAmount || !waveRecipientPhone) return ''
     const params = new URLSearchParams({
       amount: String(Math.round(numericAmount)),
       currency: 'XOF',
-      phone: normalizedPhone,
+      phone: waveRecipientPhone,
       reason: `Abonnement ${requiredMonth}`,
     })
     return `wave://pay?${params.toString()}`
-  }, [hasValidRawAmount, normalizedPhone, numericAmount, payerPhone, paymentMethod, requiredMonth])
+  }, [hasValidRawAmount, numericAmount, paymentMethod, requiredMonth, waveRecipientPhone])
 
   useEffect(() => {
     if (!blockedBySystem) return
@@ -470,7 +488,9 @@ export default function AdminSubscriptionPayments() {
       addToast({
         type: 'error',
         title: 'Wave indisponible',
-        message: 'Renseignez un numéro valide et un montant valide pour générer le lien Wave.',
+        message: waveRecipientPhone
+          ? 'Renseignez un montant valide pour générer le lien Wave.'
+          : 'Le compte bénéficiaire Wave n’est pas encore configuré par le Super Admin.',
       })
       return
     }
@@ -511,6 +531,24 @@ export default function AdminSubscriptionPayments() {
       }
     }
 
+    if (paymentMethod === 'wave' && !waveRecipientPhone) {
+      addToast({
+        type: 'error',
+        title: 'Compte Wave non configuré',
+        message: 'Le Super Admin doit renseigner le numéro bénéficiaire Wave dans les paramètres.',
+      })
+      return
+    }
+
+    if (paymentMethod === 'orange_money' && !orangeRecipientPhone) {
+      addToast({
+        type: 'error',
+        title: 'Compte Orange Money non configuré',
+        message: 'Le Super Admin doit renseigner le numéro bénéficiaire Orange Money dans les paramètres.',
+      })
+      return
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors)
       addToast({
@@ -521,7 +559,7 @@ export default function AdminSubscriptionPayments() {
       return
     }
 
-    if (paymentMethod === 'orange_money') {
+    if (paymentMethod === 'orange_money' && orangeOtpEnabled) {
       if (!orangeCode) {
         const generatedCode = buildOrangeSimulationCode()
         setOrangeCode(generatedCode)
@@ -682,6 +720,11 @@ export default function AdminSubscriptionPayments() {
             Montant attendu: <span className="font-semibold">{formatCurrency(expectedPlanAmount)} FCFA</span>
             {allowCustomAmount ? ' • Montant libre autorisé' : ' • Montant verrouillé par Super Admin'}
           </p>
+          <p className="text-xs text-[#121B53]/70">
+            Bénéficiaire Mobile Money: <span className="font-semibold">{paymentRecipientName || 'Non défini'}</span>
+            {waveRecipientPhone ? ` • Wave ${waveRecipientPhone}` : ' • Wave non configuré'}
+            {orangeRecipientPhone ? ` • Orange ${orangeRecipientPhone}` : ' • Orange non configuré'}
+          </p>
         </CardHeader>
         <CardContent className="h-full space-y-3 overflow-hidden pb-3">
           {blockedBySystem ? (
@@ -822,8 +865,11 @@ export default function AdminSubscriptionPayments() {
                     <div className="flex items-center gap-2">
                       <img src={waveLogoUrl} alt="Wave" className="h-10 rounded-lg border border-[#00AEEF]/20 bg-white p-1" />
                       <div>
-                        <p className="text-sm font-semibold text-[#006E9A]">Simulation Wave</p>
-                        <p className="text-xs text-[#2B7A9B]">Scannez le QR ou ouvrez Wave sur mobile</p>
+                        <p className="text-sm font-semibold text-[#006E9A]">Paiement Wave</p>
+                        <p className="text-xs text-[#2B7A9B]">
+                          Le paiement part vers {paymentRecipientName || 'le compte configuré'}
+                          {waveRecipientPhone ? ` (${waveRecipientPhone})` : ''}
+                        </p>
                       </div>
                     </div>
                     <Badge className="bg-[#00AEEF] text-white">WAVE</Badge>
@@ -844,7 +890,8 @@ export default function AdminSubscriptionPayments() {
                     <div className="space-y-2 text-xs text-[#256885]">
                       <p>1. Vérifiez le numéro et le montant.</p>
                       <p>2. Scannez le QR code depuis l’application Wave.</p>
-                      <p>3. Revenez ici puis confirmez la simulation.</p>
+                      <p>3. Le transfert doit arriver sur le compte Wave configuré par le Super Admin.</p>
+                      <p>4. Revenez ici puis confirmez la validation.</p>
                       <div className="flex flex-wrap gap-2 pt-1">
                         <Button
                           type="button"
@@ -878,30 +925,43 @@ export default function AdminSubscriptionPayments() {
                     <div className="flex items-center gap-2">
                       <img src={orangeLogoUrl} alt="Orange Money" className="h-10 rounded-lg border border-[#FF7900]/20 bg-white p-1" />
                       <div>
-                        <p className="text-sm font-semibold text-[#B85600]">Simulation Orange Money</p>
-                        <p className="text-xs text-[#B56A2C]">Validation par code après saisie du numéro et du montant</p>
+                        <p className="text-sm font-semibold text-[#B85600]">Paiement Orange Money</p>
+                        <p className="text-xs text-[#B56A2C]">
+                          Le transfert doit arriver sur {paymentRecipientName || 'le compte configuré'}
+                          {orangeRecipientPhone ? ` (${orangeRecipientPhone})` : ''}
+                        </p>
                       </div>
                     </div>
                     <Badge className="bg-[#FF7900] text-black">OM</Badge>
                   </div>
                   <div className="mt-3 space-y-1">
-                    <label className="text-xs font-medium text-[#B85600]">Code de validation OM</label>
-                    <Input
-                      value={orangeCodeInput}
-                      onChange={(event) => {
-                        setOrangeCodeInput(event.target.value.replace(/[^\d]/g, '').slice(0, ORANGE_SIM_CODE_LENGTH))
-                        setFieldErrors((prev) => ({ ...prev, orangeCode: undefined }))
-                      }}
-                      placeholder={`Code à ${ORANGE_SIM_CODE_LENGTH} chiffres`}
-                      className={fieldErrors.orangeCode ? 'border-rose-300 focus-visible:ring-rose-300' : 'border-[#FF7900]/30 bg-white'}
-                    />
-                    {fieldErrors.orangeCode ? <p className="text-xs text-rose-600">{fieldErrors.orangeCode}</p> : null}
-                    {orangeCode ? (
-                      <p className="text-xs text-[#8C490D]">
-                        Code simulation envoyé: <span className="font-semibold tracking-widest">{orangeCode}</span>
-                      </p>
+                    {orangeOtpEnabled ? (
+                      <>
+                        <label className="text-xs font-medium text-[#B85600]">Code de validation OM</label>
+                        <Input
+                          value={orangeCodeInput}
+                          onChange={(event) => {
+                            setOrangeCodeInput(event.target.value.replace(/[^\d]/g, '').slice(0, ORANGE_SIM_CODE_LENGTH))
+                            setFieldErrors((prev) => ({ ...prev, orangeCode: undefined }))
+                          }}
+                          placeholder={`Code à ${ORANGE_SIM_CODE_LENGTH} chiffres`}
+                          className={fieldErrors.orangeCode ? 'border-rose-300 focus-visible:ring-rose-300' : 'border-[#FF7900]/30 bg-white'}
+                        />
+                        {fieldErrors.orangeCode ? <p className="text-xs text-rose-600">{fieldErrors.orangeCode}</p> : null}
+                        {orangeCode ? (
+                          <p className="text-xs text-[#8C490D]">
+                            Code simulation envoyé: <span className="font-semibold tracking-widest">{orangeCode}</span>
+                          </p>
+                        ) : (
+                          <p className="text-xs text-[#8C490D]">
+                            Cliquez sur "Recevoir code OM" pour générer un code de validation.
+                          </p>
+                        )}
+                      </>
                     ) : (
-                      <p className="text-xs text-[#8C490D]">Cliquez sur "Recevoir code OM" pour générer un code de validation.</p>
+                      <p className="text-xs text-[#8C490D]">
+                        OTP Orange Money désactivé. Utilisez le numéro bénéficiaire configuré puis confirmez le paiement.
+                      </p>
                     )}
                   </div>
                 </div>
@@ -959,6 +1019,7 @@ export default function AdminSubscriptionPayments() {
                   paying ||
                   paidRequiredMonth ||
                   (paymentMethod === 'cash' && !canValidateCash) ||
+                  !paymentAccountConfigured ||
                   (!allowCustomAmount && expectedPlanAmount <= 0)
                 }
                 className="h-11 bg-[#121B53] text-white hover:bg-[#0B153D]"
@@ -970,9 +1031,11 @@ export default function AdminSubscriptionPayments() {
                   : paymentMethod === 'wave'
                   ? 'Confirmer paiement Wave'
                   : paymentMethod === 'orange_money'
-                  ? orangeCode
-                    ? 'Confirmer code OM'
-                    : 'Recevoir code OM'
+                  ? orangeOtpEnabled
+                    ? orangeCode
+                      ? 'Confirmer code OM'
+                      : 'Recevoir code OM'
+                    : 'Confirmer paiement OM'
                   : 'Valider paiement espèces'}
               </Button>
               {(paidRequiredMonth || !!latestUndoId || isRollingBack) && (
