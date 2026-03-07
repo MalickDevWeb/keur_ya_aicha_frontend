@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presentation de soutenance - KYA (Keur Ya Aicha)</title>
+  <style>
+    @page {
+      size: 16:9;
+      margin: 0;
+    }
+
+    :root {
+      --navy: #121b53;
+      --royal: #2c44b6;
+      --soft: #eef4ff;
+      --line: #cfd9f2;
+      --muted: #6474a3;
+      --orange: #e38a14;
+      --green: #18a35f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #edf1f8;
+      color: var(--navy);
+    }
+
+    .slide {
+      width: 1280px;
+      min-height: 720px;
+      margin: 24px auto;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 16px 48px rgba(17, 24, 39, 0.12);
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+      border-radius: 24px;
+    }
+
+    .topbar {
+      height: 20px;
+      background: linear-gradient(90deg, var(--navy), var(--royal));
+    }
+
+    .inner {
+      padding: 38px 48px 42px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      min-height: 700px;
+    }
+
+    .cover .inner {
+      grid-template-columns: 1fr;
+      text-align: center;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .logo {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      margin: 0 auto;
+      filter: drop-shadow(0 12px 24px rgba(32, 58, 123, 0.18));
+    }
+
+    .kicker {
+      display: inline-block;
+      background: rgba(227, 138, 20, 0.14);
+      color: var(--orange);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 54px;
+      line-height: 1.08;
+      margin: 0 0 14px 0;
+    }
+
+    .subtitle {
+      font-size: 28px;
+      line-height: 1.3;
+      color: var(--muted);
+      margin-bottom: 18px;
+      font-weight: 500;
+    }
+
+    .meta {
+      font-size: 24px;
+      color: var(--navy);
+      line-height: 1.8;
+    }
+
+    .content h2 {
+      margin: 0 0 10px 0;
+      font-size: 40px;
+      line-height: 1.12;
+    }
+
+    .content .subtitle {
+      font-size: 22px;
+      margin-bottom: 24px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 28px;
+      font-size: 26px;
+      line-height: 1.5;
+    }
+
+    li {
+      margin-bottom: 12px;
+    }
+
+    .visual-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff, #f6f9ff);
+      border-radius: 24px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 500px;
+    }
+
+    .visual-card img {
+      max-width: 100%;
+      max-height: 460px;
+      object-fit: contain;
+    }
+
+    .footer {
+      position: absolute;
+      left: 48px;
+      right: 48px;
+      bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .footer .page-no {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: var(--navy);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .slide {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+          <section class="slide cover">
+            <div class="topbar"></div>
+            <div class="inner">
+              <img class="logo" src="soutenance_pack_assets/logo.png" alt="Logo KYA" />
+              <div><span class="kicker">Projet de fin de cycle</span></div>
+              <h1>KYA (Keur Ya Aicha) - Plateforme de gestion locative multi-roles</h1>
+              <div class="meta">
+                <div>Papa Malick Teuw</div>
+                <div>Developpeur Full Stack Web et Mobile</div>
+                <div>Orange Digital Center - 2025-2026</div>
+                <div>M. Birane Bailla Wone</div>
+              </div>
+            </div>
+            <div class="footer">
+              <span>KYA (Keur Ya Aicha)</span>
+              <span class="page-no">1</span>
+            </div>
+          </section>
+        
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Constat de depart</div>
+              <h2>Problematique</h2>
+              <div class="subtitle">Pourquoi ce projet ?</div>
+              <ul><li>La gestion locative manuelle produit des doublons et des oublis.</li><li>Les paiements et depots sont difficiles a suivre sans historique centralise.</li><li>Les documents restent souvent disperses et peu relies aux dossiers clients.</li><li>Sans gouvernance ni audit, le controle multi-acteurs reste fragile.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/contexe.png" alt="Problematique" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">2</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Ce que KYA apporte</div>
+              <h2>Objectif et valeur</h2>
+              <div class="subtitle">Une solution complete et exploitable</div>
+              <ul><li>Centraliser clients, locations, paiements, cautions et documents.</li><li>Distinguer clairement Super Admin, Admin et Client.</li><li>Permettre l import Excel / CSV / JSON avec controle anti-doublon.</li><li>Offrir un produit deployable sur web et exploitable sur desktop Electron.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/Untitled-3.png" alt="Objectif et valeur" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">3</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Analyse fonctionnelle</div>
+              <h2>Acteurs et perimetre</h2>
+              <div class="subtitle">Qui fait quoi dans le systeme ?</div>
+              <ul><li>Super Admin : approbation, gouvernance, maintenance, impersonation, supervision.</li><li>Admin : gestion de ses clients, locations, paiements, imports et documents.</li><li>Client : reçoit les informations, recus et relances le concernant.</li><li>Services externes : paiement, Cloudinary, Brevo.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/use_case_global.svg" alt="Acteurs et perimetre" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">4</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Vue d ensemble</div>
+              <h2>Architecture globale</h2>
+              <div class="subtitle">Frontend, backend, base et services externes</div>
+              <ul><li>Frontend React/Vite/TypeScript pour l interface metier.</li><li>Backend Next.js App Router structure en couches.</li><li>PostgreSQL via Prisma pour la persistence relationnelle.</li><li>Brevo, Cloudinary et provider de paiement comme integrations externes.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/architecture_globale.svg" alt="Architecture globale" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">5</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Couche presentation</div>
+              <h2>Architecture frontend</h2>
+              <div class="subtitle">Organisation du web et du desktop</div>
+              <ul><li>React Router pour la navigation et les gardes de routes.</li><li>AuthContext pour la session et les permissions.</li><li>Zustand pour centraliser les donnees metier.</li><li>Composants reutilisables et configuration runtime de l API.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/architecture_frontend.svg" alt="Architecture frontend" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">6</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Couche metier</div>
+              <h2>Architecture backend</h2>
+              <div class="subtitle">POO, SOLID, services et DAO</div>
+              <ul><li>Routes API fines, sans logique metier lourde.</li><li>Controleurs et services applicatifs pour l orchestration.</li><li>Interfaces DAO / Repository pour decoupler la persistence.</li><li>Prisma, audit, securite et notifications comme briques d infrastructure.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/architecture_backend.svg" alt="Architecture backend" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">7</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Fiabilite du systeme</div>
+              <h2>Modele de donnees et securite</h2>
+              <div class="subtitle">Entites clefs et protections</div>
+              <ul><li>Entites principales : Utilisateur, Admin, Client, Location, Paiement, Document.</li><li>ImportRun, Notification et JournalAudit pour la traçabilite.</li><li>JWT, cookies, CSRF, blocage IP et seconde authentification Super Admin.</li><li>Isolation des donnees par admin et impersonation encadree.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/modele_donnees.svg" alt="Modele de donnees et securite" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">8</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Import de donnees</div>
+              <h2>Grande fonctionnalite 1</h2>
+              <div class="subtitle">Excel / CSV / JSON avec correction avant insertion</div>
+              <ul><li>Chargement du fichier et extraction des colonnes detectees.</li><li>Mapping clair des champs obligatoires et optionnels.</li><li>Previsualisation editable avant envoi en base.</li><li>Journal d import avec erreurs, succes et pages dediees.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/activite_import_clients.svg" alt="Grande fonctionnalite 1" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">9</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Approbation administrateur</div>
+              <h2>Grande fonctionnalite 2</h2>
+              <div class="subtitle">Demande, validation, creation du compte et notification</div>
+              <ul><li>Le Super Admin valide ou rejette une demande d inscription.</li><li>En cas d approbation, user, admin et entreprise sont crees.</li><li>Les identifiants sont generes puis notifies.</li><li>Le login accepte email ou telephone avec normalisation +221.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/sequence_approbation_admin.svg" alt="Grande fonctionnalite 2" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">10</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Paiement abonnement et notifications</div>
+              <h2>Grande fonctionnalite 3</h2>
+              <div class="subtitle">Suivi des regles metier et evenements</div>
+              <ul><li>Controle du mois requis et des doublons de paiement.</li><li>Gestion de plusieurs methodes : cash, Wave, Orange Money.</li><li>Passage en paid seulement si le paiement est reellement finalise.</li><li>Notification transactionnelle vers Super Admin, Admin et Client.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/sequence_paiement_abonnement.svg" alt="Grande fonctionnalite 3" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">11</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Produit demonstrable</div>
+              <h2>Deploiement et documentation</h2>
+              <div class="subtitle">Liens de production et documentation technique</div>
+              <ul><li>Frontend : https://keur-ya-aicha-frontend.vercel.app</li><li>Backend API : https://bakend-next-saas-gestion-client.onrender.com/api</li><li>Docs backend : https://bakend-next-saas-gestion-client.onrender.com/docs</li><li>Memoire complet, diagrammes UML, annexes code et scripts de generation fournis.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/logo.png" alt="Deploiement et documentation" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">12</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Ce qui est effectivement livre</div>
+              <h2>Resultats obtenus</h2>
+              <div class="subtitle">Bilan du projet</div>
+              <ul><li>Application web cohérente et responsive.</li><li>Backend structuré et industrialisable.</li><li>Import robuste avec pages succes / erreurs.</li><li>Pack de soutenance complet : mémoire, UML, slides, oral, FAQ jury.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/logo.png" alt="Resultats obtenus" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">13</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Parcours live recommande</div>
+              <h2>Plan de demonstration</h2>
+              <div class="subtitle">Comment montrer rapidement la valeur du produit</div>
+              <ul><li>Connexion Super Admin et validation d une demande admin.</li><li>Connexion Admin, creation d un client et d une location.</li><li>Import d un fichier avec erreurs puis correction.</li><li>Paiement abonnement et visualisation des notifications / statuts.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/logo.png" alt="Plan de demonstration" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">14</span>
+          </div>
+        </section>
+      
+
+        <section class="slide">
+          <div class="topbar"></div>
+          <div class="inner">
+            <div class="content">
+              <div class="kicker">Ouverture</div>
+              <h2>Conclusion et perspectives</h2>
+              <div class="subtitle">Ce que le projet prouve et ce qui vient ensuite</div>
+              <ul><li>KYA constitue une base serieuse de SaaS de gestion locative.</li><li>L architecture permet l evolution vers analytics, SMS/WhatsApp et CI/CD complet.</li><li>Le projet combine valeur metier, gouvernance et rigueur technique.</li><li>Merci de votre attention.</li></ul>
+            </div>
+            <div class="visual-card">
+              <img src="soutenance_pack_assets/logo.png" alt="Conclusion et perspectives" />
+            </div>
+          </div>
+          <div class="footer">
+            <span>Papa Malick Teuw - KYA (Keur Ya Aicha)</span>
+            <span class="page-no">15</span>
+          </div>
+        </section>
+      
+</body>
+</html>

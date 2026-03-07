@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 980">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1240" height="980" rx="28" />
+      
+      
+    <rect x="90" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="175" y="113" text-anchor="middle" class="small-label">
+      <tspan x="175" dy="0">Utilisateur</tspan>
+    </text>
+  
+  <line x1="175" y1="138" x2="175" y2="920" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="360" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="445" y="113" text-anchor="middle" class="small-label">
+      <tspan x="445" dy="0">API Auth</tspan>
+    </text>
+  
+  <line x1="445" y1="138" x2="445" y2="920" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="630" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="715" y="113" text-anchor="middle" class="small-label">
+      <tspan x="715" dy="0">Securite</tspan>
+    </text>
+  
+  <line x1="715" y1="138" x2="715" y2="920" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="900" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="985" y="113" text-anchor="middle" class="small-label">
+      <tspan x="985" dy="0">Store / DB</tspan>
+    </text>
+  
+  <line x1="985" y1="138" x2="985" y2="920" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+      
+    <line x1="175" y1="190" x2="445" y2="190" class="arrow"  />
+    <text x="310" y="180" class="edge-label" text-anchor="middle">POST login(login, password)</text>
+  
+      
+    <line x1="445" y1="250" x2="715" y2="250" class="arrow"  />
+    <text x="580" y="240" class="edge-label" text-anchor="middle">verifyCredentials()</text>
+  
+      
+    <line x1="715" y1="310" x2="985" y2="310" class="arrow"  />
+    <text x="850" y="300" class="edge-label" text-anchor="middle">findUserByLogin()</text>
+  
+      
+    <line x1="985" y1="370" x2="715" y2="370" class="arrow" stroke-dasharray="10 8" />
+    <text x="850" y="360" class="edge-label" text-anchor="middle">user + statut</text>
+  
+      
+    <rect x="150" y="420" width="940" height="150" rx="16" ry="16" fill="rgba(255, 241, 243, 0.65)" stroke="#d9485f" stroke-width="2.2" />
+    <rect x="162" y="432" width="128" height="34" rx="12" ry="12" fill="#ffffff" stroke="#d9485f" stroke-width="2" />
+    
+    <text x="226" y="453" text-anchor="middle" class="small-label">
+      <tspan x="226" dy="0">alt invalide</tspan>
+    </text>
+  
+  
+      
+    <line x1="715" y1="470" x2="985" y2="470" class="arrow"  />
+    <text x="850" y="460" class="edge-label" text-anchor="middle">appendAuditLog()</text>
+  
+      
+    <line x1="715" y1="520" x2="985" y2="520" class="arrow"  />
+    <text x="850" y="510" class="edge-label" text-anchor="middle">maybeBlockIp()</text>
+  
+      
+    <line x1="445" y1="560" x2="175" y2="560" class="arrow" stroke-dasharray="10 8" />
+    <text x="310" y="550" class="edge-label" text-anchor="middle">401 identifiants invalides</text>
+  
+      
+    <rect x="150" y="610" width="940" height="120" rx="16" ry="16" fill="rgba(255, 248, 231, 0.7)" stroke="#d97706" stroke-width="2.2" />
+    <rect x="162" y="622" width="128" height="34" rx="12" ry="12" fill="#ffffff" stroke="#d97706" stroke-width="2" />
+    
+    <text x="226" y="643" text-anchor="middle" class="small-label">
+      <tspan x="226" dy="0">alt pending</tspan>
+    </text>
+  
+  
+      
+    <line x1="445" y1="700" x2="175" y2="700" class="arrow" stroke-dasharray="10 8" />
+    <text x="310" y="690" class="edge-label" text-anchor="middle">403 attente approbation</text>
+  
+      
+    <rect x="150" y="760" width="940" height="120" rx="16" ry="16" fill="rgba(234, 251, 240, 0.75)" stroke="#16a34a" stroke-width="2.2" />
+    <rect x="162" y="772" width="128" height="34" rx="12" ry="12" fill="#ffffff" stroke="#16a34a" stroke-width="2" />
+    
+    <text x="226" y="793" text-anchor="middle" class="small-label">
+      <tspan x="226" dy="0">else succes</tspan>
+    </text>
+  
+  
+      
+    <line x1="715" y1="820" x2="985" y2="820" class="arrow"  />
+    <text x="850" y="810" class="edge-label" text-anchor="middle">setAuthContext()</text>
+  
+      
+    <line x1="445" y1="870" x2="175" y2="870" class="arrow" stroke-dasharray="10 8" />
+    <text x="310" y="860" class="edge-label" text-anchor="middle">200 authContext + session</text>
+  
+    
+    </svg>

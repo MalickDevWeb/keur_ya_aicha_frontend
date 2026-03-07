@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 760">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1320" height="760" rx="28" />
+      
+      
+    <g class="actor">
+      <circle cx="120" cy="250" r="18" />
+      <line x1="120" y1="268" x2="120" y2="318" />
+      <line x1="90" y1="285" x2="150" y2="285" />
+      <line x1="120" y1="318" x2="92" y2="356" />
+      <line x1="120" y1="318" x2="148" y2="356" />
+      <text x="120" y="388" text-anchor="middle" class="label strong-label">Admin</text>
+    </g>
+  
+      
+    <g class="actor">
+      <circle cx="1200" cy="250" r="18" />
+      <line x1="1200" y1="268" x2="1200" y2="318" />
+      <line x1="1170" y1="285" x2="1230" y2="285" />
+      <line x1="1200" y1="318" x2="1172" y2="356" />
+      <line x1="1200" y1="318" x2="1228" y2="356" />
+      <text x="1200" y="388" text-anchor="middle" class="label strong-label">Backend KYA</text>
+    </g>
+  
+      
+    <ellipse cx="380" cy="140" rx="150" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="380" y="142" text-anchor="middle" class="small-label">
+      <tspan x="380" dy="0">Charger fichier\nExcel / CSV / JSON</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="380" cy="260" rx="150" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="380" y="262" text-anchor="middle" class="small-label">
+      <tspan x="380" dy="0">Mapper les colonnes</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="380" cy="380" rx="150" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="380" y="382" text-anchor="middle" class="small-label">
+      <tspan x="380" dy="0">Corriger les champs\navant import</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="380" cy="500" rx="150" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="380" y="502" text-anchor="middle" class="small-label">
+      <tspan x="380" dy="0">Lancer l analyse</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="700" cy="180" rx="160" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="700" y="182" text-anchor="middle" class="small-label">
+      <tspan x="700" dy="0">Valider les lignes</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="700" cy="320" rx="160" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="700" y="322" text-anchor="middle" class="small-label">
+      <tspan x="700" dy="0">Detecter doublons\net erreurs</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="700" cy="460" rx="160" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="700" y="462" text-anchor="middle" class="small-label">
+      <tspan x="700" dy="0">Enregistrer import run</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="700" cy="600" rx="160" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="700" y="602" text-anchor="middle" class="small-label">
+      <tspan x="700" dy="0">Inserer les lignes valides</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="1020" cy="250" rx="160" ry="48" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="1020" y="252" text-anchor="middle" class="small-label">
+      <tspan x="1020" dy="0">Afficher page\nerreurs / succes</tspan>
+    </text>
+  
+  
+
+      
+    <line x1="160" y1="250" x2="230" y2="140" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="275" x2="230" y2="260" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="300" x2="230" y2="380" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="325" x2="230" y2="500" class="arrow" />
+    
+  
+
+      
+    <line x1="530" y1="140" x2="620" y2="180" class="arrow" />
+    
+  
+      
+    <line x1="530" y1="260" x2="620" y2="320" class="arrow" />
+    
+  
+      
+    <line x1="530" y1="380" x2="620" y2="320" class="arrow" />
+    
+  
+      
+    <line x1="530" y1="500" x2="620" y2="460" class="arrow" />
+    
+  
+      
+    <line x1="530" y1="520" x2="620" y2="600" class="arrow" />
+    
+  
+
+      
+    <line x1="860" y1="180" x2="940" y2="240" class="arrow" />
+    
+  
+      
+    <line x1="860" y1="320" x2="940" y2="260" class="arrow" />
+    
+  
+      
+    <line x1="860" y1="460" x2="940" y2="280" class="arrow" />
+    
+  
+      
+    <line x1="860" y1="600" x2="940" y2="300" class="arrow" />
+    
+  
+      
+    <line x1="1080" y1="250" x2="1125" y2="250" class="arrow" />
+    
+  
+    
+    </svg>

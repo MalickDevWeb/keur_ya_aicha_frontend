@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 980">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1480" height="980" rx="28" />
+      
+      
+    <rect x="90" y="90" width="250" height="96" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="215" y="142" text-anchor="middle" class="label">
+      <tspan x="215" dy="0">Utilisateur\nrole, telephone, email, statut</tspan>
+    </text>
+  
+  
+      
+    <rect x="410" y="90" width="250" height="96" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="535" y="142" text-anchor="middle" class="label">
+      <tspan x="535" dy="0">Admin\npermissions, abonnement, entreprise</tspan>
+    </text>
+  
+  
+      
+    <rect x="730" y="90" width="250" height="96" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="855" y="142" text-anchor="middle" class="label">
+      <tspan x="855" dy="0">Client\nprenom, nom, telephone, cni, statut</tspan>
+    </text>
+  
+  
+      
+    <rect x="1050" y="90" width="250" height="96" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1175" y="142" text-anchor="middle" class="label">
+      <tspan x="1175" dy="0">Location\nnomBien, loyer, dateDebut, caution</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="90" y="320" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="215" y="372" text-anchor="middle" class="label">
+      <tspan x="215" dy="0">SessionAuthentification\naccess, refresh, csrf, expireLe</tspan>
+    </text>
+  
+  
+      
+    <rect x="410" y="320" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="535" y="372" text-anchor="middle" class="label">
+      <tspan x="535" dy="0">PermissionUtilisateur\ncode, autorise</tspan>
+    </text>
+  
+  
+      
+    <rect x="730" y="320" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="855" y="372" text-anchor="middle" class="label">
+      <tspan x="855" dy="0">PaiementMensuel\nperiode, montantDu, montantPaye, statut</tspan>
+    </text>
+  
+  
+      
+    <rect x="1050" y="320" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1175" y="372" text-anchor="middle" class="label">
+      <tspan x="1175" dy="0">Document\nnom, type, url, signe</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="90" y="550" width="250" height="96" rx="22" ry="22" fill="#fff8e7" stroke="#d97706" stroke-width="2.5" class="box" />
+    
+    <text x="215" y="602" text-anchor="middle" class="label">
+      <tspan x="215" dy="0">DemandeAdmin\nnom, entreprise, statut, paye</tspan>
+    </text>
+  
+  
+      
+    <rect x="410" y="550" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="535" y="602" text-anchor="middle" class="label">
+      <tspan x="535" dy="0">Entreprise\nnom, adminId</tspan>
+    </text>
+  
+  
+      
+    <rect x="730" y="550" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="855" y="602" text-anchor="middle" class="label">
+      <tspan x="855" dy="0">PaiementCaution\nmontant, datePaiement</tspan>
+    </text>
+  
+  
+      
+    <rect x="1050" y="550" width="250" height="96" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1175" y="602" text-anchor="middle" class="label">
+      <tspan x="1175" dy="0">ImportRun\nfileName, inserted, errors</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="410" y="780" width="250" height="96" rx="22" ry="22" fill="#eafbf0" stroke="#16a34a" stroke-width="2.5" class="box" />
+    
+    <text x="535" y="832" text-anchor="middle" class="label">
+      <tspan x="535" dy="0">Notification\nmessage, isRead, userId</tspan>
+    </text>
+  
+  
+      
+    <rect x="730" y="780" width="250" height="96" rx="22" ry="22" fill="#fff1f3" stroke="#d9485f" stroke-width="2.5" class="box" />
+    
+    <text x="855" y="832" text-anchor="middle" class="label">
+      <tspan x="855" dy="0">JournalAudit\naction, statut, details, ip</tspan>
+    </text>
+  
+  
+      
+    <rect x="1050" y="780" width="250" height="96" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1175" y="832" text-anchor="middle" class="label">
+      <tspan x="1175" dy="0">ConfigurationSysteme\nmaintenance, branding, session</tspan>
+    </text>
+  
+  
+
+      
+    <line x1="340" y1="138" x2="410" y2="138" class="arrow" />
+    <text x="375" y="130" class="edge-label" text-anchor="middle">1..1</text>
+  
+      
+    <line x1="660" y1="138" x2="730" y2="138" class="arrow" />
+    <text x="695" y="130" class="edge-label" text-anchor="middle">1..n</text>
+  
+      
+    <line x1="980" y1="138" x2="1050" y2="138" class="arrow" />
+    <text x="1015" y="130" class="edge-label" text-anchor="middle">1..n</text>
+  
+      
+    <line x1="215" y1="186" x2="215" y2="320" class="arrow" />
+    <text x="215" y="245" class="edge-label" text-anchor="middle">1..n</text>
+  
+      
+    <line x1="535" y1="186" x2="535" y2="320" class="arrow" />
+    <text x="535" y="245" class="edge-label" text-anchor="middle">1..n</text>
+  
+      
+    <line x1="855" y1="186" x2="855" y2="320" class="arrow" />
+    <text x="855" y="245" class="edge-label" text-anchor="middle">1..n</text>
+  
+      
+    <line x1="1175" y1="186" x2="1175" y2="320" class="arrow" />
+    <text x="1175" y="245" class="edge-label" text-anchor="middle">1..n</text>
+  
+      
+    <line x1="215" y1="416" x2="215" y2="550" class="arrow" />
+    
+  
+      
+    <line x1="535" y1="416" x2="535" y2="550" class="arrow" />
+    
+  
+      
+    <line x1="855" y1="416" x2="855" y2="550" class="arrow" />
+    
+  
+      
+    <line x1="1175" y1="416" x2="1175" y2="550" class="arrow" />
+    
+  
+      
+    <line x1="535" y1="646" x2="535" y2="780" class="arrow" />
+    
+  
+      
+    <line x1="855" y1="646" x2="855" y2="780" class="arrow" />
+    
+  
+    
+    </svg>

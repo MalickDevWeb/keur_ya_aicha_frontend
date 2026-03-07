@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1460 960">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1460" height="960" rx="28" />
+      
+      
+    <rect x="80" y="90" width="240" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="200" y="144" text-anchor="middle" class="label">
+      <tspan x="200" dy="0">Routes API\nroute.ts</tspan>
+    </text>
+  
+  
+      
+    <rect x="380" y="90" width="240" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="500" y="144" text-anchor="middle" class="label">
+      <tspan x="500" dy="0">ControleurAdministrationAdmin</tspan>
+    </text>
+  
+  
+      
+    <rect x="680" y="90" width="240" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="800" y="144" text-anchor="middle" class="label">
+      <tspan x="800" dy="0">ServiceAdministrationAdmin</tspan>
+    </text>
+  
+  
+      
+    <rect x="980" y="90" width="320" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1140" y="144" text-anchor="middle" class="label">
+      <tspan x="1140" dy="0">ServiceEvenementsNotification\n+ Ecouteurs Brevo / Webhook</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="240" y="340" width="240" height="100" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="360" y="394" text-anchor="middle" class="label">
+      <tspan x="360" dy="0">EntiteClient\nEntiteLocation\nEntiteNotification</tspan>
+    </text>
+  
+  
+      
+    <rect x="540" y="340" width="240" height="100" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="660" y="394" text-anchor="middle" class="label">
+      <tspan x="660" dy="0">Builders\nValeurs / DTO / Mappers</tspan>
+    </text>
+  
+  
+      
+    <rect x="840" y="340" width="240" height="100" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="960" y="394" text-anchor="middle" class="label">
+      <tspan x="960" dy="0">Interfaces DAO\nRepository / Notification</tspan>
+    </text>
+  
+  
+      
+    <rect x="1140" y="340" width="220" height="100" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1250" y="394" text-anchor="middle" class="label">
+      <tspan x="1250" dy="0">ValidateurZod\nMessages / erreurs</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="240" y="610" width="240" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="360" y="664" text-anchor="middle" class="label">
+      <tspan x="360" dy="0">DaoClientPrisma\nDaoDocumentPrisma</tspan>
+    </text>
+  
+  
+      
+    <rect x="540" y="610" width="240" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="660" y="664" text-anchor="middle" class="label">
+      <tspan x="660" dy="0">DaoAuthentificationPrisma\nDaoNotificationPrisma</tspan>
+    </text>
+  
+  
+      
+    <rect x="840" y="610" width="240" height="100" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="960" y="664" text-anchor="middle" class="label">
+      <tspan x="960" dy="0">RepositoryAuthentificationPrisma</tspan>
+    </text>
+  
+  
+      
+    <rect x="1140" y="610" width="220" height="100" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1250" y="664" text-anchor="middle" class="label">
+      <tspan x="1250" dy="0">Prisma Client\nPostgreSQL</tspan>
+    </text>
+  
+  
+
+      
+    <line x1="320" y1="140" x2="380" y2="140" class="arrow" />
+    
+  
+      
+    <line x1="620" y1="140" x2="680" y2="140" class="arrow" />
+    
+  
+      
+    <line x1="920" y1="140" x2="980" y2="140" class="arrow" />
+    
+  
+      
+    <line x1="500" y1="190" x2="360" y2="340" class="arrow" />
+    
+  
+      
+    <line x1="740" y1="190" x2="660" y2="340" class="arrow" />
+    
+  
+      
+    <line x1="740" y1="190" x2="960" y2="340" class="arrow" />
+    
+  
+      
+    <line x1="500" y1="440" x2="360" y2="610" class="arrow" />
+    
+  
+      
+    <line x1="780" y1="440" x2="660" y2="610" class="arrow" />
+    
+  
+      
+    <line x1="980" y1="440" x2="960" y2="610" class="arrow" />
+    
+  
+      
+    <line x1="1080" y1="660" x2="1140" y2="660" class="arrow" />
+    
+  
+      
+    <line x1="780" y1="660" x2="840" y2="660" class="arrow" />
+    
+  
+    
+    </svg>

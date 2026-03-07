@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 1040">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1420" height="1040" rx="28" />
+      
+      
+    <rect x="80" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="165" y="113" text-anchor="middle" class="small-label">
+      <tspan x="165" dy="0">Admin</tspan>
+    </text>
+  
+  <line x1="165" y1="138" x2="165" y2="980" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="350" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="435" y="113" text-anchor="middle" class="small-label">
+      <tspan x="435" dy="0">Page Import</tspan>
+    </text>
+  
+  <line x1="435" y1="138" x2="435" y2="980" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="620" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="705" y="113" text-anchor="middle" class="small-label">
+      <tspan x="705" dy="0">API import_runs</tspan>
+    </text>
+  
+  <line x1="705" y1="138" x2="705" y2="980" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="890" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="975" y="113" text-anchor="middle" class="small-label">
+      <tspan x="975" dy="0">Service Import</tspan>
+    </text>
+  
+  <line x1="975" y1="138" x2="975" y2="980" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+    <rect x="1160" y="80" width="170" height="58" rx="18" ry="18" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" />
+    
+    <text x="1245" y="113" text-anchor="middle" class="small-label">
+      <tspan x="1245" dy="0">DB Prisma</tspan>
+    </text>
+  
+  <line x1="1245" y1="138" x2="1245" y2="980" stroke="#7d8fbe" stroke-width="2" stroke-dasharray="10 10" />
+      
+    <line x1="165" y1="190" x2="435" y2="190" class="arrow"  />
+    <text x="300" y="180" class="edge-label" text-anchor="middle">charger fichier + mapper</text>
+  
+      
+    <line x1="435" y1="250" x2="705" y2="250" class="arrow"  />
+    <text x="570" y="240" class="edge-label" text-anchor="middle">POST import run + lignes</text>
+  
+      
+    <line x1="705" y1="310" x2="975" y2="310" class="arrow"  />
+    <text x="840" y="300" class="edge-label" text-anchor="middle">resolve owner + valider</text>
+  
+      
+    <line x1="975" y1="370" x2="1245" y2="370" class="arrow"  />
+    <text x="1110" y="360" class="edge-label" text-anchor="middle">create import_run</text>
+  
+      
+    <line x1="975" y1="450" x2="1245" y2="450" class="arrow"  />
+    <text x="1110" y="440" class="edge-label" text-anchor="middle">loop validate row</text>
+  
+      
+    <rect x="520" y="510" width="780" height="220" rx="16" ry="16" fill="rgba(255, 241, 243, 0.65)" stroke="#d9485f" stroke-width="2.2" />
+    <rect x="532" y="522" width="128" height="34" rx="12" ry="12" fill="#ffffff" stroke="#d9485f" stroke-width="2" />
+    
+    <text x="596" y="543" text-anchor="middle" class="small-label">
+      <tspan x="596" dy="0">alt erreur</tspan>
+    </text>
+  
+  
+      
+    <line x1="975" y1="620" x2="1245" y2="620" class="arrow"  />
+    <text x="1110" y="610" class="edge-label" text-anchor="middle">append import_error</text>
+  
+      
+    <rect x="520" y="760" width="780" height="170" rx="16" ry="16" fill="rgba(234, 251, 240, 0.75)" stroke="#16a34a" stroke-width="2.2" />
+    <rect x="532" y="772" width="128" height="34" rx="12" ry="12" fill="#ffffff" stroke="#16a34a" stroke-width="2" />
+    
+    <text x="596" y="793" text-anchor="middle" class="small-label">
+      <tspan x="596" dy="0">else ligne valide</tspan>
+    </text>
+  
+  
+      
+    <line x1="975" y1="840" x2="1245" y2="840" class="arrow"  />
+    <text x="1110" y="830" class="edge-label" text-anchor="middle">create client / location</text>
+  
+      
+    <line x1="975" y1="930" x2="1245" y2="930" class="arrow"  />
+    <text x="1110" y="920" class="edge-label" text-anchor="middle">update counters + status</text>
+  
+      
+    <line x1="705" y1="980" x2="435" y2="980" class="arrow" stroke-dasharray="10 8" />
+    <text x="570" y="970" class="edge-label" text-anchor="middle">201 summary + importRunId</text>
+  
+    
+    </svg>

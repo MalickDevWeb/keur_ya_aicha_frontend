@@ -1,0 +1,259 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 980">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1440" height="980" rx="28" />
+      
+      
+    <g class="actor">
+      <circle cx="120" cy="180" r="18" />
+      <line x1="120" y1="198" x2="120" y2="248" />
+      <line x1="90" y1="215" x2="150" y2="215" />
+      <line x1="120" y1="248" x2="92" y2="286" />
+      <line x1="120" y1="248" x2="148" y2="286" />
+      <text x="120" y="318" text-anchor="middle" class="label strong-label">Super Admin</text>
+    </g>
+  
+      
+    <g class="actor">
+      <circle cx="120" cy="470" r="18" />
+      <line x1="120" y1="488" x2="120" y2="538" />
+      <line x1="90" y1="505" x2="150" y2="505" />
+      <line x1="120" y1="538" x2="92" y2="576" />
+      <line x1="120" y1="538" x2="148" y2="576" />
+      <text x="120" y="608" text-anchor="middle" class="label strong-label">Admin</text>
+    </g>
+  
+      
+    <g class="actor">
+      <circle cx="120" cy="780" r="18" />
+      <line x1="120" y1="798" x2="120" y2="848" />
+      <line x1="90" y1="815" x2="150" y2="815" />
+      <line x1="120" y1="848" x2="92" y2="886" />
+      <line x1="120" y1="848" x2="148" y2="886" />
+      <text x="120" y="918" text-anchor="middle" class="label strong-label">Client</text>
+    </g>
+  
+      
+    <g class="actor">
+      <circle cx="1320" cy="470" r="18" />
+      <line x1="1320" y1="488" x2="1320" y2="538" />
+      <line x1="1290" y1="505" x2="1350" y2="505" />
+      <line x1="1320" y1="538" x2="1292" y2="576" />
+      <line x1="1320" y1="538" x2="1348" y2="576" />
+      <text x="1320" y="608" text-anchor="middle" class="label strong-label">Services externes</text>
+    </g>
+  
+
+      
+    <ellipse cx="430" cy="150" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="430" y="152" text-anchor="middle" class="small-label">
+      <tspan x="430" dy="0">Approuver\nles demandes admin</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="430" cy="270" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="430" y="272" text-anchor="middle" class="small-label">
+      <tspan x="430" dy="0">Gerer entreprises\net permissions</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="430" cy="390" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="430" y="392" text-anchor="middle" class="small-label">
+      <tspan x="430" dy="0">Impersoner un admin</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="730" cy="150" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="730" y="152" text-anchor="middle" class="small-label">
+      <tspan x="730" dy="0">Consulter audit\net supervision</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="730" cy="270" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="730" y="272" text-anchor="middle" class="small-label">
+      <tspan x="730" dy="0">Activer maintenance\net gouvernance</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="730" cy="390" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="730" y="392" text-anchor="middle" class="small-label">
+      <tspan x="730" dy="0">Valider un paiement\nabonnement cash</tspan>
+    </text>
+  
+  
+
+      
+    <ellipse cx="430" cy="520" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="430" y="522" text-anchor="middle" class="small-label">
+      <tspan x="430" dy="0">Gerer clients</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="430" cy="640" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="430" y="642" text-anchor="middle" class="small-label">
+      <tspan x="430" dy="0">Gerer locations\net depots</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="430" cy="760" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="430" y="762" text-anchor="middle" class="small-label">
+      <tspan x="430" dy="0">Gerer paiements\net recus</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="730" cy="520" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="730" y="522" text-anchor="middle" class="small-label">
+      <tspan x="730" dy="0">Gerer documents</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="730" cy="640" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="730" y="642" text-anchor="middle" class="small-label">
+      <tspan x="730" dy="0">Importer Excel / CSV / JSON</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="730" cy="760" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="730" y="762" text-anchor="middle" class="small-label">
+      <tspan x="730" dy="0">Recevoir notifications\net rapports</tspan>
+    </text>
+  
+  
+
+      
+    <ellipse cx="1040" cy="470" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="1040" y="472" text-anchor="middle" class="small-label">
+      <tspan x="1040" dy="0">Consulter informations\net recus</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="1040" cy="640" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="1040" y="642" text-anchor="middle" class="small-label">
+      <tspan x="1040" dy="0">Recevoir relances\nde paiement</tspan>
+    </text>
+  
+  
+      
+    <ellipse cx="1040" cy="820" rx="150" ry="52" fill="#ffffff" stroke="#2c44b6" stroke-width="2.2" />
+    
+    <text x="1040" y="822" text-anchor="middle" class="small-label">
+      <tspan x="1040" dy="0">Payer et regulariser</tspan>
+    </text>
+  
+  
+
+      
+    <line x1="160" y1="180" x2="280" y2="150" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="205" x2="280" y2="270" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="230" x2="280" y2="390" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="250" x2="580" y2="150" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="275" x2="580" y2="270" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="300" x2="580" y2="390" class="arrow" />
+    
+  
+
+      
+    <line x1="160" y1="470" x2="280" y2="520" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="495" x2="280" y2="640" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="520" x2="280" y2="760" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="545" x2="580" y2="520" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="570" x2="580" y2="640" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="595" x2="580" y2="760" class="arrow" />
+    
+  
+
+      
+    <line x1="160" y1="780" x2="890" y2="470" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="805" x2="890" y2="640" class="arrow" />
+    
+  
+      
+    <line x1="160" y1="830" x2="890" y2="820" class="arrow" />
+    
+  
+
+      
+    <line x1="1180" y1="470" x2="1260" y2="470" class="arrow" />
+    <text x="1220" y="462" class="edge-label" text-anchor="middle">Brevo / Cloudinary / Paiement</text>
+  
+      
+    <line x1="880" y1="760" x2="1260" y2="520" class="arrow" />
+    <text x="1070" y="632" class="edge-label" text-anchor="middle">Emails</text>
+  
+      
+    <line x1="880" y1="640" x2="1260" y2="580" class="arrow" />
+    <text x="1070" y="602" class="edge-label" text-anchor="middle">Validation fournisseur</text>
+  
+    
+    </svg>

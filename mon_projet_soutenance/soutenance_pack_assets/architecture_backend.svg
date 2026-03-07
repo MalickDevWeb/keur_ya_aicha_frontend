@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1440" height="900" rx="28" />
+      
+      
+    <rect x="80" y="110" width="240" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="200" y="159" text-anchor="middle" class="label">
+      <tspan x="200" dy="0">App Router\n/api/*/route.ts</tspan>
+    </text>
+  
+  
+      
+    <rect x="380" y="110" width="240" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="500" y="159" text-anchor="middle" class="label">
+      <tspan x="500" dy="0">Middlewares et adaptateurs\nCSRF, JWT, cookies, CORS</tspan>
+    </text>
+  
+  
+      
+    <rect x="680" y="110" width="240" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="800" y="159" text-anchor="middle" class="label">
+      <tspan x="800" dy="0">Controleurs\nAuthContext, Admin, Sante</tspan>
+    </text>
+  
+  
+      
+    <rect x="980" y="110" width="280" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1120" y="159" text-anchor="middle" class="label">
+      <tspan x="1120" dy="0">Services applicatifs\nAuthentification, administration, audit</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="230" y="340" width="240" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="350" y="389" text-anchor="middle" class="label">
+      <tspan x="350" dy="0">Domaine\nEntites, enums, objets valeur</tspan>
+    </text>
+  
+  
+      
+    <rect x="530" y="340" width="240" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="650" y="389" text-anchor="middle" class="label">
+      <tspan x="650" dy="0">Interfaces\nDAO / Repository / Notification</tspan>
+    </text>
+  
+  
+      
+    <rect x="830" y="340" width="240" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="950" y="389" text-anchor="middle" class="label">
+      <tspan x="950" dy="0">Infrastructure\nDAO Prisma / Memoire</tspan>
+    </text>
+  
+  
+      
+    <rect x="1130" y="340" width="200" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1230" y="389" text-anchor="middle" class="label">
+      <tspan x="1230" dy="0">Repositories\nPrisma / Memoire</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="230" y="570" width="240" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="350" y="619" text-anchor="middle" class="label">
+      <tspan x="350" dy="0">Notifications\nBrevo, webhooks, ecouteurs</tspan>
+    </text>
+  
+  
+      
+    <rect x="530" y="570" width="240" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="650" y="619" text-anchor="middle" class="label">
+      <tspan x="650" dy="0">Prisma Client\net transactions</tspan>
+    </text>
+  
+  
+      
+    <rect x="830" y="570" width="240" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="950" y="619" text-anchor="middle" class="label">
+      <tspan x="950" dy="0">PostgreSQL\npersistance durable</tspan>
+    </text>
+  
+  
+      
+    <rect x="1130" y="570" width="200" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1230" y="619" text-anchor="middle" class="label">
+      <tspan x="1230" dy="0">Swagger / docs\n/ docs /documentation</tspan>
+    </text>
+  
+  
+
+      
+    <line x1="320" y1="155" x2="380" y2="155" class="arrow" />
+    
+  
+      
+    <line x1="620" y1="155" x2="680" y2="155" class="arrow" />
+    
+  
+      
+    <line x1="920" y1="155" x2="980" y2="155" class="arrow" />
+    
+  
+      
+    <line x1="800" y1="200" x2="650" y2="340" class="arrow" />
+    
+  
+      
+    <line x1="1080" y1="200" x2="650" y2="340" class="arrow" />
+    
+  
+      
+    <line x1="1080" y1="200" x2="950" y2="340" class="arrow" />
+    
+  
+      
+    <line x1="950" y1="430" x2="950" y2="570" class="arrow" />
+    
+  
+      
+    <line x1="650" y1="430" x2="650" y2="570" class="arrow" />
+    
+  
+      
+    <line x1="980" y1="615" x2="830" y2="615" class="arrow" />
+    
+  
+      
+    <line x1="980" y1="615" x2="1130" y2="615" class="arrow" />
+    
+  
+      
+    <line x1="680" y1="615" x2="470" y2="615" class="arrow" />
+    
+  
+    
+    </svg>

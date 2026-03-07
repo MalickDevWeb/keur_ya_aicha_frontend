@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1380 820">
+      <defs>
+        <marker id="arrow-head" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#233a7c" />
+        </marker>
+      </defs>
+      <style>
+        .bg { fill: #f7f9ff; }
+        .box { filter: drop-shadow(0 10px 24px rgba(18, 27, 83, 0.08)); }
+        .label { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #122053; font-weight: 600; }
+        .small-label { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #122053; font-weight: 600; }
+        .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #30498d; font-weight: 600; }
+        .strong-label { font-weight: 700; }
+        .actor circle, .actor line { stroke: #122053; stroke-width: 3; fill: none; }
+        .arrow { stroke: #233a7c; stroke-width: 2.8; marker-end: url(#arrow-head); }
+      </style>
+      <rect class="bg" x="0" y="0" width="1380" height="820" rx="28" />
+      
+      
+    <rect x="80" y="90" width="220" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="190" y="139" text-anchor="middle" class="label">
+      <tspan x="190" dy="0">BrowserRouter / HashRouter</tspan>
+    </text>
+  
+  
+      
+    <rect x="360" y="90" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="475" y="139" text-anchor="middle" class="label">
+      <tspan x="475" dy="0">Providers\nI18n, Auth, Data, Toast</tspan>
+    </text>
+  
+  
+      
+    <rect x="640" y="90" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="755" y="139" text-anchor="middle" class="label">
+      <tspan x="755" dy="0">MainLayout\nSidebar, Header, Guards</tspan>
+    </text>
+  
+  
+      
+    <rect x="920" y="90" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1035" y="139" text-anchor="middle" class="label">
+      <tspan x="1035" dy="0">Pages metier\nAdmin / Super Admin</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="220" y="290" width="230" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="335" y="339" text-anchor="middle" class="label">
+      <tspan x="335" dy="0">Components UI\nshadcn/ui, modals, badges</tspan>
+    </text>
+  
+  
+      
+    <rect x="500" y="290" width="230" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="615" y="339" text-anchor="middle" class="label">
+      <tspan x="615" dy="0">Stores et contextes\nZustand + AuthContext</tspan>
+    </text>
+  
+  
+      
+    <rect x="780" y="290" width="230" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="895" y="339" text-anchor="middle" class="label">
+      <tspan x="895" dy="0">Services API\nfetch, DTO, mapping</tspan>
+    </text>
+  
+  
+      
+    <rect x="1060" y="290" width="230" height="90" rx="22" ry="22" fill="#ffffff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1175" y="339" text-anchor="middle" class="label">
+      <tspan x="1175" dy="0">Infrastructure\nruntimeConfig, syncQueue</tspan>
+    </text>
+  
+  
+
+      
+    <rect x="220" y="500" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="335" y="549" text-anchor="middle" class="label">
+      <tspan x="335" dy="0">Import module\nparseSpreadsheet, mapping, preview</tspan>
+    </text>
+  
+  
+      
+    <rect x="500" y="500" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="615" y="549" text-anchor="middle" class="label">
+      <tspan x="615" dy="0">Payments &amp; PDF\nreceipts, documents, partage</tspan>
+    </text>
+  
+  
+      
+    <rect x="780" y="500" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="895" y="549" text-anchor="middle" class="label">
+      <tspan x="895" dy="0">Settings &amp; governance\nbranding, maintenance, audit</tspan>
+    </text>
+  
+  
+      
+    <rect x="1060" y="500" width="230" height="90" rx="22" ry="22" fill="#eef5ff" stroke="#2c44b6" stroke-width="2.5" class="box" />
+    
+    <text x="1175" y="549" text-anchor="middle" class="label">
+      <tspan x="1175" dy="0">Electron runtime\nconfig API sans rebuild</tspan>
+    </text>
+  
+  
+
+      
+    <line x1="300" y1="135" x2="360" y2="135" class="arrow" />
+    
+  
+      
+    <line x1="590" y1="135" x2="640" y2="135" class="arrow" />
+    
+  
+      
+    <line x1="870" y1="135" x2="920" y2="135" class="arrow" />
+    
+  
+      
+    <line x1="1035" y1="180" x2="1145" y2="290" class="arrow" />
+    
+  
+      
+    <line x1="1035" y1="180" x2="925" y2="290" class="arrow" />
+    
+  
+      
+    <line x1="800" y1="180" x2="640" y2="290" class="arrow" />
+    
+  
+      
+    <line x1="520" y1="180" x2="335" y2="290" class="arrow" />
+    
+  
+      
+    <line x1="335" y1="380" x2="335" y2="500" class="arrow" />
+    
+  
+      
+    <line x1="615" y1="380" x2="615" y2="500" class="arrow" />
+    
+  
+      
+    <line x1="895" y1="380" x2="895" y2="500" class="arrow" />
+    
+  
+      
+    <line x1="1175" y1="380" x2="1175" y2="500" class="arrow" />
+    
+  
+    
+    </svg>

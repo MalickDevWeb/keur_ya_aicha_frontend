@@ -238,12 +238,12 @@ export function AdminsDashboard() {
       </SectionWrapper>
 
       <Dialog open={Boolean(subscriptionTarget)} onOpenChange={(open) => !open && closeSubscriptionDialog()}>
-        <DialogContent className="sm:max-w-[560px]">
+        <DialogContent className="w-[calc(100vw-1rem)] max-h-[calc(100dvh-1rem)] overflow-y-auto p-4 sm:max-h-[calc(100dvh-2rem)] sm:max-w-[560px] sm:p-6">
           <DialogHeader>
             <DialogTitle>Configurer abonnement et autorisations</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="rounded-xl border border-[#121B53]/15 bg-[#F7F9FF] p-3 text-sm text-[#121B53]">
               <p className="font-semibold">{subscriptionTarget?.name || subscriptionTarget?.username || 'Admin'}</p>
               <p className="text-xs text-[#121B53]/70">Le montant sera prérempli côté admin selon ce plan.</p>
@@ -298,7 +298,7 @@ export function AdminsDashboard() {
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-[#121B53]">
+            <label className="flex items-start gap-3 text-sm leading-5 text-[#121B53]">
               <input
                 type="checkbox"
                 checked={subscriptionDraft.allowCustomAmount}
@@ -308,12 +308,13 @@ export function AdminsDashboard() {
                     allowCustomAmount: event.target.checked,
                   }))
                 }
+                className="mt-0.5 h-4 w-4 shrink-0"
               />
               Autoriser cet admin à saisir manuellement un montant différent
             </label>
 
-            <div className="space-y-2 rounded-xl border border-[#121B53]/15 bg-white p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-3 rounded-xl border border-[#121B53]/15 bg-white p-3 sm:p-4">
+              <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                 <p className="text-sm font-medium text-[#121B53]">Fonctionnalités autorisées</p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -349,7 +350,10 @@ export function AdminsDashboard() {
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {FEATURE_KEYS.map((featureKey) => (
-                  <label key={featureKey} className="flex items-center gap-2 rounded-md border border-[#121B53]/10 px-2 py-1.5 text-sm text-[#121B53]">
+                  <label
+                    key={featureKey}
+                    className="flex items-start gap-2 rounded-md border border-[#121B53]/10 px-2 py-1.5 text-sm leading-5 text-[#121B53]"
+                  >
                     <input
                       type="checkbox"
                       checked={Boolean(subscriptionDraft.permissions[featureKey])}
@@ -362,6 +366,7 @@ export function AdminsDashboard() {
                           },
                         }))
                       }
+                      className="mt-0.5 h-4 w-4 shrink-0"
                     />
                     {ADMIN_FEATURE_LABELS[featureKey]}
                   </label>
@@ -373,7 +378,7 @@ export function AdminsDashboard() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 border-t border-[#121B53]/10 pt-3 sm:pt-4">
             <Button variant="outline" onClick={closeSubscriptionDialog} disabled={savingSubscription}>
               Fermer
             </Button>
