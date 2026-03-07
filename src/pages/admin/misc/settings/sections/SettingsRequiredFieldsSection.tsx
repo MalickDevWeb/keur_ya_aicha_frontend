@@ -35,7 +35,7 @@ export function SettingsRequiredFieldsSection({
   onSave,
 }: SettingsRequiredFieldsSectionProps) {
   return (
-    <section className="mt-8 sm:mt-10">
+    <section className="mt-8 min-w-0 overflow-x-hidden sm:mt-10">
       <h3 className="font-medium">Champs obligatoires (Import)</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Ces champs doivent être renseignés lors des imports. Le Super Admin décide, les admins appliquent.

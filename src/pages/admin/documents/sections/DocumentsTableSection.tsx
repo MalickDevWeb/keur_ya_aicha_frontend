@@ -1,4 +1,4 @@
-import { Download, Edit, FileText, Trash2 } from 'lucide-react'
+import { Download, Edit, Eye, FileText, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,13 +8,21 @@ import type { DocumentGroup, DocumentRow } from '../types'
 
 type DocumentsTableSectionProps = {
   group: DocumentGroup
+  onView: (doc: DocumentRow) => void
   onDownload: (doc: DocumentRow) => void
   onEdit: (doc: DocumentRow) => void
   onDelete: (doc: DocumentRow) => void
   formatDate: (value: string) => string
 }
 
-export function DocumentsTableSection({ group, onDownload, onEdit, onDelete, formatDate }: DocumentsTableSectionProps) {
+export function DocumentsTableSection({
+  group,
+  onView,
+  onDownload,
+  onEdit,
+  onDelete,
+  formatDate,
+}: DocumentsTableSectionProps) {
   if (group.items.length === 0) return null
 
   return (
@@ -44,13 +52,16 @@ export function DocumentsTableSection({ group, onDownload, onEdit, onDelete, for
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{doc.clientName}</p>
                   </div>
-                  {group.type === 'contract' ? (
-                    doc.signed ? (
-                      <Badge className="bg-green-600">✓</Badge>
-                    ) : (
-                      <Badge variant="secondary">Non</Badge>
-                    )
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    {doc.isMissing ? <Badge variant="outline">Manquant</Badge> : null}
+                    {group.type === 'contract' ? (
+                      doc.signed ? (
+                        <Badge className="bg-green-600">✓</Badge>
+                      ) : (
+                        <Badge variant="secondary">Non</Badge>
+                      )
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
@@ -65,13 +76,22 @@ export function DocumentsTableSection({ group, onDownload, onEdit, onDelete, for
                 </div>
 
                 <div className="mt-3 flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onDownload(doc)}>
+                  <Button variant="ghost" size="sm" onClick={() => onView(doc)} disabled={doc.isMissing}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => onDownload(doc)} disabled={doc.isMissing}>
                     <Download className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(doc)}>
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(doc)} disabled={doc.isMissing}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => onDelete(doc)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => onDelete(doc)}
+                    disabled={doc.isMissing}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -114,18 +134,30 @@ export function DocumentsTableSection({ group, onDownload, onEdit, onDelete, for
                     <TableCell>{formatDate(doc.uploadedAt)}</TableCell>
                     {group.type === 'contract' ? (
                       <TableCell>
-                        {doc.signed ? <Badge className="bg-green-600">✓</Badge> : <Badge variant="secondary">Non</Badge>}
+                        <div className="flex items-center gap-2">
+                          {doc.isMissing ? <Badge variant="outline">Manquant</Badge> : null}
+                          {doc.signed ? <Badge className="bg-green-600">✓</Badge> : <Badge variant="secondary">Non</Badge>}
+                        </div>
                       </TableCell>
                     ) : null}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => onDownload(doc)}>
+                        <Button variant="ghost" size="sm" onClick={() => onView(doc)} disabled={doc.isMissing}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => onDownload(doc)} disabled={doc.isMissing}>
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(doc)}>
+                        <Button variant="ghost" size="sm" onClick={() => onEdit(doc)} disabled={doc.isMissing}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => onDelete(doc)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => onDelete(doc)}
+                          disabled={doc.isMissing}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

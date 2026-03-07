@@ -55,16 +55,17 @@ export function SettingsRuntimeApiSection({
   const isBusy = isSaving || isLoading || isReloading || isOpeningConfigFolder
 
   return (
-    <section className="mt-8 sm:mt-10">
+    <section className="mt-8 min-w-0 overflow-x-hidden sm:mt-10">
       <h3 className="font-medium">Configuration API (Super Admin)</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Modifiez l&apos;API backend consommée sans rebuild. Le frontend ajoute automatiquement le suffixe /api.
       </p>
 
-      <div className="mt-4 space-y-3">
-        <label className="block space-y-1.5">
+      <div className="mt-4 min-w-0 space-y-3">
+        <label className="block min-w-0 space-y-1.5">
           <span className="text-sm text-muted-foreground">URL API backend</span>
           <Input
+            className="min-w-0"
             value={apiBaseUrl}
             onChange={(event) => onApiBaseUrlChange(event.target.value)}
             placeholder="https://api.example.com"
@@ -72,9 +73,10 @@ export function SettingsRuntimeApiSection({
           />
         </label>
 
-        <label className="block space-y-1.5">
+        <label className="block min-w-0 space-y-1.5">
           <span className="text-sm text-muted-foreground">URL Cloudinary Sign (optionnel)</span>
           <Input
+            className="min-w-0"
             value={cloudinarySignUrl}
             onChange={(event) => onCloudinarySignUrlChange(event.target.value)}
             placeholder="https://api.example.com/api/sign"
@@ -82,7 +84,7 @@ export function SettingsRuntimeApiSection({
           />
         </label>
 
-        <div className="rounded-lg border border-border bg-white/70 px-3 py-2 space-y-2">
+        <div className="min-w-0 space-y-2 rounded-lg border border-border bg-white/70 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-muted-foreground">Source active</span>
             <Badge variant="secondary">{sourceLabel(source)}</Badge>

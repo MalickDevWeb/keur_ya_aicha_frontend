@@ -1,6 +1,8 @@
-import { FileText, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Camera, CheckCircle2, FileText, ImagePlus, RotateCcw, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getDocumentUploadPreviewKind } from '@/lib/documentUpload'
 
 type RentalOption = { id: string; propertyName: string }
 
@@ -48,12 +50,60 @@ export function DocumentsUploadSection({
 }: DocumentsUploadSectionProps) {
   const activeClient = clients.find((client) => client.id === clientId)
   const rentals = activeClient?.rentals ?? []
+  const filePickerRef = useRef<HTMLInputElement | null>(null)
+  const cameraPickerRef = useRef<HTMLInputElement | null>(null)
+  const [selectionSource, setSelectionSource] = useState<'library' | 'camera' | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const previewKind = getDocumentUploadPreviewKind(file)
+  const isCameraCapture = selectionSource === 'camera'
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null)
+      setSelectionSource(null)
+      return
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(file)
+    setPreviewUrl(nextPreviewUrl)
+    return () => {
+      URL.revokeObjectURL(nextPreviewUrl)
+    }
+  }, [file])
+
+  const pickFileFromLibrary = () => {
+    filePickerRef.current?.click()
+  }
+
+  const pickFileFromCamera = () => {
+    cameraPickerRef.current?.click()
+  }
+
+  const handleFileSelection = (
+    nextFile: File | null,
+    source: 'library' | 'camera',
+    input: HTMLInputElement
+  ) => {
+    setSelectionSource(nextFile ? source : null)
+    onFileChange(nextFile)
+    input.value = ''
+  }
+
+  const uploadLabel = isUploading
+    ? previewKind === 'image'
+      ? 'Préparation et téléversement...'
+      : 'Téléversement...'
+    : isCameraCapture
+      ? 'Confirmer et téléverser'
+      : 'Téléverser le document'
 
   return (
     <Card className="border-[#121B53]/15 bg-white/90 shadow-[0_22px_60px_rgba(12,18,60,0.14)]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg text-[#121B53]">Ajouter un document PDF</CardTitle>
-        <p className="text-sm text-muted-foreground">Stockage sécurisé via Cloudinary, liens instantanés.</p>
+        <CardTitle className="text-lg text-[#121B53]">Ajouter un document</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Mobile friendly: choisissez un fichier, ouvrez la caméra, prévisualisez puis confirmez l’envoi.
+        </p>
       </CardHeader>
       <CardContent className="px-4 pb-4 pt-0 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-[1.2fr_1.2fr_1fr]">
@@ -116,33 +166,135 @@ export function DocumentsUploadSection({
           </div>
 
           <div className="rounded-2xl border border-[#121B53]/10 bg-[#F4F6FF] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#121B53]/60">Fichier</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#121B53]/60">Fichier / Caméra</p>
             <div className="mt-3 space-y-3">
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-[#121B53]/25 bg-white px-3 py-3 text-sm text-[#121B53]/70">
-                <div className="flex min-w-0 items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#121B53]" />
-                  <span className="truncate">{file ? file.name : 'Choisir un PDF'}</span>
-                </div>
-                <span className="text-xs text-[#121B53]/50">.pdf</span>
-                <input
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
-                  className="hidden"
-                />
-              </label>
-              <Button
-                className="w-full gap-2 bg-gradient-to-r from-[#121B53] via-[#1A2A78] to-[#0B153D] text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isUploading || !clientId || !rentalId || !file}
-                onClick={onUpload}
-              >
-                <Upload className="h-4 w-4" />
-                {isUploading ? 'Téléversement...' : 'Téléverser le PDF'}
-              </Button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="justify-start gap-2 rounded-xl border-[#121B53]/20 bg-white text-[#121B53]"
+                  onClick={pickFileFromLibrary}
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Galerie / Fichiers
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="justify-start gap-2 rounded-xl border-[#121B53]/20 bg-white text-[#121B53]"
+                  onClick={pickFileFromCamera}
+                >
+                  <Camera className="h-4 w-4" />
+                  Prendre une photo
+                </Button>
+              </div>
+              <input
+                ref={filePickerRef}
+                type="file"
+                accept=".pdf,application/pdf,image/*"
+                className="hidden"
+                onChange={(event) =>
+                  handleFileSelection(event.target.files?.[0] ?? null, 'library', event.currentTarget)
+                }
+              />
+              <input
+                ref={cameraPickerRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) =>
+                  handleFileSelection(event.target.files?.[0] ?? null, 'camera', event.currentTarget)
+                }
+              />
+              <div className="rounded-xl border border-dashed border-[#121B53]/25 bg-white p-3">
+                {file ? (
+                  <div className="space-y-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-[#121B53]/80">
+                      <FileText className="h-4 w-4 shrink-0 text-[#121B53]" />
+                      <span className="truncate font-medium">{file.name}</span>
+                    </div>
+                    {previewUrl ? (
+                      previewKind === 'image' ? (
+                        <div className="overflow-hidden rounded-xl border border-[#121B53]/10 bg-[#F7F9FF]">
+                          <img
+                            src={previewUrl}
+                            alt="Prévisualisation du document"
+                            className="h-48 w-full object-contain bg-white"
+                          />
+                        </div>
+                      ) : previewKind === 'pdf' ? (
+                        <div className="overflow-hidden rounded-xl border border-[#121B53]/10 bg-[#F7F9FF]">
+                          <iframe
+                            src={previewUrl}
+                            title="Prévisualisation PDF"
+                            className="h-48 w-full bg-white"
+                          />
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-[#121B53]/10 bg-[#F7F9FF] px-3 py-6 text-center text-sm text-[#121B53]/65">
+                          Prévisualisation non disponible pour ce format, mais le fichier sera envoyé tel quel.
+                        </div>
+                      )
+                    ) : null}
+                    <div className="space-y-1 text-xs text-[#121B53]/65">
+                      <p>
+                        Source: {isCameraCapture ? 'Caméra du téléphone' : 'Galerie ou gestionnaire de fichiers'}
+                      </p>
+                      <p>
+                        {previewKind === 'image'
+                          ? 'La photo sera automatiquement convertie en PDF avant envoi.'
+                          : 'Le fichier sera envoyé au serveur après validation.'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="gap-2"
+                          onClick={isCameraCapture ? pickFileFromCamera : pickFileFromLibrary}
+                        >
+                          {isCameraCapture ? <RotateCcw className="h-4 w-4" /> : <ImagePlus className="h-4 w-4" />}
+                          {isCameraCapture ? 'Reprendre la photo' : 'Changer le fichier'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-[#121B53]/70"
+                          onClick={() => onFileChange(null)}
+                        >
+                          Annuler la sélection
+                        </Button>
+                      </div>
+                      <Button
+                        type="button"
+                        className="w-full gap-2 bg-gradient-to-r from-[#121B53] via-[#1A2A78] to-[#0B153D] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={isUploading || !clientId || !rentalId || !file}
+                        onClick={onUpload}
+                      >
+                        {isCameraCapture && !isUploading ? <CheckCircle2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                        {uploadLabel}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-sm text-[#121B53]/65">
+                    <p>Choisissez un document depuis le téléphone ou prenez une photo directement.</p>
+                    <p className="text-xs">
+                      Formats acceptés: PDF, JPG, PNG, WEBP. Les photos prises avec la caméra sont converties en PDF avant upload.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        {file ? <p className="mt-3 break-all text-xs text-muted-foreground">Fichier sélectionné: {file.name}</p> : null}
+        {file ? (
+          <p className="mt-3 break-all text-xs text-muted-foreground">
+            Fichier sélectionné: {file.name}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   )

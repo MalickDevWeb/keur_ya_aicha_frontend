@@ -22,15 +22,16 @@ export function SettingsImportAliasesSection({
   onOpenImport,
 }: SettingsImportAliasesSectionProps) {
   return (
-    <section className="mt-8 sm:mt-10">
+    <section className="mt-8 min-w-0 overflow-x-hidden sm:mt-10">
       <h3 className="font-medium">Format d'import Excel</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Définissez votre format d'import (par admin). Exemple: si votre fichier contient "CN1", ajoutez-le dans la
         liste de <span className="font-medium">cni</span>.
       </p>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 min-w-0 space-y-3">
         <Textarea
+          className="min-w-0 font-mono text-xs sm:text-sm"
           rows={10}
           value={value}
           onChange={(event) => onChange(event.target.value)}

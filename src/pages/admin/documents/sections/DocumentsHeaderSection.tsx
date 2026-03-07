@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Download, Eye } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { DocumentFilter } from '../types'
@@ -11,10 +11,23 @@ const FILTER_LABELS: Record<DocumentFilter, string> = {
 
 type DocumentsHeaderSectionProps = {
   filterType: DocumentFilter
+  canViewAll: boolean
+  canDownloadAll: boolean
+  isDownloadingAll: boolean
   onBack: () => void
+  onViewAll: () => void
+  onDownloadAll: () => void
 }
 
-export function DocumentsHeaderSection({ filterType, onBack }: DocumentsHeaderSectionProps) {
+export function DocumentsHeaderSection({
+  filterType,
+  canViewAll,
+  canDownloadAll,
+  isDownloadingAll,
+  onBack,
+  onViewAll,
+  onDownloadAll,
+}: DocumentsHeaderSectionProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex w-full items-start gap-2 sm:items-center sm:gap-4">
@@ -29,15 +42,30 @@ export function DocumentsHeaderSection({ filterType, onBack }: DocumentsHeaderSe
           {filterType && <Badge className="mt-2">{FILTER_LABELS[filterType]}</Badge>}
         </div>
       </div>
-      <Button
-        className="w-full bg-[#121B53] text-white hover:bg-[#0B153D] sm:w-auto"
-        onClick={() => {
-          const el = document.getElementById('upload-document')
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }}
-      >
-        + Téléverser
-      </Button>
+      <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+        <Button variant="outline" className="w-full sm:w-auto" onClick={onViewAll} disabled={!canViewAll}>
+          <Eye className="mr-2 h-4 w-4" />
+          Voir tout
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={onDownloadAll}
+          disabled={!canDownloadAll || isDownloadingAll}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          {isDownloadingAll ? 'Téléchargement...' : 'Télécharger tout'}
+        </Button>
+        <Button
+          className="w-full bg-[#121B53] text-white hover:bg-[#0B153D] sm:w-auto"
+          onClick={() => {
+            const el = document.getElementById('upload-document')
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }}
+        >
+          + Téléverser
+        </Button>
+      </div>
     </div>
   )
 }

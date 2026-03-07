@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2 } from 'lucide-react'
+import type { AuditAutoExportStatus } from '@/services/api/auditLogs.api'
 import type { PlatformConfig } from '@/services/platformConfig'
 
 type SettingsGovernanceSectionProps = {
@@ -13,12 +14,18 @@ type SettingsGovernanceSectionProps = {
   isReloading: boolean
   isApplyingAuditRetention: boolean
   isExportingAudit: boolean
+  autoExportStatus: AuditAutoExportStatus | null
+  isAutoExportStatusLoading: boolean
+  isRunningAutoExport: boolean
+  isDownloadingAutoExport: boolean
   isTestingWebhook: boolean
   onChange: (updater: (prev: PlatformConfig) => PlatformConfig) => void
   onSave: () => void
   onReload: () => void
   onApplyAuditRetention: () => void
   onExportAuditNow: () => void
+  onRunAutoExportNow: () => void
+  onDownloadLatestAutoExport: () => void
   onTestWebhook: () => void
 }
 
@@ -35,15 +42,32 @@ export function SettingsGovernanceSection({
   isReloading,
   isApplyingAuditRetention,
   isExportingAudit,
+  autoExportStatus,
+  isAutoExportStatusLoading,
+  isRunningAutoExport,
+  isDownloadingAutoExport,
   isTestingWebhook,
   onChange,
   onSave,
   onReload,
   onApplyAuditRetention,
   onExportAuditNow,
+  onRunAutoExportNow,
+  onDownloadLatestAutoExport,
   onTestWebhook,
 }: SettingsGovernanceSectionProps) {
-  const isBusy = isLoading || isSaving || isReloading || isApplyingAuditRetention || isExportingAudit || isTestingWebhook
+  const isBusy =
+    isLoading ||
+    isSaving ||
+    isReloading ||
+    isApplyingAuditRetention ||
+    isExportingAudit ||
+    isRunningAutoExport ||
+    isDownloadingAutoExport ||
+    isTestingWebhook
+
+  const formatDateTime = (value: string | null | undefined): string =>
+    value ? new Date(value).toLocaleString('fr-FR') : 'Jamais'
 
   const setMaintenanceEnabled = (checked: boolean) =>
     onChange((prev) => ({
@@ -69,12 +93,23 @@ export function SettingsGovernanceSection({
       },
     }))
 
-  const setPaymentField = (key: 'graceDays' | 'latePenaltyPercent', next: string) =>
+  const setPaymentField = (
+    key:
+      | 'graceDays'
+      | 'latePenaltyPercent'
+      | 'recipientName'
+      | 'waveRecipientPhone'
+      | 'orangeRecipientPhone',
+    next: string
+  ) =>
     onChange((prev) => ({
       ...prev,
       paymentRules: {
         ...prev.paymentRules,
-        [key]: toPositiveNumber(next, prev.paymentRules[key]),
+        [key]:
+          key === 'graceDays' || key === 'latePenaltyPercent'
+            ? toPositiveNumber(next, prev.paymentRules[key])
+            : next,
       },
     }))
 
@@ -82,6 +117,12 @@ export function SettingsGovernanceSection({
     onChange((prev) => ({
       ...prev,
       paymentRules: { ...prev.paymentRules, blockOnOverdue: checked },
+    }))
+
+  const setOrangeOtpEnabled = (checked: boolean) =>
+    onChange((prev) => ({
+      ...prev,
+      paymentRules: { ...prev.paymentRules, orangeOtpEnabled: checked },
     }))
 
   const setDocumentsField = (key: 'maxUploadMb' | 'retentionDays', next: string) =>
@@ -169,7 +210,7 @@ export function SettingsGovernanceSection({
     }))
 
   return (
-    <section className="mt-8 space-y-6 sm:mt-10">
+    <section className="mt-8 min-w-0 space-y-6 overflow-x-hidden sm:mt-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="font-medium">Gouvernance Plateforme (Super Admin)</h3>
@@ -189,7 +230,7 @@ export function SettingsGovernanceSection({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Mode Maintenance Global</h4>
         <div className="flex items-center gap-3">
           <Switch checked={value.maintenance.enabled} onCheckedChange={setMaintenanceEnabled} />
@@ -205,39 +246,43 @@ export function SettingsGovernanceSection({
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Sécurité Session</h4>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Durée max session (minutes)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={5}
               value={value.sessionSecurity.sessionDurationMinutes}
               onChange={(event) => setSessionField('sessionDurationMinutes', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Timeout inactivité (minutes)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.sessionSecurity.inactivityTimeoutMinutes}
               onChange={(event) => setSessionField('inactivityTimeoutMinutes', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Échecs login avant blocage</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.sessionSecurity.maxFailedLogins}
               onChange={(event) => setSessionField('maxFailedLogins', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Durée blocage login (minutes)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.sessionSecurity.lockoutMinutes}
@@ -247,25 +292,54 @@ export function SettingsGovernanceSection({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Règles Paiement</h4>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Jours de grâce</span>
             <Input
+              className="min-w-0"
               type="number"
               min={0}
               value={value.paymentRules.graceDays}
               onChange={(event) => setPaymentField('graceDays', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Pénalité retard (%)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={0}
               value={value.paymentRules.latePenaltyPercent}
               onChange={(event) => setPaymentField('latePenaltyPercent', event.target.value)}
+            />
+          </label>
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-muted-foreground">Nom bénéficiaire Mobile Money</span>
+            <Input
+              className="min-w-0"
+              value={value.paymentRules.recipientName}
+              onChange={(event) => setPaymentField('recipientName', event.target.value)}
+              placeholder="Ex: Keur Ya Aicha"
+            />
+          </label>
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-muted-foreground">Numéro bénéficiaire Wave</span>
+            <Input
+              className="min-w-0"
+              value={value.paymentRules.waveRecipientPhone}
+              onChange={(event) => setPaymentField('waveRecipientPhone', event.target.value)}
+              placeholder="Ex: 771719013"
+            />
+          </label>
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-muted-foreground">Numéro bénéficiaire Orange Money</span>
+            <Input
+              className="min-w-0"
+              value={value.paymentRules.orangeRecipientPhone}
+              onChange={(event) => setPaymentField('orangeRecipientPhone', event.target.value)}
+              placeholder="Ex: 771719013"
             />
           </label>
         </div>
@@ -273,23 +347,29 @@ export function SettingsGovernanceSection({
           <Switch checked={value.paymentRules.blockOnOverdue} onCheckedChange={setPaymentBlockOnOverdue} />
           <span className="text-sm text-muted-foreground">Bloquer l’accès si abonnement en retard</span>
         </div>
+        <div className="flex items-center gap-3">
+          <Switch checked={value.paymentRules.orangeOtpEnabled} onCheckedChange={setOrangeOtpEnabled} />
+          <span className="text-sm text-muted-foreground">Activer la validation OTP pour Orange Money</span>
+        </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Documents</h4>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Taille max upload (MB)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.documents.maxUploadMb}
               onChange={(event) => setDocumentsField('maxUploadMb', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Rétention documents (jours)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.documents.retentionDays}
@@ -297,9 +377,10 @@ export function SettingsGovernanceSection({
             />
           </label>
         </div>
-        <label className="space-y-1">
+        <label className="min-w-0 space-y-1">
           <span className="text-xs text-muted-foreground">Types autorisés (MIME, séparés par virgule)</span>
           <Input
+            className="min-w-0"
             value={value.documents.allowedMimeTypes.join(', ')}
             onChange={(event) => setAllowedMimeTypes(event.target.value)}
             placeholder="application/pdf, image/jpeg, image/png"
@@ -307,9 +388,9 @@ export function SettingsGovernanceSection({
         </label>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Notifications (Templates + Événements)</h4>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-3">
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={value.notifications.channels.sms} onCheckedChange={(next) => setNotificationChannel('sms', next)} />
             SMS
@@ -326,35 +407,35 @@ export function SettingsGovernanceSection({
             WhatsApp
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex items-center gap-2 text-sm">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch
               checked={value.notifications.events.maintenance}
               onCheckedChange={(next) => setNotificationEvent('maintenance', next)}
             />
             Événement maintenance
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch
               checked={value.notifications.events.loginFailure}
               onCheckedChange={(next) => setNotificationEvent('loginFailure', next)}
             />
             Échec login
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch
               checked={value.notifications.events.paymentOverdue}
               onCheckedChange={(next) => setNotificationEvent('paymentOverdue', next)}
             />
             Paiement en retard
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch checked={value.notifications.events.apiError} onCheckedChange={(next) => setNotificationEvent('apiError', next)} />
             Erreur API
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Template maintenance</span>
             <Textarea
               rows={2}
@@ -362,7 +443,7 @@ export function SettingsGovernanceSection({
               onChange={(event) => setNotificationTemplate('maintenance', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Template login failure</span>
             <Textarea
               rows={2}
@@ -370,7 +451,7 @@ export function SettingsGovernanceSection({
               onChange={(event) => setNotificationTemplate('loginFailure', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Template paiement en retard</span>
             <Textarea
               rows={2}
@@ -378,7 +459,7 @@ export function SettingsGovernanceSection({
               onChange={(event) => setNotificationTemplate('paymentOverdue', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Template erreur API</span>
             <Textarea
               rows={2}
@@ -389,21 +470,22 @@ export function SettingsGovernanceSection({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Branding</h4>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Nom application</span>
-            <Input value={value.branding.appName} onChange={(event) => setBrandingField('appName', event.target.value)} />
+            <Input className="min-w-0" value={value.branding.appName} onChange={(event) => setBrandingField('appName', event.target.value)} />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">URL logo</span>
-            <Input value={value.branding.logoUrl} onChange={(event) => setBrandingField('logoUrl', event.target.value)} />
+            <Input className="min-w-0" value={value.branding.logoUrl} onChange={(event) => setBrandingField('logoUrl', event.target.value)} />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Couleur principale</span>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <Input
+                className="min-w-0"
                 value={value.branding.primaryColor}
                 onChange={(event) => setBrandingField('primaryColor', event.target.value)}
                 placeholder="#121B53"
@@ -416,9 +498,10 @@ export function SettingsGovernanceSection({
               />
             </div>
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Pied de page</span>
             <Input
+              className="min-w-0"
               value={value.branding.footerText}
               onChange={(event) => setBrandingField('footerText', event.target.value)}
             />
@@ -426,21 +509,23 @@ export function SettingsGovernanceSection({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/70 p-4 space-y-3">
+      <div className="min-w-0 space-y-3 rounded-xl border border-border bg-white/70 p-4">
         <h4 className="font-semibold">Audit & Conformité</h4>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Rétention logs (jours)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.auditCompliance.retentionDays}
               onChange={(event) => setAuditField('retentionDays', event.target.value)}
             />
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Fréquence export auto (heures)</span>
             <Input
+              className="min-w-0"
               type="number"
               min={1}
               value={value.auditCompliance.autoExportIntervalHours}
@@ -448,12 +533,12 @@ export function SettingsGovernanceSection({
             />
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex items-center gap-2 text-sm">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch checked={value.auditCompliance.autoExportEnabled} onCheckedChange={(next) => setAuditBoolean('autoExportEnabled', next)} />
             Export auto des logs
           </label>
-          <label className="space-y-1">
+          <label className="min-w-0 space-y-1">
             <span className="text-xs text-muted-foreground">Format export auto</span>
             <Select
               value={value.auditCompliance.autoExportFormat}
@@ -478,19 +563,19 @@ export function SettingsGovernanceSection({
           </label>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex items-center gap-2 text-sm">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch
               checked={value.auditCompliance.alertWebhookEnabled}
               onCheckedChange={(next) => setAuditBoolean('alertWebhookEnabled', next)}
             />
             Webhook alertes activé
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch checked={value.auditCompliance.alertOnApiError} onCheckedChange={(next) => setAuditBoolean('alertOnApiError', next)} />
             Alerter sur erreurs API
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="min-w-0 flex items-center gap-2 text-sm">
             <Switch
               checked={value.auditCompliance.alertOnSecurityEvent}
               onCheckedChange={(next) => setAuditBoolean('alertOnSecurityEvent', next)}
@@ -498,22 +583,59 @@ export function SettingsGovernanceSection({
             Alerter sur événements sécurité
           </label>
         </div>
-        <label className="space-y-1">
+        <label className="min-w-0 space-y-1">
           <span className="text-xs text-muted-foreground">URL webhook alertes</span>
           <Input
+            className="min-w-0"
             value={value.auditCompliance.alertWebhookUrl}
             onChange={(event) => setAuditString('alertWebhookUrl', event.target.value)}
             placeholder="https://hooks.example.com/kya"
           />
         </label>
-        <label className="space-y-1">
+        <label className="min-w-0 space-y-1">
           <span className="text-xs text-muted-foreground">Secret webhook (optionnel)</span>
           <Input
+            className="min-w-0"
             value={value.auditCompliance.alertWebhookSecret}
             onChange={(event) => setAuditString('alertWebhookSecret', event.target.value)}
             placeholder="secret"
           />
         </label>
+        <div className="min-w-0 rounded-lg border border-dashed border-border bg-muted/30 p-3 text-sm">
+          <div className="flex flex-col gap-1">
+            <span className="font-medium">État du dernier auto-export backend</span>
+            {isAutoExportStatusLoading ? (
+              <span className="text-muted-foreground">Chargement du statut...</span>
+            ) : autoExportStatus ? (
+              <>
+                <span className="text-muted-foreground">
+                  Activé: {autoExportStatus.enabled ? 'oui' : 'non'} | Format: {autoExportStatus.format.toUpperCase()} | Fréquence: {autoExportStatus.intervalHours}h
+                </span>
+                <span className="text-muted-foreground">
+                  Cron: {autoExportStatus.endpointPath} avec header `{autoExportStatus.headerName}` | Secret configuré: {autoExportStatus.cronSecretConfigured ? 'oui' : 'non'}
+                </span>
+                <span className="text-muted-foreground">
+                  Échéance: {autoExportStatus.due ? 'export dû maintenant' : `prochain export prévu le ${formatDateTime(autoExportStatus.nextDueAt)}`}
+                </span>
+                <span className="text-muted-foreground">
+                  Dernier export: {autoExportStatus.lastExport ? `${formatDateTime(autoExportStatus.lastExport.generatedAt)} | ${autoExportStatus.lastExport.fileName}` : 'aucun snapshot généré'}
+                </span>
+                {autoExportStatus.lastExport ? (
+                  <>
+                    <span className="text-muted-foreground">
+                      Volume: {autoExportStatus.lastExport.count} logs ({autoExportStatus.lastExport.adminAuditCount} audits admin, {autoExportStatus.lastExport.securityAuditCount} audits sécurité)
+                    </span>
+                    <span className="break-all text-muted-foreground">
+                      Checksum SHA-256: {autoExportStatus.lastExport.checksumSha256}
+                    </span>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <span className="text-muted-foreground">Statut indisponible.</span>
+            )}
+          </div>
+        </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button variant="outline" onClick={onApplyAuditRetention} disabled={isBusy} className="w-full sm:w-auto">
             {isApplyingAuditRetention ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -522,6 +644,14 @@ export function SettingsGovernanceSection({
           <Button variant="outline" onClick={onExportAuditNow} disabled={isBusy} className="w-full sm:w-auto">
             {isExportingAudit ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isExportingAudit ? 'Export en cours...' : 'Exporter logs maintenant'}
+          </Button>
+          <Button variant="outline" onClick={onRunAutoExportNow} disabled={isBusy} className="w-full sm:w-auto">
+            {isRunningAutoExport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isRunningAutoExport ? 'Génération...' : 'Lancer auto-export backend'}
+          </Button>
+          <Button variant="outline" onClick={onDownloadLatestAutoExport} disabled={isBusy || !autoExportStatus?.lastExport} className="w-full sm:w-auto">
+            {isDownloadingAutoExport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isDownloadingAutoExport ? 'Téléchargement...' : 'Télécharger dernier auto-export'}
           </Button>
           <Button variant="secondary" onClick={onTestWebhook} disabled={isBusy} className="w-full sm:w-auto">
             {isTestingWebhook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

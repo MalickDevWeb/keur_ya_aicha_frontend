@@ -11,7 +11,7 @@ type SettingsReportSectionProps = {
 
 export function SettingsReportSection({ value, onChange, onSave, isSaving }: SettingsReportSectionProps) {
   return (
-    <section className="mt-10">
+    <section className="mt-10 min-w-0 overflow-x-hidden">
       <h3 className="font-medium">Format du rapport d'import</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Choisissez le format de téléchargement pour la page d'erreurs d'import.

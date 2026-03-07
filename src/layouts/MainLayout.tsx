@@ -9,7 +9,6 @@ import { updateAdmin, updateUser } from '@/services/api';
 import { AdminStatus } from '@/dto/frontend/responses';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { listAuditLogs } from '@/services/api/auditLogs.api';
 import type { AdminFeaturePermissions } from '@/dto/frontend/responses';
 import { normalizeAdminFeaturePermissions } from '@/services/adminPermissions';
 import {
@@ -18,7 +17,6 @@ import {
   applyBrandingToDocument,
   getPlatformConfigSnapshot,
   refreshPlatformConfigFromServer,
-  sendComplianceWebhookAlert,
   subscribePlatformConfigUpdates,
 } from '@/services/platformConfig';
 
@@ -116,76 +114,6 @@ export function MainLayout({ children }: MainLayoutProps) {
       unsubscribe()
     }
   }, [])
-
-  useEffect(() => {
-    if (String(user?.role || '').toUpperCase() !== 'SUPER_ADMIN') return
-    if (user?.superAdminSecondAuthRequired !== false) return
-    if (!impersonation?.adminId) return
-    if (!platformConfig.auditCompliance.autoExportEnabled) return
-
-    const intervalMs = Math.max(1, platformConfig.auditCompliance.autoExportIntervalHours) * 60 * 60 * 1000
-    const metaKey = 'kya_audit_auto_export_meta'
-
-    const maybeRunAutoExport = async () => {
-      try {
-        const rawMeta = localStorage.getItem(metaKey)
-        const parsedMeta = rawMeta ? (JSON.parse(rawMeta) as { generatedAt?: string }) : null
-        const lastAt = parsedMeta?.generatedAt ? new Date(parsedMeta.generatedAt).getTime() : 0
-        const now = Date.now()
-        if (lastAt > 0 && now - lastAt < intervalMs) return
-
-        const logs = await listAuditLogs()
-        const format = platformConfig.auditCompliance.autoExportFormat
-        const generatedAt = new Date().toISOString()
-        if (format === 'json') {
-          localStorage.setItem('kya_audit_auto_export_data', JSON.stringify(logs))
-        } else {
-          const headers = ['id', 'createdAt', 'actor', 'action', 'targetType', 'targetId', 'message', 'ipAddress']
-          const rows = logs.map((log) =>
-            headers
-              .map((key) => {
-                const raw = String((log as Record<string, unknown>)[key] ?? '')
-                return `"${raw.replace(/"/g, '""')}"`
-              })
-              .join(',')
-          )
-          localStorage.setItem('kya_audit_auto_export_data', [headers.join(','), ...rows].join('\n'))
-        }
-        localStorage.setItem(
-          metaKey,
-          JSON.stringify({
-            generatedAt,
-            count: logs.length,
-            format,
-          })
-        )
-        void sendComplianceWebhookAlert('security', {
-          event: 'auto_audit_export',
-          generatedAt,
-          count: logs.length,
-          format,
-        })
-      } catch {
-        // ignore background auto-export failures
-      }
-    }
-
-    void maybeRunAutoExport()
-    const timer = window.setInterval(() => {
-      void maybeRunAutoExport()
-    }, 60_000)
-
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [
-    impersonation?.adminId,
-    platformConfig.auditCompliance.autoExportEnabled,
-    platformConfig.auditCompliance.autoExportFormat,
-    platformConfig.auditCompliance.autoExportIntervalHours,
-    user?.role,
-    user?.superAdminSecondAuthRequired,
-  ])
 
   useEffect(() => {
     const onSubscriptionBlocked = (event: Event) => {

@@ -7,7 +7,14 @@ import { useActionLogger } from '@/lib/actionLogger'
 import { CLIENT_IMPORT_FIELDS, DEFAULT_IMPORT_ALIASES, DEFAULT_REQUIRED_FIELDS, type ClientImportMapping } from '@/lib/importClients'
 import { changeOwnPassword, getSetting, setSetting } from '@/services/api'
 import { uploadToCloudinary } from '@/services/api/uploads.api'
-import { deleteAuditLogs, listAuditLogs } from '@/services/api/auditLogs.api'
+import {
+  applyAuditLogsRetention,
+  downloadAuditLogsExport,
+  downloadLatestAuditAutoExport,
+  fetchAuditAutoExportStatus,
+  triggerAuditAutoExportNow,
+  type AuditAutoExportStatus,
+} from '@/services/api/auditLogs.api'
 import {
   PlatformConfig,
   applyBrandingToDocument,
@@ -15,6 +22,7 @@ import {
   refreshPlatformConfigFromServer,
   savePlatformConfig,
   sendComplianceWebhookAlert,
+  testComplianceWebhookServerSide,
 } from '@/services/platformConfig'
 import {
   ensureRuntimeConfigLoaded,
@@ -89,6 +97,10 @@ export default function SettingsPage() {
   const [platformConfigReloading, setPlatformConfigReloading] = useState(false)
   const [auditRetentionApplying, setAuditRetentionApplying] = useState(false)
   const [auditExporting, setAuditExporting] = useState(false)
+  const [auditAutoExportStatus, setAuditAutoExportStatus] = useState<AuditAutoExportStatus | null>(null)
+  const [auditAutoExportStatusLoading, setAuditAutoExportStatusLoading] = useState(false)
+  const [auditAutoExportRunning, setAuditAutoExportRunning] = useState(false)
+  const [auditAutoExportDownloading, setAuditAutoExportDownloading] = useState(false)
   const [webhookTesting, setWebhookTesting] = useState(false)
   const [adminAppName, setAdminAppName] = useState('')
   const [adminNameSaving, setAdminNameSaving] = useState(false)
@@ -143,6 +155,27 @@ export default function SettingsPage() {
       setPlatformConfigLoading(false)
     }
   }, [canEditRequired])
+
+  const loadAuditAutoExportStatus = useCallback(
+    async (silent = true) => {
+      if (!canEditRequired) return
+      setAuditAutoExportStatusLoading(true)
+      try {
+        const status = await fetchAuditAutoExportStatus()
+        setAuditAutoExportStatus(status)
+      } catch (error) {
+        setAuditAutoExportStatus(null)
+        if (!silent) {
+          const message =
+            error instanceof Error ? error.message : "Impossible de charger l'état de l'auto-export."
+          toast({ title: 'Erreur', description: message, variant: 'destructive' })
+        }
+      } finally {
+        setAuditAutoExportStatusLoading(false)
+      }
+    },
+    [canEditRequired, toast]
+  )
 
   useEffect(() => {
     async function loadImportAliases() {
@@ -211,6 +244,11 @@ export default function SettingsPage() {
     if (!canEditRequired) return
     void loadPlatformConfig()
   }, [canEditRequired, loadPlatformConfig])
+
+  useEffect(() => {
+    if (!canEditRequired) return
+    void loadAuditAutoExportStatus(true)
+  }, [canEditRequired, loadAuditAutoExportStatus])
 
   useEffect(() => {
     let mounted = true
@@ -437,6 +475,7 @@ export default function SettingsPage() {
     setPlatformConfigReloading(true)
     try {
       await loadPlatformConfig()
+      await loadAuditAutoExportStatus(true)
     } finally {
       setPlatformConfigReloading(false)
     }
@@ -464,6 +503,7 @@ export default function SettingsPage() {
       const saved = await savePlatformConfig(platformConfigDraft)
       setPlatformConfigDraft(saved)
       applyBrandingToDocument(saved)
+      await loadAuditAutoExportStatus(true)
       if (saved.maintenance.enabled) {
         void sendComplianceWebhookAlert('security', {
           event: 'maintenance',
@@ -487,18 +527,15 @@ export default function SettingsPage() {
     void logAction('settings.governance.audit.retention.start')
     setAuditRetentionApplying(true)
     try {
-      const retentionDays = Math.max(1, Number(platformConfigDraft.auditCompliance.retentionDays || 1))
-      const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000
-      const logs = await listAuditLogs()
-      const toDelete = logs
-        .filter((log) => new Date(log.createdAt || 0).getTime() < cutoff)
-        .map((log) => log.id)
-      await deleteAuditLogs(toDelete)
+      const resultat = await applyAuditLogsRetention()
       toast({
         title: 'Rétention appliquée',
-        description: `${toDelete.length} log(s) supprimé(s) selon la politique.`,
+        description: `${resultat.deletedCount} log(s) supprimé(s) selon la politique (${resultat.retentionDays} jour(s)).`,
       })
-      void logAction('settings.governance.audit.retention.success', { deleted: toDelete.length })
+      void logAction('settings.governance.audit.retention.success', {
+        deleted: resultat.deletedCount,
+        retentionDays: resultat.retentionDays,
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Échec application rétention.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
@@ -513,26 +550,8 @@ export default function SettingsPage() {
     void logAction('settings.governance.audit.export.start')
     setAuditExporting(true)
     try {
-      const logs = await listAuditLogs()
       const format = platformConfigDraft.auditCompliance.autoExportFormat
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-      const fileName = `audit_logs_${stamp}.${format}`
-      let blob: Blob
-      if (format === 'json') {
-        blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' })
-      } else {
-        const headers = ['id', 'createdAt', 'actor', 'action', 'targetType', 'targetId', 'message', 'ipAddress']
-        const rows = logs.map((log) =>
-          headers
-            .map((key) => {
-              const raw = String((log as Record<string, unknown>)[key] ?? '')
-              return `"${raw.replace(/"/g, '""')}"`
-            })
-            .join(',')
-        )
-        const csv = [headers.join(','), ...rows].join('\n')
-        blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-      }
+      const { blob, fileName } = await downloadAuditLogsExport(format)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -541,8 +560,8 @@ export default function SettingsPage() {
       link.click()
       link.remove()
       URL.revokeObjectURL(url)
-      toast({ title: 'Export prêt', description: `${logs.length} log(s) exporté(s).` })
-      void logAction('settings.governance.audit.export.success', { count: logs.length, format })
+      toast({ title: 'Export prêt', description: `Export ${format.toUpperCase()} généré côté serveur.` })
+      void logAction('settings.governance.audit.export.success', { format, fileName })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Échec export logs.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
@@ -552,23 +571,71 @@ export default function SettingsPage() {
     }
   }
 
+  const runAuditAutoExportNow = async () => {
+    if (auditAutoExportRunning) return
+    void logAction('settings.governance.audit.autoExport.run.start')
+    setAuditAutoExportRunning(true)
+    try {
+      const resultat = await triggerAuditAutoExportNow(true)
+      await loadAuditAutoExportStatus(true)
+      toast({
+        title: resultat.executed ? 'Auto-export backend lancé' : 'Auto-export backend inchangé',
+        description: resultat.executed
+          ? `Snapshot backend généré (${resultat.export?.count || 0} logs).`
+          : "Aucun nouveau snapshot n'était nécessaire pour l'instant.",
+      })
+      void logAction('settings.governance.audit.autoExport.run.success', resultat)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de lancer l'auto-export backend."
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.governance.audit.autoExport.run.error', { message })
+    } finally {
+      setAuditAutoExportRunning(false)
+    }
+  }
+
+  const downloadLatestAutoExport = async () => {
+    if (auditAutoExportDownloading) return
+    void logAction('settings.governance.audit.autoExport.download.start')
+    setAuditAutoExportDownloading(true)
+    try {
+      const { blob, fileName } = await downloadLatestAuditAutoExport()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      void logAction('settings.governance.audit.autoExport.download.success', { fileName })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Impossible de télécharger le dernier auto-export."
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+      void logAction('settings.governance.audit.autoExport.download.error', { message })
+    } finally {
+      setAuditAutoExportDownloading(false)
+    }
+  }
+
   const testAlertWebhook = async () => {
     if (webhookTesting) return
     void logAction('settings.governance.audit.webhook.test.start')
     setWebhookTesting(true)
     try {
-      await sendComplianceWebhookAlert('security', {
-        event: 'manual_test',
-        actor: user?.id || 'unknown',
-        message: 'Test webhook initié depuis paramètres Super Admin',
-      })
+      const resultat = await testComplianceWebhookServerSide()
       toast({
         title: 'Webhook testé',
-        description: platformConfigDraft.auditCompliance.alertWebhookEnabled
-          ? 'Demande de test envoyée au webhook.'
-          : "Webhook désactivé: activez l'option pour envoyer réellement le test.",
+        description: !resultat.enabled
+          ? "Webhook désactivé: activez l'option pour envoyer réellement le test."
+          : !resultat.configured
+            ? "Aucune URL webhook n'est configurée."
+            : resultat.sent
+              ? 'Demande de test envoyée par le backend au webhook.'
+              : 'Le backend a tenté le test webhook, mais la cible a refusé ou n’a pas répondu.',
       })
-      void logAction('settings.governance.audit.webhook.test.success')
+      void logAction('settings.governance.audit.webhook.test.success', resultat)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Échec test webhook.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
@@ -697,7 +764,7 @@ export default function SettingsPage() {
 
   if (!canEdit) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
+      <div className="mx-auto w-full max-w-6xl min-w-0 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
         <SettingsHeaderSection title="Paramètres" />
         <p className="mt-4 text-muted-foreground">Vous n'êtes pas autorisé à modifier ces paramètres.</p>
       </div>
@@ -705,7 +772,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
+    <div className="mx-auto w-full max-w-6xl min-w-0 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
       <SettingsHeaderSection title="Paramètres" />
 
       {canEditAdminBranding ? (
@@ -798,6 +865,10 @@ export default function SettingsPage() {
           isReloading={platformConfigReloading}
           isApplyingAuditRetention={auditRetentionApplying}
           isExportingAudit={auditExporting}
+          autoExportStatus={auditAutoExportStatus}
+          isAutoExportStatusLoading={auditAutoExportStatusLoading}
+          isRunningAutoExport={auditAutoExportRunning}
+          isDownloadingAutoExport={auditAutoExportDownloading}
           isTestingWebhook={webhookTesting}
           onChange={(updater) => setPlatformConfigDraft((prev) => updater(prev))}
           onSave={saveGovernanceConfig}
@@ -806,6 +877,8 @@ export default function SettingsPage() {
           }}
           onApplyAuditRetention={applyAuditRetentionNow}
           onExportAuditNow={exportAuditNow}
+          onRunAutoExportNow={runAuditAutoExportNow}
+          onDownloadLatestAutoExport={downloadLatestAutoExport}
           onTestWebhook={testAlertWebhook}
         />
       )}

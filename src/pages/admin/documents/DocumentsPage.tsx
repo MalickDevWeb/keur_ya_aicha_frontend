@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { useGoBack } from '@/hooks/useGoBack'
@@ -6,6 +6,7 @@ import { useStore } from '@/stores/dataStore'
 import { SectionWrapper } from '@/pages/common/SectionWrapper'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { getCloudinaryOpenUrl } from '@/services/api/uploads.api'
+import { getDocumentUploadLabel, prepareDocumentUploadFile } from '@/lib/documentUpload'
 import { buildReadableDocumentName, toSafeFileBaseName } from '@/lib/documentDisplay'
 import type { DocumentFilter, DocumentGroup, DocumentRow } from './types'
 import {
@@ -55,11 +56,14 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<DocumentFilter>('')
   const [isUploading, setIsUploading] = useState(false)
-  const [modalDoc, setModalDoc] = useState<DocumentRow | null>(null)
-  const [modalAction, setModalAction] = useState<'download' | 'whatsapp' | null>(null)
-  const [modalBlobUrl, setModalBlobUrl] = useState<string | null>(null)
+  const [viewerDocuments, setViewerDocuments] = useState<DocumentRow[]>([])
+  const [viewerIndex, setViewerIndex] = useState(0)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
+  const [modalAction, setModalAction] = useState<'download' | 'whatsapp' | 'download-all' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const previewObjectUrlRef = useRef<string | null>(null)
 
   useEffect(() => {
     const filter = (searchParams.get('filter') || '') as DocumentFilter
@@ -91,9 +95,12 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     return () => {
-      if (modalBlobUrl) URL.revokeObjectURL(modalBlobUrl)
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current)
+        previewObjectUrlRef.current = null
+      }
     }
-  }, [modalBlobUrl])
+  }, [])
 
   const allDocuments = useMemo(() => buildDocumentsList(clients), [clients])
 
@@ -106,6 +113,10 @@ export default function DocumentsPage() {
     () => filterDocuments(sourceDocuments, clients, searchQuery, filterType),
     [sourceDocuments, clients, searchQuery, filterType]
   )
+  const actionableDocuments = useMemo(
+    () => filteredDocuments.filter((doc) => !doc.isMissing),
+    [filteredDocuments]
+  )
 
   const groupedAll = useMemo(() => groupDocumentsByType(allDocuments), [allDocuments])
   const groupedFiltered = useMemo(() => groupDocumentsByType(filteredDocuments), [filteredDocuments])
@@ -113,6 +124,9 @@ export default function DocumentsPage() {
   const totalsAll = getGroupCounts(groupedAll)
   const totalsFiltered = getGroupCounts(groupedFiltered)
   const showTotals = Boolean(searchQuery || filterType)
+  const modalDoc = viewerDocuments[viewerIndex] || null
+  const canGoToPreviousDocument = viewerDocuments.length > 1 && viewerIndex > 0
+  const canGoToNextDocument = viewerDocuments.length > 1 && viewerIndex < viewerDocuments.length - 1
 
   const handleClientChange = (nextClientId: string) => {
     setClientId(nextClientId)
@@ -138,9 +152,20 @@ export default function DocumentsPage() {
 
     try {
       setIsUploading(true)
-      const name = docName || file.name || 'Document'
-      await addDocument(clientId, rentalId, { name, type: docType, signed, file })
-      toast({ title: 'Succès', description: `Document "${name}" importé avec succès!` })
+      const preparedUpload = await prepareDocumentUploadFile(file)
+      const name = docName.trim() || getDocumentUploadLabel(file) || 'Document'
+      await addDocument(clientId, rentalId, {
+        name,
+        type: docType,
+        signed,
+        file: preparedUpload.file,
+      })
+      toast({
+        title: 'Succès',
+        description: preparedUpload.wasConvertedFromImage
+          ? `Photo convertie en PDF puis importée avec succès pour "${name}".`
+          : `Document "${name}" importé avec succès!`,
+      })
       setDocName('')
       setFile(null)
       setSigned(false)
@@ -152,39 +177,127 @@ export default function DocumentsPage() {
     }
   }
 
-  const openActionDialog = (doc: DocumentRow) => {
-    if (modalBlobUrl) URL.revokeObjectURL(modalBlobUrl)
-    setModalBlobUrl(null)
-    setModalDoc(doc)
-  }
-
   const generateAndGetBlob = async (doc: DocumentRow) => {
     const { generatePdfForDocument } = await import('@/lib/pdfUtils')
     return await generatePdfForDocument(doc)
   }
 
-  const handleModalDownload = async () => {
-    if (!modalDoc) return
-    const displayName = getDocumentDisplayName(modalDoc)
-    const safeFileName = `${toSafeFileBaseName(displayName)}.pdf`
-    setModalAction('download')
-    try {
-      if (modalDoc.url && modalDoc.type !== 'receipt') {
-        const openUrl = await getCloudinaryOpenUrl(String(modalDoc.url))
-        const link = document.createElement('a')
-        link.href = openUrl
-        link.download = safeFileName
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
+  const getDocumentDisplayFileName = (doc: DocumentRow) => {
+    const displayName = getDocumentDisplayName(doc)
+    return `${toSafeFileBaseName(displayName)}.pdf`
+  }
+
+  const resetPreviewState = () => {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current)
+      previewObjectUrlRef.current = null
+    }
+    setPreviewUrl(null)
+  }
+
+  const downloadDocument = async (doc: DocumentRow) => {
+    const safeFileName = getDocumentDisplayFileName(doc)
+    if (doc.url && doc.type !== 'receipt') {
+      const openUrl = await getCloudinaryOpenUrl(String(doc.url))
+      const link = document.createElement('a')
+      link.href = openUrl
+      link.download = safeFileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      return
+    }
+
+    const blob = await generateAndGetBlob(doc)
+    const { downloadBlob } = await import('@/lib/pdfUtils')
+    downloadBlob(blob, safeFileName)
+  }
+
+  const closeViewer = () => {
+    resetPreviewState()
+    setViewerDocuments([])
+    setViewerIndex(0)
+  }
+
+  const openViewer = (documents: DocumentRow[], startIndex = 0) => {
+    const realDocuments = documents.filter((doc) => !doc.isMissing)
+    if (realDocuments.length === 0) {
+      toast({
+        title: 'Aperçu indisponible',
+        description: 'Aucun document réel à afficher dans cette sélection.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    resetPreviewState()
+    setViewerDocuments(realDocuments)
+    setViewerIndex(Math.max(0, Math.min(startIndex, realDocuments.length - 1)))
+  }
+
+  const handleViewDocument = (doc: DocumentRow) => {
+    if (doc.isMissing) {
+      toast({
+        title: 'Document manquant',
+        description: 'Ce document n’existe pas encore. Téléversez-le d’abord.',
+        variant: 'destructive',
+      })
+      return
+    }
+    openViewer([doc])
+  }
+
+  const handleViewAllDocuments = () => {
+    openViewer(actionableDocuments)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadPreview = async () => {
+      resetPreviewState()
+      if (!modalDoc) {
+        setIsPreviewLoading(false)
         return
       }
 
-      const blob = await generateAndGetBlob(modalDoc)
-      const { downloadBlob } = await import('@/lib/pdfUtils')
-      downloadBlob(blob, safeFileName)
-      const url = URL.createObjectURL(blob)
-      setModalBlobUrl(url)
+      setIsPreviewLoading(true)
+      try {
+        const nextPreview =
+          modalDoc.url && modalDoc.type !== 'receipt'
+            ? { url: await getCloudinaryOpenUrl(String(modalDoc.url)), shouldRevoke: false }
+            : { url: URL.createObjectURL(await generateAndGetBlob(modalDoc)), shouldRevoke: true }
+        if (cancelled) {
+          if (nextPreview.shouldRevoke) URL.revokeObjectURL(nextPreview.url)
+          return
+        }
+
+        if (nextPreview.shouldRevoke) {
+          previewObjectUrlRef.current = nextPreview.url
+        }
+        setPreviewUrl(nextPreview.url)
+      } catch (error: unknown) {
+        if (cancelled) return
+        const message = error instanceof Error ? error.message : 'Impossible de charger le document.'
+        toast({ title: 'Erreur', description: message, variant: 'destructive' })
+        setPreviewUrl(null)
+      } finally {
+        if (!cancelled) setIsPreviewLoading(false)
+      }
+    }
+
+    void loadPreview()
+
+    return () => {
+      cancelled = true
+    }
+  }, [modalDoc, toast])
+
+  const handleModalDownload = async () => {
+    if (!modalDoc) return
+    setModalAction('download')
+    try {
+      await downloadDocument(modalDoc)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Impossible de générer le PDF.'
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
@@ -196,7 +309,7 @@ export default function DocumentsPage() {
   const handleModalSendWhatsapp = async () => {
     if (!modalDoc) return
     const displayName = getDocumentDisplayName(modalDoc)
-    const fileName = `${toSafeFileBaseName(displayName)}.pdf`
+    const fileName = getDocumentDisplayFileName(modalDoc)
     setModalAction('whatsapp')
     try {
       let blob: Blob | null = null
@@ -237,6 +350,60 @@ export default function DocumentsPage() {
     }
   }
 
+  const handleOpenCurrentDocumentInNewTab = () => {
+    if (!previewUrl) return
+    window.open(previewUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleDownloadDirect = async (doc: DocumentRow) => {
+    if (doc.isMissing) {
+      toast({
+        title: 'Document manquant',
+        description: 'Ce document n’existe pas encore. Téléversez-le d’abord.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      await downloadDocument(doc)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Impossible de télécharger le document.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    }
+  }
+
+  const handleDownloadAllDocuments = async () => {
+    if (actionableDocuments.length === 0) {
+      toast({
+        title: 'Aucun document',
+        description: 'Il n’y a aucun document réel à télécharger dans cette sélection.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setModalAction('download-all')
+    try {
+      for (const [index, documentItem] of actionableDocuments.entries()) {
+        await downloadDocument(documentItem)
+        if (index < actionableDocuments.length - 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 150))
+        }
+      }
+      toast({
+        title: 'Téléchargements lancés',
+        description: `${actionableDocuments.length} document(s) ont été préparés pour téléchargement.`,
+      })
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Impossible de télécharger tous les documents.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setModalAction(null)
+    }
+  }
+
   const handleDelete = (doc: DocumentRow) => {
     if (doc.isMissing) return
     setDeleteTarget(doc)
@@ -264,7 +431,17 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-6">
       <SectionWrapper>
-        <DocumentsHeaderSection filterType={filterType} onBack={() => goBack('/dashboard')} />
+        <DocumentsHeaderSection
+          filterType={filterType}
+          canViewAll={actionableDocuments.length > 0}
+          canDownloadAll={actionableDocuments.length > 0}
+          isDownloadingAll={modalAction === 'download-all'}
+          onBack={() => goBack('/dashboard')}
+          onViewAll={handleViewAllDocuments}
+          onDownloadAll={() => {
+            void handleDownloadAllDocuments()
+          }}
+        />
       </SectionWrapper>
 
       <SectionWrapper>
@@ -311,7 +488,10 @@ export default function DocumentsPage() {
           <DocumentsTableSection
             group={group}
             formatDate={formatDocumentDate}
-            onDownload={openActionDialog}
+            onView={handleViewDocument}
+            onDownload={(doc) => {
+              void handleDownloadDirect(doc)
+            }}
             onEdit={(doc) => navigate(`/documents/${doc.id}/edit`)}
             onDelete={handleDelete}
           />
@@ -338,13 +518,17 @@ export default function DocumentsPage() {
 
       <DocumentActionDialog
         document={modalDoc}
-        previewUrl={modalBlobUrl}
+        previewUrl={previewUrl}
+        isPreviewLoading={isPreviewLoading}
         activeAction={modalAction}
-        onClose={() => {
-          if (modalBlobUrl) URL.revokeObjectURL(modalBlobUrl)
-          setModalBlobUrl(null)
-          setModalDoc(null)
-        }}
+        currentIndex={viewerIndex}
+        totalDocuments={viewerDocuments.length}
+        canGoPrevious={canGoToPreviousDocument}
+        canGoNext={canGoToNextDocument}
+        onPrevious={() => setViewerIndex((current) => Math.max(0, current - 1))}
+        onNext={() => setViewerIndex((current) => Math.min(viewerDocuments.length - 1, current + 1))}
+        onOpenInNewTab={handleOpenCurrentDocumentInNewTab}
+        onClose={closeViewer}
         onDownload={handleModalDownload}
         onSendWhatsapp={handleModalSendWhatsapp}
       />

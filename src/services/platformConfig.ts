@@ -1,4 +1,5 @@
 import { getSetting, setSetting } from '@/services/api'
+import { apiFetch } from '@/services/http'
 import { resolveAssetUrl } from '@/services/assets'
 
 export const PLATFORM_CONFIG_KEY = 'platform_config_v1'
@@ -22,6 +23,10 @@ export type PaymentRulesConfig = {
   graceDays: number
   latePenaltyPercent: number
   blockOnOverdue: boolean
+  recipientName: string
+  waveRecipientPhone: string
+  orangeRecipientPhone: string
+  orangeOtpEnabled: boolean
 }
 
 export type DocumentsConfig = {
@@ -111,6 +116,10 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
     graceDays: 5,
     latePenaltyPercent: 0,
     blockOnOverdue: true,
+    recipientName: 'Keur Ya Aicha',
+    waveRecipientPhone: '771719013',
+    orangeRecipientPhone: '771719013',
+    orangeOtpEnabled: true,
   },
   documents: {
     maxUploadMb: 10,
@@ -246,6 +255,16 @@ function sanitizePlatformConfig(value: unknown): PlatformConfig {
         DEFAULT_PLATFORM_CONFIG.paymentRules.latePenaltyPercent
       ),
       blockOnOverdue: asBoolean(paymentRules.blockOnOverdue, DEFAULT_PLATFORM_CONFIG.paymentRules.blockOnOverdue),
+      recipientName: asString(
+        paymentRules.recipientName,
+        DEFAULT_PLATFORM_CONFIG.paymentRules.recipientName
+      ),
+      waveRecipientPhone: asOptionalString(paymentRules.waveRecipientPhone),
+      orangeRecipientPhone: asOptionalString(paymentRules.orangeRecipientPhone),
+      orangeOtpEnabled: asBoolean(
+        paymentRules.orangeOtpEnabled,
+        DEFAULT_PLATFORM_CONFIG.paymentRules.orangeOtpEnabled
+      ),
     },
     documents: {
       maxUploadMb: clampNumber(documents.maxUploadMb, 1, 1024, DEFAULT_PLATFORM_CONFIG.documents.maxUploadMb),
@@ -624,4 +643,17 @@ export async function sendComplianceWebhookAlert(
   } catch {
     // ignore webhook failures
   }
+}
+
+export async function testComplianceWebhookServerSide(): Promise<{
+  ok: true
+  sent: boolean
+  enabled: boolean
+  configured: boolean
+  status: number | null
+}> {
+  return apiFetch('/securite/audits/webhook-test', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
 }

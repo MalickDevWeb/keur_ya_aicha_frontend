@@ -44,16 +44,16 @@ export function SettingsAdminBrandingSection({
   const fallbackSource = resolveAssetUrl(globalLogoUrl || DEFAULT_LOGO_ASSET_PATH)
 
   return (
-    <section className="mt-8 sm:mt-10">
+    <section className="mt-8 min-w-0 overflow-x-hidden sm:mt-10">
       <h3 className="font-medium">Identité de votre espace admin</h3>
       <p className="text-sm text-muted-foreground mt-2">
         Le nom d’entreprise et le logo de <span className="font-semibold">{adminScopeLabel}</span> s’affichent dans
         les reçus/PDF et les écrans de cet admin.
       </p>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-3">
-          <div className="space-y-2 rounded-lg border bg-card p-3">
+      <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-3">
+          <div className="min-w-0 space-y-2 rounded-lg border bg-card p-3">
             <p className="text-xs font-medium text-muted-foreground">Nom d’entreprise</p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Input
@@ -100,7 +100,7 @@ export function SettingsAdminBrandingSection({
             </Button>
           </div>
 
-          <div className="space-y-2 pt-1">
+          <div className="min-w-0 space-y-2 pt-1">
             <p className="text-xs text-muted-foreground">Logos enregistrés (choix rapide)</p>
             {logoLibrary.length > 0 ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">

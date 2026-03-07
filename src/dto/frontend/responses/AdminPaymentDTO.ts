@@ -29,4 +29,8 @@ export interface AdminPaymentStatusDTO {
   subscriptionMode?: 'monthly' | 'premium' | 'annual'
   expectedAmount?: number
   allowCustomAmount?: boolean
+  recipientName?: string
+  waveRecipientPhone?: string
+  orangeRecipientPhone?: string
+  orangeOtpEnabled?: boolean
 }

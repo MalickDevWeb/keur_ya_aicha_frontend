@@ -70,7 +70,7 @@ export function SettingsAccountSecuritySection({
   isImpersonating,
 }: SettingsAccountSecuritySectionProps) {
   return (
-    <section className="mt-8 sm:mt-10">
+    <section className="mt-8 min-w-0 overflow-x-hidden sm:mt-10">
       <div className="flex items-start gap-3 rounded-xl border bg-card px-4 py-4">
         <div className="rounded-full bg-primary/10 p-2 text-primary">
           <ShieldCheck className="h-5 w-5" />
@@ -89,8 +89,8 @@ export function SettingsAccountSecuritySection({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="space-y-4 rounded-xl border bg-card p-4">
+      <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
+        <div className="min-w-0 space-y-4 rounded-xl border bg-card p-4">
           <PasswordField
             id="current-password"
             label="Mot de passe actuel"
