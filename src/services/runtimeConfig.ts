@@ -168,11 +168,12 @@ const DEFAULT_API_BASE = (() => {
   const normalizedEnvApi = normalizeApiBaseUrlSafe(ENV_API_URL)
   if (normalizedEnvApi) return normalizedEnvApi
 
-  // 2) Sinon, en contexte navigateur, on tente le même domaine /api (utile en dev local/proxy).
+  // 2) Sinon, en contexte navigateur local, on tente le même domaine /api (utile en dev local/proxy).
+  //    En production web publique (ex: Vercel), on évite le same-origin qui ne porte pas l'API.
   const browserSameOriginApi = getBrowserSameOriginApiBase()
-  if (browserSameOriginApi) return browserSameOriginApi
+  if (browserSameOriginApi && !isPublicWebContext()) return browserSameOriginApi
 
-  // 3) Fallback Render.
+  // 3) Fallback Render en production publique.
   return normalizeApiBaseUrlSafe(FALLBACK_API_ORIGIN) || `${FALLBACK_API_ORIGIN}${API_PATH_SUFFIX}`
 })()
 const DEFAULT_CLOUDINARY_SIGN_URL = normalizeSignUrlSafe(
