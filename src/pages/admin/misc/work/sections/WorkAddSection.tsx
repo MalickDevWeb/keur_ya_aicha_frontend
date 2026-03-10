@@ -19,7 +19,7 @@ export function WorkAddSection({
   onAdd,
 }: WorkAddSectionProps) {
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+    <Card className="bg-blue-50 border-blue-200">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Plus className="w-5 h-5" />
@@ -34,7 +34,7 @@ export function WorkAddSection({
             value={description}
             onChange={(event) => onDescriptionChange(event.target.value)}
           />
-          <Button className="w-full gap-2 bg-gradient-to-r from-blue-600 to-cyan-600" onClick={onAdd}>
+          <Button className="w-full gap-2 bg-blue-600 text-white hover:bg-blue-700" onClick={onAdd}>
             <Plus className="h-4 w-4" />
             Ajouter
           </Button>

@@ -25,7 +25,7 @@ export function ClientsCardsSection({ rows, onView, onEdit, onArchive, t }: Clie
             className="overflow-hidden hover:shadow-xl transition-all cursor-pointer group border-0"
             onClick={() => onView(client.id)}
           >
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white relative overflow-hidden">
+            <div className="bg-slate-900 p-6 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
               <div className="relative z-10">
                 <div className="flex items-start justify-between gap-3 mb-4">
@@ -51,7 +51,7 @@ export function ClientsCardsSection({ rows, onView, onEdit, onArchive, t }: Clie
                 </div>
               </div>
 
-              <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+              <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                 <p className="text-xs text-emerald-600 uppercase tracking-wider font-bold mb-2">Types de bien</p>
                 <div className="flex flex-wrap gap-2">
                   {propertyDisplay.length > 0 ? (

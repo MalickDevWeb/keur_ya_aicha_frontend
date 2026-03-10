@@ -78,7 +78,7 @@ export function EntreprisesListSection({
   return (
     <Card className="border-[#121B53]/15 bg-white/85 shadow-[0_20px_50px_rgba(12,18,60,0.12)]">
       <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4 rounded-2xl border border-[#121B53]/10 bg-gradient-to-r from-[#F7F9FF] via-white to-[#EEF2FF] p-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-4 rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-4 sm:flex-row sm:items-center">
           <SearchInput
             value={search}
             onChange={onSearchChange}
@@ -137,7 +137,7 @@ export function EntreprisesListSection({
                 key={entreprise.id}
                 className={cn(
                   'group relative overflow-hidden border border-[#121B53]/10 shadow-[0_16px_35px_rgba(14,20,60,0.12)] hover:shadow-[0_24px_60px_rgba(14,20,60,0.18)] transition-all',
-                  'bg-gradient-to-br from-white via-[#F7F9FF] to-[#EEF2FF]'
+                  'bg-white'
                 )}
               >
                 <CardContent className="space-y-3 p-4 sm:p-5">
@@ -232,7 +232,7 @@ export function EntreprisesListSection({
                     </div>
                   )}
                 </CardContent>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#121B53]/10 via-[#4A7CFF]/20 to-[#121B53]/10 opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-[#121B53]/10 opacity-0 transition-opacity group-hover:opacity-100" />
               </Card>
               )
             })}

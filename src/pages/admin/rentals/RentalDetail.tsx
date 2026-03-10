@@ -319,7 +319,7 @@ export default function RentalDetail() {
       {/* Caution */}
       {activeTab === 'deposit' && (
         <div className="space-y-4">
-          <Card className="border-primary/15 bg-gradient-to-r from-primary/5 via-card to-emerald-50/50 shadow-sm">
+          <Card className="border-primary/15 bg-primary/5 shadow-sm">
             <CardContent className="pt-6">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -334,7 +334,7 @@ export default function RentalDetail() {
               <div className="mt-4 h-2 rounded-full bg-muted overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    depositRemaining > 0 ? 'bg-gradient-to-r from-amber-500 to-orange-600' : 'bg-gradient-to-r from-emerald-500 to-green-600'
+                    depositRemaining > 0 ? 'bg-amber-500' : 'bg-emerald-500'
                   }`}
                   style={{ width: `${depositPaidPercent}%` }}
                 />
@@ -344,7 +344,7 @@ export default function RentalDetail() {
 
           {/* Deposit Info */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-blue-200/60 bg-gradient-to-br from-card to-blue-50/40 shadow-sm">
+            <Card className="border-blue-200/60 bg-card shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Caution Totale</CardTitle>
               </CardHeader>
@@ -353,7 +353,7 @@ export default function RentalDetail() {
               </CardContent>
             </Card>
 
-            <Card className="border-emerald-200/60 bg-gradient-to-br from-card to-emerald-50/50 shadow-sm">
+            <Card className="border-emerald-200/60 bg-card shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Caution Payée</CardTitle>
               </CardHeader>
@@ -362,7 +362,7 @@ export default function RentalDetail() {
               </CardContent>
             </Card>
 
-            <Card className="border-amber-200/60 bg-gradient-to-br from-card to-amber-50/50 shadow-sm">
+            <Card className="border-amber-200/60 bg-card shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">À Percevoir</CardTitle>
               </CardHeader>

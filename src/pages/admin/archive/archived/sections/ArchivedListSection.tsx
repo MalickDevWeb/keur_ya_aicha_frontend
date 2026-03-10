@@ -15,7 +15,7 @@ type ArchivedListSectionProps = {
 export function ArchivedListSection({ clients, formatDate, onReactivate, onView }: ArchivedListSectionProps) {
   return (
     <Card className="border-slate-200">
-      <CardHeader className="bg-gradient-to-r from-slate-50 to-transparent pb-4">
+      <CardHeader className="bg-slate-50 pb-4">
         <CardTitle className="flex items-center gap-2">
           <Archive className="h-5 w-5 text-slate-600" />
           Clients Archivés
@@ -81,7 +81,7 @@ export function ArchivedListSection({ clients, formatDate, onReactivate, onView 
             <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-slate-50 to-transparent">
+                  <TableRow className="bg-slate-50">
                     <TableHead>Nom Complet</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>CNI</TableHead>

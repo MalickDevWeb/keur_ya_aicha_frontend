@@ -59,7 +59,7 @@ function BlacklistActionDialog({ client, onBlacklist, fullWidth = false }: Black
 
 export function BlacklistedSearchSection({ searchQuery, results, onSearchChange, onClear, onBlacklist }: BlacklistedSearchSectionProps) {
   return (
-    <Card className="border-destructive/30 bg-gradient-to-br from-red-50/50 to-transparent">
+    <Card className="border-destructive/30 bg-red-50/50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -114,7 +114,7 @@ export function BlacklistedSearchSection({ searchQuery, results, onSearchChange,
                   <div className="hidden md:block border rounded-lg overflow-hidden bg-white shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-gradient-to-r from-red-50 to-transparent">
+                        <TableRow className="bg-red-50">
                           <TableHead>Nom Complet</TableHead>
                           <TableHead>Téléphone</TableHead>
                           <TableHead>CNI</TableHead>

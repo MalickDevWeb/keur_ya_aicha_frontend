@@ -59,7 +59,7 @@ function ArchiveActionDialog({ client, onArchive, fullWidth = false }: ArchiveAc
 
 export function ArchivedSearchSection({ searchQuery, results, onSearchChange, onClear, onArchive }: ArchivedSearchSectionProps) {
   return (
-    <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-transparent">
+    <Card className="border-blue-200 bg-blue-50/50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Archive className="h-5 w-5 text-blue-600" />
@@ -114,7 +114,7 @@ export function ArchivedSearchSection({ searchQuery, results, onSearchChange, on
                   <div className="hidden md:block border rounded-lg overflow-hidden bg-white shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-gradient-to-r from-blue-50 to-transparent">
+                        <TableRow className="bg-blue-50">
                           <TableHead>Nom Complet</TableHead>
                           <TableHead>Téléphone</TableHead>
                           <TableHead>CNI</TableHead>

@@ -58,7 +58,7 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
             {/* Elegant Logo */}
             <div className="relative">
               {logoBroken ? (
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
                   <Landmark className="w-8 h-8 text-white" />
                 </div>
               ) : (

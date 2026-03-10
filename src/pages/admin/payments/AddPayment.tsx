@@ -524,7 +524,7 @@ export default function AddPayment() {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                      className="bg-green-600 hover:from-green-700 hover:to-green-800"
                     >
                       {isLoading ? '⏳ Enregistrement...' : '✅ Enregistrer le paiement'}
                     </Button>

@@ -13,14 +13,14 @@ export function EntreprisesStatsSection({ entreprisesCount, adminsCount }: Entre
       value: entreprisesCount,
       icon: <Building2 className="h-6 w-6 text-white" />,
       className:
-        'border-0 bg-gradient-to-br from-[#121B53] via-[#1A2A78] to-[#0B153D] text-white shadow-[0_18px_45px_rgba(10,16,48,0.35)]',
+        'border-0 bg-[#121B53] text-white shadow-[0_18px_45px_rgba(10,16,48,0.35)]',
     },
     {
       title: 'Admins',
       value: adminsCount,
       icon: <Users className="h-6 w-6 text-white" />,
       className:
-        'border-0 bg-gradient-to-br from-[#233A8C] via-[#2E52D0] to-[#162B66] text-white shadow-[0_18px_45px_rgba(18,34,94,0.32)]',
+        'border-0 bg-[#233A8C] text-white shadow-[0_18px_45px_rgba(18,34,94,0.32)]',
     },
   ]
 

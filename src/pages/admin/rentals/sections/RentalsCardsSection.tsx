@@ -31,14 +31,14 @@ export function RentalsCardsSection({ rows, onView, onEdit }: RentalsCardsSectio
           >
             <div
               className={cn(
-                'bg-gradient-to-br p-6 text-white relative overflow-hidden',
+                'p-6 text-white relative overflow-hidden',
                 rental.propertyType === 'villa'
-                  ? 'from-emerald-900 to-emerald-800'
+                  ? 'bg-emerald-900'
                   : rental.propertyType === 'apartment'
-                    ? 'from-blue-900 to-blue-800'
+                    ? 'bg-blue-900'
                     : rental.propertyType === 'studio'
-                      ? 'from-purple-900 to-purple-800'
-                      : 'from-slate-900 to-slate-800'
+                      ? 'bg-purple-900'
+                      : 'bg-slate-900'
               )}
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
@@ -74,7 +74,7 @@ export function RentalsCardsSection({ rows, onView, onEdit }: RentalsCardsSectio
                 </div>
               </div>
 
-              <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+              <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs text-amber-700 uppercase tracking-wider font-bold">Caution</p>
                   <span className="text-sm font-bold text-amber-900">
@@ -86,10 +86,10 @@ export function RentalsCardsSection({ rows, onView, onEdit }: RentalsCardsSectio
                     className={cn(
                       'h-full transition-all rounded-full font-bold flex items-center justify-center text-xs text-white',
                       depositProgress === 100
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                        ? 'bg-green-500'
                         : depositProgress > 0
-                          ? 'bg-gradient-to-r from-orange-500 to-amber-500'
-                          : 'bg-gradient-to-r from-red-500 to-rose-500'
+                          ? 'bg-orange-500'
+                          : 'bg-red-500'
                     )}
                     style={{ width: `${depositProgress}%` }}
                   />

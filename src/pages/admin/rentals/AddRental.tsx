@@ -104,7 +104,7 @@ export default function AddRental() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 animate-fade-in">
+    <div className="min-h-screen bg-slate-50 p-6 animate-fade-in">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -129,7 +129,7 @@ export default function AddRental() {
         {!selectedClientId && (
           <div className="space-y-4">
             <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-t-lg">
+              <CardHeader className="bg-slate-900 text-white rounded-t-lg">
                 <CardTitle className="text-xl font-black">Sélectionner un client</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
@@ -159,7 +159,7 @@ export default function AddRental() {
                             setSelectedClientId(c.id);
                             setClientSearch('');
                           }}
-                          className="w-full text-left p-4 rounded-lg border border-slate-200 bg-white hover:bg-gradient-to-r hover:from-highlight hover:to-accent hover:border-sidebar-border transition-all group"
+                          className="w-full text-left p-4 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-200 transition-all group"
                         >
                           <div className="flex items-center justify-between">
                             <div>
@@ -175,13 +175,13 @@ export default function AddRental() {
                     </div>
                   </div>
                 ) : clientSearch.length > 0 ? (
-                  <div className="space-y-4 p-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border-2 border-orange-200 text-center">
+                  <div className="space-y-4 p-6 bg-orange-50 rounded-lg border-2 border-orange-200 text-center">
                     <p className="text-sm text-slate-700">
                       Aucun client trouvé avec "<span className="font-semibold">{clientSearch}</span>"
                     </p>
                     <Button
                       onClick={() => navigate('/clients/add')}
-                      className="bg-gradient-to-r from-warning to-destructive hover:from-warning hover:to-destructive text-white font-semibold"
+                      className="bg-warning hover:bg-warning/90 text-white font-semibold"
                       size="sm"
                     >
                       Créer un nouveau client
@@ -199,7 +199,7 @@ export default function AddRental() {
 
         {/* Form */}
         <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-t-lg">
+          <CardHeader className="bg-primary text-primary-foreground rounded-t-lg">
             <CardTitle className="text-xl font-black">Informations de la location</CardTitle>
           </CardHeader>
           <CardContent className="pt-8">
@@ -293,7 +293,7 @@ export default function AddRental() {
                 </div>
 
                 {/* Deposit Section */}
-                <div className="space-y-4 p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200">
+                <div className="space-y-4 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
                   <h3 className="font-black text-lg text-amber-900">💰 Caution</h3>
 
                   <div className="grid md:grid-cols-2 gap-6">
@@ -353,7 +353,7 @@ export default function AddRental() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white font-bold flex-1"
+                    className="bg-primary hover:bg-primary/90 text-white font-bold flex-1"
                   >
                     {isLoading ? '⏳ Création en cours...' : '✨ Créer la location'}
                   </Button>

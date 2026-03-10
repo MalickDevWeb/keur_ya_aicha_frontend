@@ -89,7 +89,7 @@ const PAYMENT_METHOD_OPTIONS: Array<{
     hint: 'Paiement mobile instantané',
     icon: Smartphone,
     badge: 'WAVE',
-    selectedClass: 'border-[#00AEEF] bg-gradient-to-r from-[#E7F9FF] via-[#D8F4FF] to-[#CBEEFF] shadow-[0_10px_24px_rgba(0,174,239,0.22)]',
+    selectedClass: 'border-[#00AEEF] bg-[#E7F9FF] shadow-[0_10px_24px_rgba(0,174,239,0.22)]',
     unselectedClass: 'border-[#00AEEF]/25 bg-white hover:border-[#00AEEF]/55 hover:bg-[#F4FCFF]',
     iconClass: 'bg-[#00AEEF]/12 text-[#008BC2]',
     badgeClass: 'bg-[#00AEEF] text-white',
@@ -102,7 +102,7 @@ const PAYMENT_METHOD_OPTIONS: Array<{
     hint: 'Paiement via OM',
     icon: Landmark,
     badge: 'OM',
-    selectedClass: 'border-[#FF7900] bg-gradient-to-r from-[#FFF2E7] via-[#FFE8D1] to-[#FFDFBF] shadow-[0_10px_24px_rgba(255,121,0,0.2)]',
+    selectedClass: 'border-[#FF7900] bg-[#FFF2E7] shadow-[0_10px_24px_rgba(255,121,0,0.2)]',
     unselectedClass: 'border-[#FF7900]/25 bg-white hover:border-[#FF7900]/55 hover:bg-[#FFF8F1]',
     iconClass: 'bg-[#FF7900]/12 text-[#D16300]',
     badgeClass: 'bg-[#FF7900] text-black',
@@ -115,7 +115,7 @@ const PAYMENT_METHOD_OPTIONS: Array<{
     hint: 'Validation manuelle Super Admin',
     icon: Banknote,
     badge: 'CASH',
-    selectedClass: 'border-[#121B53] bg-gradient-to-r from-[#EEF2FF] via-[#E6ECFF] to-[#DEE7FF] shadow-[0_10px_24px_rgba(18,27,83,0.2)]',
+    selectedClass: 'border-[#121B53] bg-[#EEF2FF] shadow-[0_10px_24px_rgba(18,27,83,0.2)]',
     unselectedClass: 'border-[#121B53]/15 bg-white hover:border-[#121B53]/40 hover:bg-[#F8FAFF]',
     iconClass: 'bg-[#121B53]/10 text-[#121B53]',
     badgeClass: 'bg-[#121B53] text-white',
@@ -942,7 +942,7 @@ export default function AdminSubscriptionPayments() {
               </div>
 
               {paymentMethod === 'wave' ? (
-                <div className="rounded-2xl border border-[#00AEEF]/30 bg-gradient-to-r from-[#ECFAFF] via-[#E3F8FF] to-[#D6F3FF] p-3">
+                <div className="rounded-2xl border border-[#00AEEF]/30 bg-[#ECFAFF] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <img src={waveLogoUrl} alt="Wave" className="h-10 rounded-lg border border-[#00AEEF]/20 bg-white p-1" />
@@ -1011,7 +1011,7 @@ export default function AdminSubscriptionPayments() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-[#FF7900]/25 bg-gradient-to-r from-[#FFF5EC] via-[#FFF0E0] to-[#FFE7D1] p-3">
+                <div className="rounded-2xl border border-[#FF7900]/25 bg-[#FFF5EC] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <img src={orangeLogoUrl} alt="Orange Money" className="h-10 rounded-lg border border-[#FF7900]/20 bg-white p-1" />

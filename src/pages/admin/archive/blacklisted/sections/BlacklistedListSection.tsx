@@ -58,7 +58,7 @@ function RemoveBlacklistDialog({ client, onRemove, fullWidth = false }: RemoveBl
 export function BlacklistedListSection({ clients, formatDate, onRemove, onView }: BlacklistedListSectionProps) {
   return (
     <Card className="border-red-200">
-      <CardHeader className="bg-gradient-to-r from-red-50 to-transparent pb-4">
+      <CardHeader className="bg-red-50 pb-4">
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-destructive" />
           Clients Blacklistés
@@ -112,7 +112,7 @@ export function BlacklistedListSection({ clients, formatDate, onRemove, onView }
             <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-red-50 to-transparent">
+                  <TableRow className="bg-red-50">
                     <TableHead>Nom Complet</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>CNI</TableHead>

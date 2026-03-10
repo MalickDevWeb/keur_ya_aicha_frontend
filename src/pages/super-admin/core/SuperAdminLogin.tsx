@@ -273,9 +273,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           to { opacity: 1; transform: translateY(0); }
         }
         .scanlines {
-          background: repeating-linear-gradient(
-            0deg, transparent, transparent 2px, rgba(0, 255, 255, .03) 2px, rgba(0, 255, 255, .03) 4px
-          );
+          background: none;
         }
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -344,7 +342,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           fontFamily: "'DM Sans', sans-serif",
-          background: '#050510',
+          background: '#0B153D',
           overflow: 'hidden',
           cursor: 'crosshair',
         }}
@@ -360,7 +358,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
             alignItems: 'center',
             padding: '60px 48px',
             overflow: 'hidden',
-            background: 'radial-gradient(ellipse at center, #0a0a1a 0%, #000005 100%)',
+            background: '#121B53',
           }}
         >
           {/* Grid pattern */}
@@ -368,11 +366,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundImage: `
-                linear-gradient(rgba(0, 200, 255, .02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 200, 255, .02) 1px, transparent 1px)
-              `,
-              backgroundSize: '60px 60px',
+              backgroundImage: 'none',
               pointerEvents: 'none',
             }}
           />
@@ -439,7 +433,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
               width: 100,
               height: 100,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(0, 200, 255, .1) 0%, rgba(0, 100, 150, .05) 100%)',
+              background: '#1A2A78',
               border: '1px solid rgba(0, 200, 255, .2)',
               display: 'flex',
               alignItems: 'center',
@@ -575,7 +569,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
         <div
           className="superadmin-camera"
           style={{
-            background: 'linear-gradient(180deg, #0a0a15 0%, #050510 100%)',
+            background: '#0B153D',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -621,7 +615,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                   style={{
                     width: '100%',
                     height: '100%',
-                    background: 'linear-gradient(180deg, #0a0a0a 0%, #111 100%)',
+                    background: '#0B153D',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -631,11 +625,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      backgroundImage: `
-                        linear-gradient(rgba(0, 200, 255, .08) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(0, 200, 255, .08) 1px, transparent 1px)
-                      `,
-                      backgroundSize: '15px 15px',
+                      backgroundImage: 'none',
                     }}
                   />
                   <div
@@ -643,7 +633,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                       left: 0,
                       right: 0,
                       height: 2,
-                      background: 'linear-gradient(90deg, transparent, #00c8ff, transparent)',
+                      background: '#4A7CFF',
                       top: `${scanLine}%`,
                       boxShadow: '0 0 10px #00c8ff',
                       position: 'absolute',
@@ -692,7 +682,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                   style={{
                     width: '100%',
                     height: '100%',
-                    background: 'linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%)',
+                    background: '#0B153D',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -704,11 +694,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      backgroundImage: `
-                        linear-gradient(rgba(0, 200, 255, .1) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(0, 200, 255, .1) 1px, transparent 1px)
-                      `,
-                      backgroundSize: '30px 30px',
+                      backgroundImage: 'none',
                     }}
                   />
                   {/* Scanning line */}
@@ -718,7 +704,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                       left: 0,
                       right: 0,
                       height: 2,
-                      background: 'linear-gradient(90deg, transparent, #00c8ff, transparent)',
+                      background: '#4A7CFF',
                       top: `${scanLine}%`,
                       boxShadow: '0 0 10px #00c8ff',
                     }}
@@ -828,7 +814,7 @@ export function SuperAdminLogin({ requireSecondAuth = false }: { requireSecondAu
                   </div>
                 )}
 
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '16px 0', border: 'none', borderRadius: 14, background: 'linear-gradient(135deg, #00c8ff 0%, #0088cc 100%)', color: '#000', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, letterSpacing: '1.3px', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, boxShadow: '0 4px 25px rgba(0, 200, 255, .3)', transition: 'all 0.3s ease' }}>
+                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '16px 0', border: 'none', borderRadius: 14, background: '#4A7CFF', color: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, letterSpacing: '1.3px', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, boxShadow: '0 4px 25px rgba(74, 124, 255, .25)', transition: 'all 0.3s ease' }}>
                   {loading ? <><Loader2 size={18} className="animate-spin" />Vérification...</> : <><ArrowRight size={18} />Authentifier</>}
                 </button>
               </form>

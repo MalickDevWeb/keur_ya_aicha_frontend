@@ -12,7 +12,7 @@ export const connexionSchema = z.object({
       (value) => REGEX_TELEPHONE_SN.test(value) || REGEX_EMAIL.test(value),
       'Identifiant invalide (email ou numéro Sénégal, ex: +221 77 123 45 67)'
     ),
-  motDePasse: z.string().min(1, 'Mot de passe requis'),
+  motDePasse: z.string().min(8, 'Mot de passe requis (8 caractères min.)'),
 })
 
 export type ConnexionFormData = z.infer<typeof connexionSchema>

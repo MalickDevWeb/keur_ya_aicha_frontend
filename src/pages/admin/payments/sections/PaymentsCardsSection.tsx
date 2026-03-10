@@ -54,10 +54,10 @@ export function PaymentsCardsSection({
                 className={
                   `relative overflow-hidden p-4 ${
                     isPaid
-                      ? 'bg-gradient-to-br from-[#EAFBF0] via-[#DDF8E7] to-[#D0F2DE] text-[#166534]'
+                      ? 'bg-[#EAFBF0] text-[#166534]'
                       : isPartial
-                        ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF3D4] to-[#FBE8B5] text-[#9A6700]'
-                        : 'bg-gradient-to-br from-[#FFF1F3] via-[#FFE4E8] to-[#FFD7DD] text-[#B42318]'
+                        ? 'bg-[#FFF8E7] text-[#9A6700]'
+                        : 'bg-[#FFF1F3] text-[#B42318]'
                   }`
                 }
               >
@@ -69,7 +69,7 @@ export function PaymentsCardsSection({
                 </div>
               </div>
 
-              <div className="space-y-3 bg-gradient-to-b from-white to-slate-50 p-4">
+              <div className="space-y-3 bg-white p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-[#405A9A] uppercase tracking-[0.16em]">Période</span>
                   <span className="text-xs bg-[#ECF3FF] border border-[#D7E4FF] px-3 py-1 rounded-md font-semibold text-[#121B53]">

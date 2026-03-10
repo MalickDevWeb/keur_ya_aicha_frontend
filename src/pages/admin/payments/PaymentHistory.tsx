@@ -193,7 +193,7 @@ export default function PaymentHistory() {
                       className="overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer border-muted-foreground/20"
                     >
                       {/* Header */}
-                      <div className="p-4 bg-gradient-to-br from-success to-success text-white relative overflow-hidden">
+                      <div className="p-4 bg-success text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform" />
                         <div className="relative z-10">
                           <h3 className="font-black text-lg text-white">{client?.firstName} {client?.lastName}</h3>

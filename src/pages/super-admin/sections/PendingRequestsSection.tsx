@@ -51,7 +51,7 @@ export function PendingRequestsSection({
         </div>
       </div>
       <Card className="space-y-4 rounded-3xl border border-blue-200/60 bg-white/80 p-1 shadow-[0_24px_60px_-40px_rgba(30,64,175,0.35)]">
-        <CardHeader className="rounded-2xl border border-blue-200/70 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white">
+        <CardHeader className="rounded-2xl border border-blue-200/70 bg-blue-950 text-white">
           <div className="flex flex-col gap-1">
             <CardTitle className="text-base">Demandes Admin (EN_ATTENTE)</CardTitle>
             <p className="text-xs text-slate-300">Les comptes bloqués attendent validation & paiement initial</p>
@@ -118,35 +118,32 @@ export function PendingRequestsSection({
               {visiblePending.map((req) => (
                 <Card
                   key={req.id}
-                  className="group relative overflow-hidden border-0 bg-gradient-to-b from-blue-100 via-white to-blue-50 shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-2xl rounded-b-3xl rounded-t-none"
+                  className="group relative overflow-hidden rounded-3xl border border-blue-200 bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
                 >
                   <div
-                    className="absolute left-1/2 top-0 h-4 w-10 -translate-x-1/2 -translate-y-full bg-blue-900"
+                    className="absolute left-1/2 top-0 h-4 w-10 -translate-x-1/2 -translate-y-full bg-blue-700"
                     style={{ clipPath: 'polygon(0 100%, 50% 0, 100% 100%)' }}
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(30,64,175,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(30,64,175,0.08)_1px,transparent_1px)] bg-[size:14px_16px] opacity-60" />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-gradient-to-r from-blue-900/10 via-blue-900/20 to-blue-900/10" />
-                  <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-blue-900 to-blue-800" />
-                  <CardContent className="relative p-4 pt-3 space-y-3 rounded-b-3xl rounded-t-none">
+                  <CardContent className="relative space-y-3 rounded-3xl p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 backdrop-blur">
-                          <Building2 className="h-4.5 w-4.5 text-white" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-200">
+                          <Building2 className="h-4.5 w-4.5 text-blue-700" />
                         </div>
                         <div>
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-blue-200">Bâtiment</p>
-                          <h3 className="text-sm font-semibold text-white">{req.entrepriseName || 'Entreprise'}</h3>
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-blue-700">Bâtiment</p>
+                          <h3 className="text-sm font-semibold text-slate-900">{req.entrepriseName || 'Entreprise'}</h3>
                         </div>
                       </div>
                       <div className="hidden grid-cols-3 gap-1 sm:grid">
                         {Array.from({ length: 9 }).map((_, idx) => (
                           <span
                             key={idx}
-                            className="h-2 w-2 rounded-[2px] border border-white/30 bg-white/10"
+                            className="h-2 w-2 rounded-[2px] border border-blue-200 bg-blue-100"
                           />
                         ))}
                       </div>
-                      <div className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white">
+                      <div className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
                         EN_ATTENTE
                       </div>
                     </div>
@@ -182,7 +179,7 @@ export function PendingRequestsSection({
                           Valider
                         </Button>
                       </div>
-                      <div className="h-2 w-full rounded-b-3xl bg-gradient-to-r from-blue-900/10 via-blue-900/20 to-blue-900/10" />
+                      <div className="h-2 w-full rounded-b-3xl bg-blue-100" />
                     </CardContent>
                   </Card>
               ))}

@@ -345,11 +345,11 @@ export default function Deposits() {
                       className="overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer border-muted-foreground/20"
                     >
                       {/* Header with status color */}
-                      <div className={`p-4 text-white relative overflow-hidden ${
-                        isPaid ? 'bg-gradient-to-br from-success to-success' :
-                        isPartial ? 'bg-gradient-to-br from-warning to-warning' :
-                        'bg-gradient-to-br from-destructive to-destructive'
-                      }`}>
+                      <div
+                        className={`p-4 text-white relative overflow-hidden ${
+                          isPaid ? 'bg-success' : isPartial ? 'bg-warning' : 'bg-destructive'
+                        }`}
+                      >
                         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform" />
                         <div className="relative z-10">
                           <h3 className="font-black text-lg text-white">{deposit.clientName}</h3>

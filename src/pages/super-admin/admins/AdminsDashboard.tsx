@@ -348,7 +348,7 @@ export function AdminsDashboard() {
       </SectionWrapper>
 
       <SectionWrapper>
-        <div className="rounded-[24px] border border-[#121B53]/15 bg-gradient-to-br from-[#121B53] via-[#1A2A78] to-[#0B153D] px-4 py-4 text-white shadow-[0_28px_70px_rgba(10,16,48,0.45)] sm:rounded-[28px] sm:px-6 sm:py-5">
+        <div className="rounded-[24px] border border-[#121B53]/15 bg-[#121B53] px-4 py-4 text-white shadow-[0_28px_70px_rgba(10,16,48,0.45)] sm:rounded-[28px] sm:px-6 sm:py-5">
           <p className="text-xs uppercase tracking-[0.3em] text-white/70">Super Admin</p>
           <h1 className="mt-2 text-xl font-semibold sm:text-2xl">Liste des administrateurs</h1>
           <p className="mt-1 text-sm text-white/70">Gérez les statuts, accès et entreprises associées.</p>

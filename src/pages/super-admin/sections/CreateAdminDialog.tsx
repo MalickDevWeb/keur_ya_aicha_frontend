@@ -67,7 +67,7 @@ export function CreateAdminDialog({
             Formulaire de création et résumé des identifiants admin.
           </DialogDescription>
         </DialogHeader>
-        <div className="bg-gradient-to-r from-[#121B53] via-[#1D2D7A] to-[#3A58B7] p-4 text-white sm:p-5">
+        <div className="bg-[#121B53] p-4 text-white sm:p-5">
           <p className="text-xs uppercase tracking-[0.3em] text-[#BFD1FF]">Super Admin</p>
           <h2 className="mt-2 text-2xl font-semibold">
             {createdAdmin ? 'Compte créé' : 'Inscription directe'}

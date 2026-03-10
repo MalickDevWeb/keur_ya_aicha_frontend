@@ -150,7 +150,7 @@ export function AdminsListSection({
             <h2 className="text-lg font-semibold text-[#121B53]">Administrateurs</h2>
             <p className="text-sm text-muted-foreground">Gérez l’accès, le statut et les actions rapides.</p>
           </div>
-          <div className="flex flex-col gap-3 rounded-2xl border border-[#121B53]/10 bg-gradient-to-r from-[#F7F9FF] via-white to-[#EEF2FF] p-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 rounded-2xl border border-[#121B53]/10 bg-[#F7F9FF] p-4 sm:flex-row sm:items-center">
             <SearchInput
               value={search}
               onChange={onSearchChange}
@@ -211,7 +211,7 @@ export function AdminsListSection({
                   key={admin.id}
                   className={cn(
                     'overflow-hidden border border-[#121B53]/10 shadow-[0_18px_40px_rgba(14,20,60,0.15)] hover:shadow-[0_28px_75px_rgba(14,20,60,0.22)] transition-all',
-                    'bg-gradient-to-br from-white via-[#F7F9FF] to-[#EEF2FF]'
+                    'bg-white'
                   )}
                 >
                   <CardContent className="space-y-4 p-4 sm:p-5">

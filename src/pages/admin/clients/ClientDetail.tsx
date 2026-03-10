@@ -193,19 +193,19 @@ export default function ClientDetail() {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Left Column - Contact Info */}
         <div className="lg:col-span-1 space-y-3">
-          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50">
+          <Card className="border-l-4 border-l-blue-500 bg-blue-50">
             <CardContent className="pt-6">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Téléphone</p>
               <p className="text-lg font-bold text-slate-900">{client.phone}</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-pink-50">
+          <Card className="border-l-4 border-l-purple-500 bg-purple-50">
             <CardContent className="pt-6">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">CNI</p>
               <p className="text-lg font-bold text-slate-900">{client.cni}</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-emerald-50">
+          <Card className="border-l-4 border-l-green-500 bg-green-50">
             <CardContent className="pt-6">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Statut</p>
               <BadgeStatut status={globalStatus} />
@@ -235,7 +235,7 @@ export default function ClientDetail() {
             variant="warning"
             isCurrency
           />
-          <Card className="border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+          <Card className="border-l-4 border-l-orange-500 bg-orange-50 flex items-center justify-center">
             <CardContent className="pt-6 w-full">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -302,7 +302,7 @@ export default function ClientDetail() {
               </Card>
             ) : client.rentals.map((rental) => (
               <Card key={rental.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b">
+                  <div className="bg-blue-50 p-4 border-b">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <Badge className="bg-blue-600">{t(`property.${rental.propertyType}`)}</Badge>
@@ -324,7 +324,7 @@ export default function ClientDetail() {
                       const remainingDeposit = rental.deposit.total - rental.deposit.paid
                       const isDepositFullyPaid = remainingDeposit <= 0
                       return (
-                    <div className="flex flex-wrap items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                    <div className="flex flex-wrap items-center gap-4 p-4 bg-blue-50 rounded-lg">
                       <div className="flex-1 min-w-[120px]">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Caution totale</p>
                         <p className="text-lg font-bold text-slate-900">{formatCurrency(rental.deposit.total)} FCFA</p>
@@ -381,7 +381,7 @@ export default function ClientDetail() {
           <div className="space-y-4">
             {client.rentals.map((rental) => (
               <div key={rental.id} className="space-y-3">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border">
+                <div className="bg-blue-50 p-4 rounded-lg border">
                   <div className="flex items-center gap-3">
                     <Badge className="bg-blue-600">{t(`property.${rental.propertyType}`)}</Badge>
                     <div>

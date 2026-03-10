@@ -213,7 +213,7 @@ export default function PaymentReceipts() {
                       className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer border-muted-foreground/20"
                     >
                       {/* Header */}
-                      <div className="p-4 bg-gradient-to-br from-primary to-secondary text-primary-foreground relative overflow-hidden">
+                      <div className="p-4 bg-primary text-primary-foreground relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
                         <div className="relative z-10">
                           <p className="text-xs font-bold text-white/80 uppercase">Reçu</p>

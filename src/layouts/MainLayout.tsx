@@ -276,7 +276,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </div>
             )}
             {isSuperAdmin && impersonation && (
-              <div className="mb-4 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-r from-secondary via-primary to-secondary text-white shadow-[0_18px_40px_rgba(18,27,83,0.18)]">
+              <div className="mb-4 overflow-hidden rounded-2xl border border-primary/15 bg-primary text-white shadow-[0_18px_40px_rgba(18,27,83,0.18)]">
                 <div className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.3em] text-white/70">Mode Super Admin</p>

@@ -291,7 +291,7 @@ export function DocumentsUploadSection({
                       </div>
                       <Button
                         type="button"
-                        className="w-full gap-2 bg-gradient-to-r from-[#121B53] via-[#1A2A78] to-[#0B153D] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full gap-2 bg-[#121B53] text-white disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={isUploading || !clientId || !rentalId || !file}
                         onClick={onUpload}
                       >

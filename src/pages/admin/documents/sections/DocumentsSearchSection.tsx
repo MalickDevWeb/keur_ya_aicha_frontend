@@ -10,7 +10,7 @@ type DocumentsSearchSectionProps = {
 
 export function DocumentsSearchSection({ value, total, onChange }: DocumentsSearchSectionProps) {
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+    <Card className="bg-blue-50 border-blue-200">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <Search className="w-5 h-5 text-blue-600" />
