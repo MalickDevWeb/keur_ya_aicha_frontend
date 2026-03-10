@@ -33,6 +33,8 @@ type SubscriptionDraft = {
   monthlyAmount: string
   annualAmount: string
   allowCustomAmount: boolean
+  notifyClientsOverdue: boolean
+  notifyAdminOverdue: boolean
   permissions: typeof ADMIN_FEATURE_PERMISSION_DEFAULTS
 }
 
@@ -73,6 +75,8 @@ function buildSubscriptionDraft(admin: AdminDTO): SubscriptionDraft {
     monthlyAmount: String(Number.isFinite(monthlyAmount) && monthlyAmount > 0 ? Math.round(monthlyAmount) : DEFAULT_MONTHLY_AMOUNT),
     annualAmount: String(Number.isFinite(annualAmount) && annualAmount > 0 ? Math.round(annualAmount) : DEFAULT_ANNUAL_AMOUNT),
     allowCustomAmount: Boolean(admin.subscriptionAllowCustomAmount),
+    notifyClientsOverdue: Boolean(admin.notifyClientsOverdue),
+    notifyAdminOverdue: Boolean(admin.notifyAdminOverdue),
     permissions: normalizeAdminFeaturePermissions(admin.permissions),
   }
 }
@@ -92,6 +96,8 @@ export function AdminsDashboard() {
     monthlyAmount: String(DEFAULT_MONTHLY_AMOUNT),
     annualAmount: String(DEFAULT_ANNUAL_AMOUNT),
     allowCustomAmount: false,
+    notifyClientsOverdue: false,
+    notifyAdminOverdue: false,
     permissions: { ...ADMIN_FEATURE_PERMISSION_DEFAULTS },
   })
   const [savingSubscription, setSavingSubscription] = useState(false)
@@ -227,6 +233,8 @@ export function AdminsDashboard() {
         subscriptionMonthlyAmount: Math.round(monthlyAmount),
         subscriptionAnnualAmount: Math.round(annualAmount),
         subscriptionAllowCustomAmount: subscriptionDraft.allowCustomAmount,
+        notifyClientsOverdue: subscriptionDraft.notifyClientsOverdue,
+        notifyAdminOverdue: subscriptionDraft.notifyAdminOverdue,
         permissions: subscriptionDraft.permissions,
       })
       setAdmins((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
@@ -480,6 +488,41 @@ export function AdminsDashboard() {
                   {processingDirectPayment ? 'Paiement...' : 'Payer / Valider'}
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-[#121B53]/15 bg-white p-3 sm:p-4">
+              <p className="text-sm font-medium text-[#121B53]">Notifications retards de paiement</p>
+              <label className="flex items-start gap-2 text-sm text-[#121B53]">
+                <input
+                  type="checkbox"
+                  checked={subscriptionDraft.notifyClientsOverdue}
+                  onChange={(e) =>
+                    setSubscriptionDraft((prev) => ({
+                      ...prev,
+                      notifyClientsOverdue: e.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+                Autoriser l'envoi aux clients de cet admin en cas de retard.
+              </label>
+              <label className="flex items-start gap-2 text-sm text-[#121B53]">
+                <input
+                  type="checkbox"
+                  checked={subscriptionDraft.notifyAdminOverdue}
+                  onChange={(e) =>
+                    setSubscriptionDraft((prev) => ({
+                      ...prev,
+                      notifyAdminOverdue: e.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+                Envoyer aussi à l'admin (rappel interne) en cas de retard client.
+              </label>
+              <p className="text-xs text-[#121B53]/65">
+                Si l'admin est suspendu ou impayé, aucun email client/admin n'est envoyé (super admin restera notifié).
+              </p>
             </div>
 
             <div className="space-y-3 rounded-xl border border-[#121B53]/15 bg-white p-3 sm:p-4">

@@ -56,6 +56,8 @@ export interface AdminDTO {
   subscriptionMonthlyAmount?: number
   subscriptionAnnualAmount?: number
   subscriptionAllowCustomAmount?: boolean
+  notifyClientsOverdue?: boolean
+  notifyAdminOverdue?: boolean
   permissions?: AdminFeaturePermissions
 }
 
