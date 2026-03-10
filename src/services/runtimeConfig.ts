@@ -163,13 +163,16 @@ const getBrowserSameOriginApiBase = (): string => {
 }
 
 const DEFAULT_API_BASE = (() => {
-  const browserSameOriginApi = getBrowserSameOriginApiBase()
-  // In browser contexts, always prefer same-origin `/api` to avoid CORS dependency.
-  if (browserSameOriginApi) return browserSameOriginApi
-
+  // 1) Si une URL est fournie via l'environnement (VITE_API_URL), on la privilégie partout
+  //    afin d'éviter d'appeler l'origine Vercel qui n'expose pas les routes backend.
   const normalizedEnvApi = normalizeApiBaseUrlSafe(ENV_API_URL)
   if (normalizedEnvApi) return normalizedEnvApi
 
+  // 2) Sinon, en contexte navigateur, on tente le même domaine /api (utile en dev local/proxy).
+  const browserSameOriginApi = getBrowserSameOriginApiBase()
+  if (browserSameOriginApi) return browserSameOriginApi
+
+  // 3) Fallback Render.
   return normalizeApiBaseUrlSafe(FALLBACK_API_ORIGIN) || `${FALLBACK_API_ORIGIN}${API_PATH_SUFFIX}`
 })()
 const DEFAULT_CLOUDINARY_SIGN_URL = normalizeSignUrlSafe(
