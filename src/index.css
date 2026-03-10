@@ -3,40 +3,40 @@
 @tailwind utilities;
 
 /* Design System - Application Gestion Locative
-   Palette: #0F2854, #1C4D8D, #4988C4, #BDE8F5
+   Palette Login: #0F2854, #162d5e, #4a7cff, #E8E9F5
    All colors in HSL format
 */
 
 @layer base {
   :root {
-    --background: 200 50% 98%;
-    --foreground: 217 69% 19%;
+    --background: 0 0% 100%;
+    --foreground: 218 70% 19%;
 
     --card: 0 0% 100%;
-    --card-foreground: 217 69% 19%;
+    --card-foreground: 218 70% 19%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 217 69% 19%;
+    --popover-foreground: 218 70% 19%;
 
     /* Primary: #0F2854 */
-    --primary: 217 69% 19%;
+    --primary: 218 70% 19%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: #1C4D8D */
-    --secondary: 215 67% 33%;
+    /* Secondary: #162d5e */
+    --secondary: 221 62% 23%;
     --secondary-foreground: 0 0% 100%;
 
     /* Muted */
-    --muted: 200 50% 96%;
-    --muted-foreground: 217 30% 45%;
+    --muted: 235 39% 94%;
+    --muted-foreground: 215 16% 47%;
 
-    /* Accent: #4988C4 */
-    --accent: 210 52% 53%;
+    /* Accent: #4a7cff */
+    --accent: 223 100% 65%;
     --accent-foreground: 0 0% 100%;
 
-    /* Highlight: #BDE8F5 */
-    --highlight: 195 75% 85%;
-    --highlight-foreground: 217 69% 19%;
+    /* Highlight: #cbd5e1 */
+    --highlight: 213 27% 84%;
+    --highlight-foreground: 218 70% 19%;
 
     /* Status colors */
     --success: 145 63% 42%;
@@ -49,26 +49,26 @@
     --destructive-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 69% 19%;
+    --input: 235 39% 94%;
+    --ring: 223 100% 65%;
 
     --radius: 0.5rem;
 
     /* Sidebar: #0F2854 */
-    --sidebar-background: 217 69% 19%;
+    --sidebar-background: 218 70% 19%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 195 75% 85%;
-    --sidebar-primary-foreground: 217 69% 19%;
-    --sidebar-accent: 215 67% 33%;
+    --sidebar-primary: 223 100% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 62% 23%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 50% 30%;
-    --sidebar-ring: 195 75% 85%;
+    --sidebar-border: 221 62% 23%;
+    --sidebar-ring: 223 100% 65%;
 
     /* Chart colors */
-    --chart-1: 217 69% 19%;
-    --chart-2: 215 67% 33%;
-    --chart-3: 210 52% 53%;
-    --chart-4: 195 75% 85%;
+    --chart-1: 218 70% 19%;
+    --chart-2: 221 62% 23%;
+    --chart-3: 223 100% 65%;
+    --chart-4: 235 39% 94%;
     --chart-5: 145 63% 42%;
   }
 
