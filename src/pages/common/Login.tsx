@@ -21,17 +21,6 @@ import { useToast } from "@/contexts/ToastContext";
 import { connexionSchema, ConnexionFormData } from "@/validators/frontend";
 import { AuthAccessNoticeDialog, type AuthAccessNoticeKind } from "./AuthAccessNoticeDialog";
 
-const LOGIN_COLORS = {
-  primary: "#1E1B5C",
-  primaryDark: "#252160",
-  accent: "#6B5CE7",
-  accentLight: "#7B6EF6",
-  inputBg: "#E8E9F5",
-  borderSoft: "#DFE1F3",
-  textSecondary: "#9E9E9E",
-  textMuted: "#B8B8B8",
-};
-
 // TEMPORAIRE: désactiver le blocage local des tentatives de connexion.
 // Remettre à false quand tu voudras réactiver le blocage.
 const LOGIN_BLOCK_TEMP_DISABLED = true;
@@ -65,7 +54,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
           fontWeight: 600,
           letterSpacing: "1.4px",
           textTransform: "uppercase",
-          color: active ? LOGIN_COLORS.accent : LOGIN_COLORS.textSecondary,
+          color: active ? "#4a7cff" : "#7a8fa8",
           marginBottom: 10,
           transition: "color .25s",
         }}
@@ -78,9 +67,9 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
         style={{
           position: "relative",
           borderRadius: 16,
-          border: `2px solid ${error ? "#ef4444" : focused ? LOGIN_COLORS.accent : LOGIN_COLORS.borderSoft}`,
-          background: LOGIN_COLORS.inputBg,
-          boxShadow: focused ? "0 0 0 4px rgba(107,92,231,.12)" : "none",
+          border: `2px solid ${error ? "#ef4444" : focused ? "#4a7cff" : hasValue ? "#cbd5e1" : "#e2e8f0"}`,
+          background: "#fff",
+          boxShadow: focused ? "0 0 0 4px rgba(74,124,255,.13)" : "none",
           transition: "border-color .25s, box-shadow .25s",
         }}
       >
@@ -91,7 +80,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
             left: 18,
             top: "50%",
             transform: "translateY(-50%)",
-            color: focused ? LOGIN_COLORS.accent : LOGIN_COLORS.textSecondary,
+            color: focused ? "#4a7cff" : "#64748b",
             display: "flex",
             alignItems: "center",
             transition: "color .25s",
@@ -121,7 +110,7 @@ function InputField({ label, name, icon, placeholder, type = "text", error, regi
             fontFamily: "'DM Sans', sans-serif",
             fontSize: 16,
             fontWeight: 500,
-            color: LOGIN_COLORS.primary,
+            color: "#000000",
             outline: "none",
             borderRadius: 16,
           }}
@@ -434,6 +423,11 @@ export default function LoginPage() {
     }
   };
 
+  // ─── styles constants
+  const NAVY = "#0F2854";
+  const NAVY_MID = "#162d5e";
+  const ACCENT = "#4a7cff";
+
   return (
     <>
       {/* Hidden SVG clipPath for wavy border */}
@@ -462,8 +456,8 @@ export default function LoginPage() {
       <style>
         {`
           @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 4px 20px rgba(107,92,231,.28); }
-            50% { box-shadow: 0 4px 32px rgba(107,92,231,.45); }
+            0%, 100% { box-shadow: 0 4px 20px rgba(74,124,255,.4); }
+            50% { box-shadow: 0 4px 35px rgba(74,124,255,.7), 0 0 15px rgba(139,92,246,.3); }
           }
           @keyframes slide-up {
             from { opacity: 0; transform: translateY(10px); }
@@ -475,7 +469,7 @@ export default function LoginPage() {
             display: grid;
             grid-template-columns: 1fr 1fr;
             font-family: 'DM Sans', sans-serif;
-            background: ${LOGIN_COLORS.primary};
+            background: ${NAVY};
           }
           .login-left-content {
             margin-top: -30px;
@@ -552,6 +546,40 @@ export default function LoginPage() {
           }}
         >
           {/* Zig-zag separator moved to the right panel */}
+          {/* Ambient blobs */}
+          <div
+            style={{
+              position: "absolute", width: 420, height: 420,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(74,124,255,.22) 0%, transparent 70%)",
+              filter: "blur(70px)",
+              top: -140, left: -100,
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute", width: 300, height: 300,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(108,59,224,.18) 0%, transparent 70%)",
+              filter: "blur(60px)",
+              bottom: -80, right: -60,
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Subtle grid */}
+          <div
+            style={{
+              position: "absolute", inset: 0,
+              backgroundImage: `
+                linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)
+              `,
+              backgroundSize: "48px 48px",
+              pointerEvents: "none",
+            }}
+          />
 
           {/* Content */}
           <div className="login-left-content" style={{ position: "relative", zIndex: 2, textAlign: "center", width: "100%" }}>
@@ -560,11 +588,11 @@ export default function LoginPage() {
               className="login-logo"
               style={{
                 width: 220, height: 220, borderRadius: 100, margin: "0 auto 24px",
-                background: "#ffffff",
-                border: "1.5px solid rgba(107,92,231,.25)",
+                background: "linear-gradient(135deg, rgb(255, 255, 255), rgb(255, 255, 255))",
+                border: "1.5px solid rgba(74,124,255,.3)",
                 backdropFilter: "blur(12px)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 10px 35px rgba(30,27,92,.2)",
+                boxShadow: "0 8px 40px rgba(74,124,255,.15)",
               }}
             >
               <img
@@ -593,7 +621,7 @@ export default function LoginPage() {
             </h1>
             <p
               style={{
-                color: LOGIN_COLORS.accentLight,
+                color: "#c9a84c",
                 fontSize: 11,
                 fontWeight: 300,
                 letterSpacing: "3.5px",
@@ -680,7 +708,7 @@ export default function LoginPage() {
                       left: 0,
                       right: 0,
                       height: "50%",
-                      background: "rgba(255,255,255,.04)",
+                      background: "linear-gradient(180deg, rgba(255,255,255,.03) 0%, transparent 100%)",
                       pointerEvents: "none",
                       zIndex: 1,
                     }}
@@ -743,7 +771,7 @@ export default function LoginPage() {
           <p
             style={{
               position: "absolute", bottom: 28,
-              color: "rgba(255,255,255,.45)",
+              color: "rgba(255,255,255,.18)",
               fontSize: 11, letterSpacing: "1px",
             }}
           >
@@ -755,7 +783,7 @@ export default function LoginPage() {
         <div
           className="login-right"
           style={{
-            background: "#ffffff",
+            background: "#fff",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -777,7 +805,7 @@ export default function LoginPage() {
               width: "24px",
               height: "100%",
               backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='80' viewBox='0 0 56 80'%3E%3Cpolygon points='0,0%2056,40%200,80' fill='%231E1B5C' fill-opacity='0.98'/%3E%3C/svg%3E\")",
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='80' viewBox='0 0 56 80'%3E%3Cpolygon points='0,0%2056,40%200,80' fill='%230F2854' fill-opacity='0.98'/%3E%3C/svg%3E\")",
               backgroundRepeat: "repeat-y",
               backgroundSize: "24px 36px",
               backgroundPosition: "0 0",
@@ -827,16 +855,16 @@ export default function LoginPage() {
               )}
               <h2
                 style={{
-                fontFamily: "'Playfair Display', serif",
-                fontSize: 36,
-                color: LOGIN_COLORS.primary,
-                fontWeight: 700,
-                marginBottom: 6,
-              }}
-            >
-              Bienvenue
-            </h2>
-              <p style={{ color: LOGIN_COLORS.textSecondary, fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: 36,
+                  color: NAVY,
+                  fontWeight: 700,
+                  marginBottom: 6,
+                }}
+              >
+                Bienvenue
+              </h2>
+              <p style={{ color: "#0F2854", fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
                 Gérez vos clients en toute simplicité
               </p>
 
@@ -870,15 +898,15 @@ export default function LoginPage() {
                     onClick={() => setShowPass(!showPass)}
                     style={{
                       background: "none", border: "none", cursor: "pointer",
-                      color: LOGIN_COLORS.textSecondary, padding: 4,
+                      color: "#94a3b8", padding: 4,
                       display: "flex", alignItems: "center",
                       transition: "color .2s",
                     }}
                     onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-                      e.currentTarget.style.color = LOGIN_COLORS.accent;
+                      e.currentTarget.style.color = ACCENT;
                     }}
                     onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-                      e.currentTarget.style.color = LOGIN_COLORS.textSecondary;
+                      e.currentTarget.style.color = "#94a3b8";
                     }}
                   >
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -891,7 +919,7 @@ export default function LoginPage() {
                 <a
                   href="#"
                   style={{
-                    fontSize: 12, color: LOGIN_COLORS.accent, textDecoration: "none", fontWeight: 500,
+                    fontSize: 12, color: ACCENT, textDecoration: "none", fontWeight: 500,
                   }}
                 >
 
@@ -908,7 +936,7 @@ export default function LoginPage() {
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   width: "100%", padding: "22px 0",
                   border: "none", borderRadius: 16,
-                  background: LOGIN_COLORS.primary,
+                  background: `linear-gradient(135deg, ${NAVY}, ${NAVY_MID})`,
                   color: "#fff",
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: 17,
@@ -924,13 +952,11 @@ export default function LoginPage() {
                   if (!loading) {
                     e.currentTarget.style.transform = "translateY(-2px)";
                     e.currentTarget.style.boxShadow = "0 6px 30px rgba(15,40,84,.4)";
-                    e.currentTarget.style.background = LOGIN_COLORS.primaryDark;
                   }
                 }}
                 onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.currentTarget.style.transform = "translateY(0)";
                   e.currentTarget.style.boxShadow = "0 4px 22px rgba(15,40,84,.3)";
-                  e.currentTarget.style.background = LOGIN_COLORS.primary;
                 }}
               >
                 {loading ? (
@@ -952,7 +978,7 @@ export default function LoginPage() {
                     background: "transparent",
                     border: "none",
                     padding: 0,
-                    color: LOGIN_COLORS.primary,
+                    color: NAVY,
                     fontWeight: 600,
                     fontSize: 14,
                     cursor: "pointer",
@@ -961,10 +987,10 @@ export default function LoginPage() {
                     letterSpacing: "0.4px",
                   }}
                   onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.currentTarget.style.color = LOGIN_COLORS.accent;
+                    e.currentTarget.style.color = ACCENT;
                   }}
                   onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.currentTarget.style.color = LOGIN_COLORS.primary;
+                    e.currentTarget.style.color = NAVY;
                   }}
                 >
                   Créer un compte administrateur
@@ -974,32 +1000,32 @@ export default function LoginPage() {
               <div
                 style={{
                   marginTop: 14,
-                  borderTop: `1px solid ${LOGIN_COLORS.borderSoft}`,
+                  borderTop: "1px solid #e2e8f0",
                   paddingTop: 10,
                   textAlign: "center",
                 }}
               >
-                <p style={{ fontSize: 12, color: LOGIN_COLORS.primary, fontWeight: 600 }}>
+                <p style={{ fontSize: 12, color: "#0F2854", fontWeight: 600 }}>
                   Besoin d’aide ?
                 </p>
-                <p style={{ fontSize: 12, color: LOGIN_COLORS.textSecondary }}>
+                <p style={{ fontSize: 12, color: "#64748b" }}>
                   <a
                     href="https://wa.me/221771719013"
                     target="_blank"
                     rel="noreferrer"
-                    style={{ color: LOGIN_COLORS.accent, textDecoration: "none", fontWeight: 600 }}
+                    style={{ color: "#4a7cff", textDecoration: "none", fontWeight: 600 }}
                   >
                     77 1719013
                   </a>
                   <span style={{ padding: "0 6px" }}>·</span>
                   <a
                     href="mailto:malickteuw.devweb@gmail.com"
-                    style={{ color: LOGIN_COLORS.accent, textDecoration: "none", fontWeight: 600 }}
+                    style={{ color: "#4a7cff", textDecoration: "none", fontWeight: 600 }}
                   >
                     malickteuw.devweb@gmail.com
                   </a>
                 </p>
-                <p style={{ marginTop: 6, fontSize: 11, color: LOGIN_COLORS.textMuted, letterSpacing: "0.6px" }}>
+                <p style={{ marginTop: 6, fontSize: 11, color: "#94a3b8", letterSpacing: "0.6px" }}>
                   © malickdevweb
                 </p>
               </div>
