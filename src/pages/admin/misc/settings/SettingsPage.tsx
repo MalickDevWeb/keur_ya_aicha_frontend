@@ -164,6 +164,7 @@ export default function SettingsPage() {
   const role = String(user?.role || '').toUpperCase()
   const canEdit = user && (role === 'ADMIN' || role === 'SUPER_ADMIN')
   const canEditRequired = role === 'SUPER_ADMIN'
+  const canEditContracts = Boolean(canEdit)
   const canEditAdminBranding = role === 'ADMIN' || !!impersonation?.adminId
   const roleLabel = role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'ADMIN' ? 'Admin' : 'Compte'
   const activeAdminId = String(
@@ -985,7 +986,7 @@ export default function SettingsPage() {
         />
       )}
 
-      {canEditRequired && <SettingsContractsSection />}
+      {canEditContracts && <SettingsContractsSection />}
     </div>
   )
 }
