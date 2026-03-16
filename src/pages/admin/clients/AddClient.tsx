@@ -325,7 +325,7 @@ export default function AddClient() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('clients.email')} (optionnel)</FormLabel>
+                    <FormLabel data-optional="true">{t('clients.email')}</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="nom@email.com" {...field} />
                     </FormControl>

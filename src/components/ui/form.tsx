@@ -75,11 +75,26 @@ FormItem.displayName = "FormItem";
 
 const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> & { optional?: boolean }
+>(({ className, children, optional, ...props }, ref) => {
   const { error, formItemId } = useFormField();
+  const isOptional =
+    optional === true ||
+    String((props as Record<string, unknown>)['data-optional'] || '').toLowerCase() === 'true';
 
-  return <Label ref={ref} className={cn(error && "text-destructive", className)} htmlFor={formItemId} {...props} />;
+  return (
+    <Label
+      ref={ref}
+      className={cn(error && "text-destructive", className)}
+      htmlFor={formItemId}
+      {...props}
+    >
+      {children}{" "}
+      <span className="text-muted-foreground">
+        {isOptional ? "(facultatif)" : "*"}
+      </span>
+    </Label>
+  );
 });
 FormLabel.displayName = "FormLabel";
 

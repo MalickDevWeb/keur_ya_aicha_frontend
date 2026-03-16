@@ -30,7 +30,7 @@ export function WorkAddSection({
         <div className="space-y-3">
           <Input placeholder="Titre du travail..." value={title} onChange={(event) => onTitleChange(event.target.value)} />
           <Input
-            placeholder="Description (optionnel)"
+            placeholder="Description (facultatif)"
             value={description}
             onChange={(event) => onDescriptionChange(event.target.value)}
           />

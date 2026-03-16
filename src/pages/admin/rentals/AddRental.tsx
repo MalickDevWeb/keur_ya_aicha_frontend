@@ -322,7 +322,7 @@ export default function AddRental() {
                       name="depositPaid"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-semibold text-amber-900">Montant déjà payé (optionnel)</FormLabel>
+                          <FormLabel className="text-sm font-semibold text-amber-900" data-optional="true">Montant déjà payé</FormLabel>
                           <FormControl>
                             <Input
                               type="number"

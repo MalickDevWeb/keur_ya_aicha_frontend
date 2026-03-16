@@ -135,7 +135,7 @@ export function CreateAdminForm({
             value={formData.entreprise}
             onChange={(e) => handleChange('entreprise', e.target.value)}
           >
-            <option value="">Sélectionner une entreprise (optionnel)</option>
+            <option value="">Sélectionner une entreprise (facultatif)</option>
             {entreprises.map((ent) => (
               <option key={ent.id} value={ent.id}>
                 {ent.name}

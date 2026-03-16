@@ -164,7 +164,8 @@ export default function SettingsPage() {
   const role = String(user?.role || '').toUpperCase()
   const canEdit = user && (role === 'ADMIN' || role === 'SUPER_ADMIN')
   const canEditRequired = role === 'SUPER_ADMIN'
-  const canEditContracts = Boolean(canEdit)
+  // Afficher la section contrats pour les admins et aussi pour le super admin en impersonation
+  const canEditContracts = Boolean(canEdit || impersonation?.adminId)
   const canEditAdminBranding = role === 'ADMIN' || !!impersonation?.adminId
   const roleLabel = role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'ADMIN' ? 'Admin' : 'Compte'
   const activeAdminId = String(

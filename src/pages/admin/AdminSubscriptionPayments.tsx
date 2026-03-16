@@ -1068,7 +1068,7 @@ export default function AdminSubscriptionPayments() {
                 Paiement espèces: validation directe uniquement par Super Admin.
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-[#121B53]">Note espèces (optionnel)</label>
+                <label className="text-sm font-medium text-[#121B53]">Note espèces (facultatif)</label>
                 <Input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}

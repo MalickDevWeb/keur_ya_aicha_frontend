@@ -487,7 +487,7 @@ export default function AddPayment() {
                     name="receiptNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Numéro de reçu (optionnel)</FormLabel>
+                        <FormLabel data-optional="true">Numéro de reçu</FormLabel>
                         <FormControl>
                           <Input placeholder="REC-202602-XXXXXX" {...field} />
                         </FormControl>
@@ -502,7 +502,7 @@ export default function AddPayment() {
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Notes (optionnel)</FormLabel>
+                        <FormLabel data-optional="true">Notes</FormLabel>
                         <FormControl>
                           <Textarea placeholder="Ajouter des notes..." rows={3} {...field} />
                         </FormControl>

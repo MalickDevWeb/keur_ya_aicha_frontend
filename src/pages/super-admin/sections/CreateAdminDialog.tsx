@@ -164,7 +164,7 @@ export function CreateAdminDialog({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Email (optionnel)</label>
+                  <label className="text-sm font-medium">Email (facultatif)</label>
                     <Input
                       autoComplete="email"
                       value={newEmail}
@@ -173,7 +173,7 @@ export function CreateAdminDialog({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Entreprise (optionnel)</label>
+                  <label className="text-sm font-medium">Entreprise (facultatif)</label>
                     <Input
                       autoComplete="organization"
                       value={newEntreprise}
