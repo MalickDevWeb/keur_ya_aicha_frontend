@@ -41,14 +41,18 @@ export default function FormulaireInscriptionAdmin({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="firstName" className="text-[#0F2854] text-sm font-medium">Prénom</Label>
+              <Label htmlFor="firstName" className="text-[#0F2854] text-sm font-medium">
+                Prénom <span className="text-[#0F2854]">*</span>
+              </Label>
               <Input id="firstName" autoComplete="given-name" placeholder="Votre prénom" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("firstName")} />
               {errors.firstName && (
                 <p className="text-xs text-destructive">{errors.firstName.message}</p>
               )}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="lastName" className="text-[#0F2854] text-sm font-medium">Nom</Label>
+              <Label htmlFor="lastName" className="text-[#0F2854] text-sm font-medium">
+                Nom <span className="text-[#0F2854]">*</span>
+              </Label>
               <Input id="lastName" autoComplete="family-name" placeholder="Votre nom" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("lastName")} />
               {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
             </div>
@@ -56,7 +60,9 @@ export default function FormulaireInscriptionAdmin({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="password" className="text-[#0F2854] text-sm font-medium">Mot de passe</Label>
+              <Label htmlFor="password" className="text-[#0F2854] text-sm font-medium">
+                Mot de passe <span className="text-[#0F2854]">*</span>
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -78,7 +84,9 @@ export default function FormulaireInscriptionAdmin({
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="confirmPassword" className="text-[#0F2854] text-sm font-medium">Confirmer le mot de passe</Label>
+              <Label htmlFor="confirmPassword" className="text-[#0F2854] text-sm font-medium">
+                Confirmer le mot de passe <span className="text-[#0F2854]">*</span>
+              </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -102,19 +110,25 @@ export default function FormulaireInscriptionAdmin({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="phone" className="text-[#0F2854] text-sm font-medium">Téléphone</Label>
+            <Label htmlFor="phone" className="text-[#0F2854] text-sm font-medium">
+              Téléphone <span className="text-[#0F2854]">*</span>
+            </Label>
             <Input id="phone" autoComplete="tel" placeholder="+221 77 123 45 67" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("phone")} />
             {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="email" className="text-[#0F2854] text-sm font-medium">Email <span className="text-slate-400 font-normal">(optionnel)</span></Label>
+              <Label htmlFor="email" className="text-[#0F2854] text-sm font-medium">
+                Email <span className="text-slate-400 font-normal">(facultatif)</span>
+              </Label>
               <Input id="email" type="email" autoComplete="email" placeholder="email@exemple.com" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("email")} />
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="entrepriseName" className="text-[#0F2854] text-sm font-medium">Entreprise <span className="text-slate-400 font-normal">(optionnel)</span></Label>
+              <Label htmlFor="entrepriseName" className="text-[#0F2854] text-sm font-medium">
+                Entreprise <span className="text-slate-400 font-normal">(facultatif)</span>
+              </Label>
               <Input id="entrepriseName" placeholder="Nom de votre entreprise" className="border-slate-300 focus:border-[#0F2854] focus:ring-[#0F2854]" {...register("entrepriseName")} />
               {errors.entrepriseName && <p className="text-xs text-destructive">{errors.entrepriseName.message}</p>}
             </div>
