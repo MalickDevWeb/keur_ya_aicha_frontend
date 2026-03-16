@@ -1,18 +1,19 @@
 #!/bin/bash
 
 echo "🔄 Arrêt des serveurs existants..."
-pkill -f "json-server" 2>/dev/null
+pkill -f "next dev" 2>/dev/null
+pkill -f "vite" 2>/dev/null
 pkill -f "electron" 2>/dev/null
 sleep 2
 
-echo "🚀 Démarrage de json-server..."
+echo "🚀 Démarrage backend Next.js..."
 cd /home/pmt/KeurYaAicha/kya/frontend
-npx json-server db/db.json --port 4000 &
+PORT=3000 npm --prefix next-backend run dev &
 sleep 3
 
 echo "✅ Vérification de la connexion..."
-curl -s http://localhost:4000/clients 2>/dev/null | head -c 300 || echo "Le serveur n'est pas encore prêt"
+curl -s http://localhost:3000/api/sante 2>/dev/null | head -c 300 || echo "Le serveur n'est pas encore prêt"
 
 echo ""
 echo "🎉 Redémarrage terminé!"
-echo "📡 API: http://localhost:4000"
+echo "📡 API: http://localhost:3000"

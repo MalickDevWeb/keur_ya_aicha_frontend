@@ -218,16 +218,16 @@ function asStringArray(value: unknown, fallback: string[]): string[] {
 
 function sanitizePlatformConfig(value: unknown): PlatformConfig {
   const raw = (value || {}) as Partial<PlatformConfig>
-  const maintenance = raw.maintenance || {}
-  const sessionSecurity = raw.sessionSecurity || {}
-  const paymentRules = raw.paymentRules || {}
-  const documents = raw.documents || {}
-  const notifications = raw.notifications || {}
-  const channels = notifications.channels || {}
-  const events = notifications.events || {}
-  const templates = notifications.templates || {}
-  const branding = raw.branding || {}
-  const auditCompliance = raw.auditCompliance || {}
+  const maintenance: Partial<MaintenanceConfig> = raw.maintenance || {}
+  const sessionSecurity: Partial<SessionSecurityConfig> = raw.sessionSecurity || {}
+  const paymentRules: Partial<PaymentRulesConfig> = raw.paymentRules || {}
+  const documents: Partial<DocumentsConfig> = raw.documents || {}
+  const notifications: Partial<NotificationsConfig> = raw.notifications || {}
+  const channels: Partial<NotificationChannels> = notifications.channels || {}
+  const events: Partial<NotificationEvents> = notifications.events || {}
+  const templates: Partial<NotificationTemplates> = notifications.templates || {}
+  const branding: Partial<BrandingConfig> = raw.branding || {}
+  const auditCompliance: Partial<AuditComplianceConfig> = raw.auditCompliance || {}
 
   const output: PlatformConfig = {
     maintenance: {

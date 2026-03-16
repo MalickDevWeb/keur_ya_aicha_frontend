@@ -1,4 +1,4 @@
-# Diagramme de cas d'utilisation - Vue globale (Analyse)
+# Diagramme de cas d'utilisation — Vue globale (Analyse)
 
 ```mermaid
 flowchart LR

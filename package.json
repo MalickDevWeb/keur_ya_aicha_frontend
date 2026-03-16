@@ -8,9 +8,12 @@
     "npm": ">=10"
   },
   "scripts": {
-    "dev": "concurrently \"node backend/src/index.mjs\" \"ELECTRON_DEV=true electron .\" \"vite\"",
+    "dev": "concurrently \"npm --prefix next-backend run dev\" \"ELECTRON_DEV=true electron .\" \"vite\"",
     "dev:web": "vite",
     "dev:all": "bash start-dev.sh",
+    "dev:api": "npm --prefix next-backend run dev",
+    "db:up": "docker compose -f next-backend/docker-compose.extreme-local.yml up -d",
+    "db:down": "docker compose -f next-backend/docker-compose.extreme-local.yml down",
     "seed-db": "node scripts/seed-db.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -22,8 +25,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start:api": "node backend/src/index.mjs",
-    "json:server": "node backend/src/index.mjs"
+    "start:api": "npm --prefix next-backend run dev"
   },
   "dependencies": {
     "@cloudinary/react": "^1.14.3",

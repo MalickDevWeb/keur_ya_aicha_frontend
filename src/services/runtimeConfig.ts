@@ -168,10 +168,11 @@ const DEFAULT_API_BASE = (() => {
   const normalizedEnvApi = normalizeApiBaseUrlSafe(ENV_API_URL)
   if (normalizedEnvApi) return normalizedEnvApi
 
-  // 2) Sinon, en contexte navigateur local, on tente le même domaine /api (utile en dev local/proxy).
-  //    En production web publique (ex: Vercel), on évite le same-origin qui ne porte pas l'API.
+  // 2) Sinon, tenter systématiquement le même domaine /api. Sur Vercel nous avons un rewrite
+  //    vers l'API Render, ce qui évite les cookies tiers bloqués (SameSite=Strict) sur Chrome.
+  //    Même en prod publique, on préfère le same-origin pour rester 1st-party.
   const browserSameOriginApi = getBrowserSameOriginApiBase()
-  if (browserSameOriginApi && !isPublicWebContext()) return browserSameOriginApi
+  if (browserSameOriginApi) return browserSameOriginApi
 
   // 3) Fallback Render en production publique.
   return normalizeApiBaseUrlSafe(FALLBACK_API_ORIGIN) || `${FALLBACK_API_ORIGIN}${API_PATH_SUFFIX}`

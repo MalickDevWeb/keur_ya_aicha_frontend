@@ -1,4 +1,4 @@
-# Cas d'utilisation (Analyse) — SYSTEME PAIEMENT
+# Diagramme de cas d'utilisation — Systeme paiement (Analyse)
 
 ```mermaid
 flowchart LR
