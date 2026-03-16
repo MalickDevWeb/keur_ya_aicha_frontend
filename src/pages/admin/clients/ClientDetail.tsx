@@ -27,6 +27,8 @@ import { formatCurrency,
 import { useClientDetailActions } from './hooks/useClientDetailActions';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { listContractTemplates, type ContractTemplate } from '@/services/api/contractTemplates.api';
+import { generateContract } from '@/services/api/contracts.api';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +51,9 @@ export default function ClientDetail() {
   const [docSigned, setDocSigned] = useState(false)
   const [isUploadingDoc, setIsUploadingDoc] = useState(false)
   const [openingDocId, setOpeningDocId] = useState<string | null>(null)
+  const [templates, setTemplates] = useState<ContractTemplate[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [isGeneratingContract, setIsGeneratingContract] = useState(false)
 
   useEffect(() => {
     const firstRentalId = client?.rentals?.[0]?.id || ''
@@ -61,6 +66,18 @@ export default function ClientDetail() {
       return firstRentalId
     })
   }, [client?.id, client?.rentals])
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const data = await listContractTemplates()
+        setTemplates(data)
+        if (data.length > 0) setSelectedTemplateId(data[0].id)
+      } catch {
+        // silencieux : la section contrats affichera un message si besoin
+      }
+    })()
+  }, [])
 
   const clientDocuments = useMemo(
     () =>
@@ -110,6 +127,42 @@ export default function ClientDetail() {
       toast({ title: 'Erreur', description: message, variant: 'destructive' })
     } finally {
       setIsUploadingDoc(false)
+    }
+  }
+
+  const handleGenerateContract = async () => {
+    if (!client) return
+    try {
+      setIsGeneratingContract(true)
+      const payload = {
+        clientId: client.id,
+        templateId: selectedTemplateId,
+        locationId: selectedRentalId || null,
+        donnees: {
+          client: {
+            nom: client.lastName || client.nom,
+            prenom: client.firstName || client.prenom,
+            telephone: client.phone || client.telephone,
+            email: client.email,
+            cni: client.cni,
+          },
+          bail: {
+            debut: client.rentals?.[0]?.startDate || new Date().toISOString(),
+            loyer: client.rentals?.[0]?.monthlyRent,
+            caution: client.rentals?.[0]?.deposit?.total,
+          },
+        },
+      }
+      const contrat = await generateContract(payload)
+      toast({
+        title: 'Contrat généré',
+        description: contrat.pdfUrl ? 'PDF disponible dans la section Contrats.' : 'Contrat créé (PDF en attente).',
+      })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Impossible de générer le contrat.'
+      toast({ title: 'Erreur', description: message, variant: 'destructive' })
+    } finally {
+      setIsGeneratingContract(false)
     }
   }
 
@@ -722,6 +775,55 @@ export default function ClientDetail() {
                         <Upload className="w-4 h-4 mr-2" />
                       )}
                       {isUploadingDoc ? 'Téléversement...' : t('document.upload')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {templates.length > 0 && (
+                <div className="rounded-xl border border-border/70 bg-slate-50 p-4 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Template de contrat</label>
+                      <select
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={selectedTemplateId || ''}
+                        onChange={(event) => setSelectedTemplateId(event.target.value || null)}
+                      >
+                        {templates.map((tpl) => (
+                          <option key={tpl.id} value={tpl.id}>
+                            {tpl.nom} (v{tpl.version})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Location ciblée</label>
+                      <select
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={selectedRentalId}
+                        onChange={(event) => setSelectedRentalId(event.target.value)}
+                      >
+                        {client.rentals.map((rental) => (
+                          <option key={rental.id} value={rental.id}>
+                            {rental.propertyName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-primary text-white hover:bg-primary/90"
+                      disabled={isGeneratingContract}
+                      onClick={() => {
+                        void handleGenerateContract()
+                      }}
+                    >
+                      {isGeneratingContract ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                      Générer un contrat
                     </Button>
                   </div>
                 </div>

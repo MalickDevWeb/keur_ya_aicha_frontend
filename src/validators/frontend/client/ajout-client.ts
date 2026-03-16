@@ -25,7 +25,13 @@ export const ajoutClientSchema = z
       .string()
       .min(1, 'La CNI est requise')
       .refine(validateCNI, 'La CNI doit contenir 13 caractères alphanumériques'),
-    email: z.string().optional().refine((value) => !value || validateEmail(value), 'Email invalide'),
+    email: z
+      .string()
+      .optional()
+      .refine(
+        (value) => !value || validateEmail(value),
+        'Veuillez saisir une adresse email valide afin de recevoir les notifications.'
+      ),
     propertyType: z.enum(['studio', 'room', 'apartment', 'villa', 'other']),
     propertyName: z
       .string()

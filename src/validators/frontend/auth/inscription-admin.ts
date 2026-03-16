@@ -12,7 +12,11 @@ export const inscriptionAdminSchema = z.object({
       /^(?:\+221|221|0)?\s?(70|75|76|77|78)\s?\d{3}\s?\d{2}\s?\d{2}$/,
       'Numéro Sénégal invalide (ex: +221 77 123 45 67)'
     ),
-  email: z.string().email('Email invalide').optional().or(z.literal('')),
+  email: z
+    .string()
+    .email('Veuillez saisir une adresse email valide afin de recevoir les notifications.')
+    .optional()
+    .or(z.literal('')),
   entrepriseName: z.string().optional().or(z.literal('')),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas',

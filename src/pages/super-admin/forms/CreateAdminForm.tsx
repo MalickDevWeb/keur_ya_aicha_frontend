@@ -49,6 +49,11 @@ export function CreateAdminForm({
       setError('Nom et mot de passe requis')
       return
     }
+    const emailTrimmed = formData.email.trim()
+    if (emailTrimmed && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(emailTrimmed)) {
+      setError('Veuillez saisir une adresse email valide afin de recevoir les notifications.')
+      return
+    }
 
     setCreating(true)
     try {
@@ -60,7 +65,7 @@ export function CreateAdminForm({
         username: generatedUsername,
         password: formData.password,
         name: formData.name,
-        email: formData.email,
+        email: emailTrimmed || undefined,
         phone: formData.phone,
         entreprise: formData.entreprise || undefined,
       })

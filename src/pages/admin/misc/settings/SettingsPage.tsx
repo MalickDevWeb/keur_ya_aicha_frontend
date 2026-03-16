@@ -46,6 +46,7 @@ import { SettingsImportAliasesSection } from './sections/SettingsImportAliasesSe
 import { SettingsRequiredFieldsSection } from './sections/SettingsRequiredFieldsSection'
 import { SettingsReportSection } from './sections/SettingsReportSection'
 import { SettingsRuntimeApiSection } from './sections/SettingsRuntimeApiSection'
+import { SettingsContractsSection } from './sections/SettingsContractsSection'
 import { safeJsonParse } from './utils'
 import {
   appendAdminLogoToLibrary,
@@ -983,6 +984,8 @@ export default function SettingsPage() {
           onTestWebhook={testAlertWebhook}
         />
       )}
+
+      {canEditRequired && <SettingsContractsSection />}
     </div>
   )
 }
