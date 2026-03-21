@@ -81,7 +81,7 @@ export function useSuperAdminDashboard() {
     pendingSearch: '',
     pendingOnlyEntreprise: false,
     showAllPending: false,
-    loading: true,
+    loading: false,
     adminSearch: '',
     paymentStats: { paid: 0, unpaid: 0, partial: 0 },
   })
@@ -96,7 +96,6 @@ export function useSuperAdminDashboard() {
       return
     }
 
-    setState((prev) => ({ ...prev, loading: true }))
     const requestsResult = await Promise.allSettled([
       withTimeout(fetchAdminRequests(), REQUESTS_BOOT_TIMEOUT_MS, 'admin_requests'),
     ])
@@ -111,7 +110,6 @@ export function useSuperAdminDashboard() {
     setState((prev) => ({
       ...prev,
       requests: requests ?? prev.requests,
-      loading: false,
     }))
 
     const coreResults = await Promise.allSettled([
