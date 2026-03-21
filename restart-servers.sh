@@ -3,7 +3,6 @@
 echo "🔄 Arrêt des serveurs existants..."
 pkill -f "next dev" 2>/dev/null
 pkill -f "vite" 2>/dev/null
-pkill -f "electron" 2>/dev/null
 sleep 2
 
 echo "🚀 Démarrage backend Next.js..."
