@@ -8,7 +8,6 @@ import {
   fetchAdminPayments,
   fetchClients,
   fetchEntreprises,
-  fetchUsers,
   updateAdminRequest,
 } from '@/services/api'
 import type { AdminRequestDTO } from '@/dto/frontend/responses'
@@ -23,6 +22,30 @@ function isSecondAuthRequiredError(error: unknown): boolean {
 function getFulfilledValue<T>(result: PromiseSettledResult<T>): T | null {
   if (result.status !== 'fulfilled') return null
   return result.value
+}
+
+const REQUESTS_BOOT_TIMEOUT_MS = 4_500
+const BACKGROUND_REQUEST_TIMEOUT_MS = 8_000
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`Timeout ${label} après ${timeoutMs}ms`))
+      }, timeoutMs)
+
+      promise
+        .then((value) => resolve(value))
+        .catch((error) => reject(error))
+    })
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
 }
 
 export function useSuperAdminDashboard() {
@@ -74,45 +97,54 @@ export function useSuperAdminDashboard() {
     }
 
     setState((prev) => ({ ...prev, loading: true }))
+    const requestsResult = await Promise.allSettled([
+      withTimeout(fetchAdminRequests(), REQUESTS_BOOT_TIMEOUT_MS, 'admin_requests'),
+    ])
+    const requestFailure =
+      requestsResult[0].status === 'rejected' ? requestsResult[0].reason : null
+    if (requestFailure && isSecondAuthRequiredError(requestFailure)) {
+      markSecondAuthRequired()
+    }
+    const requests = getFulfilledValue(requestsResult[0])
+
+    // Débloque rapidement l'UI sur la section principale "Demandes en attente".
+    setState((prev) => ({
+      ...prev,
+      requests: requests ?? prev.requests,
+      loading: false,
+    }))
+
     const coreResults = await Promise.allSettled([
-      fetchAdmins(),
-      fetchAdminRequests(),
-      fetchEntreprises(),
-      fetchUsers(),
+      withTimeout(fetchAdmins(), BACKGROUND_REQUEST_TIMEOUT_MS, 'admins'),
+      withTimeout(fetchEntreprises(), BACKGROUND_REQUEST_TIMEOUT_MS, 'entreprises'),
     ])
 
     const coreFailures = coreResults
       .filter((result) => result.status === 'rejected')
       .map((result) => (result as PromiseRejectedResult).reason)
-
     if (coreFailures.some((error) => isSecondAuthRequiredError(error))) {
       markSecondAuthRequired()
     }
 
     const admins = getFulfilledValue(coreResults[0])
-    const requests = getFulfilledValue(coreResults[1])
-    const entreprises = getFulfilledValue(coreResults[2])
-    const users = getFulfilledValue(coreResults[3])
+    const entreprises = getFulfilledValue(coreResults[1])
 
     if (!canReadAdminScopedData) {
       setState((prev) => ({
         ...prev,
         admins: admins ?? prev.admins,
-        requests: requests ?? prev.requests,
         entreprises: entreprises ?? prev.entreprises,
-        users: users ?? prev.users,
         auditLogs: [],
         adminPayments: [],
         paymentStats: { paid: 0, unpaid: 0, partial: 0 },
-        loading: false,
       }))
       return
     }
 
     const scopedResults = await Promise.allSettled([
-      fetchClients(),
-      fetchAuditLogs(),
-      fetchAdminPayments(),
+      withTimeout(fetchClients(), BACKGROUND_REQUEST_TIMEOUT_MS, 'clients'),
+      withTimeout(fetchAuditLogs(), BACKGROUND_REQUEST_TIMEOUT_MS, 'audit_logs'),
+      withTimeout(fetchAdminPayments(), BACKGROUND_REQUEST_TIMEOUT_MS, 'admin_payments'),
     ])
 
     const scopedFailures = scopedResults
@@ -131,13 +163,10 @@ export function useSuperAdminDashboard() {
     setState((prev) => ({
       ...prev,
       admins: admins ?? prev.admins,
-      requests: requests ?? prev.requests,
       entreprises: entreprises ?? prev.entreprises,
-      users: users ?? prev.users,
       auditLogs: logs,
       adminPayments,
       paymentStats,
-      loading: false,
     }))
   }
 
